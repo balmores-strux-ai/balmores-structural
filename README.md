@@ -22,21 +22,24 @@ uvicorn app:app --host 127.0.0.1 --port 8000
 
 **Note:** `.pt` brain files are gitignored by default. Train/deploy weights separately if they are large.
 
-## Push to GitHub (on your PC)
+## Push to GitHub (automatic on your PC)
 
-Install [Git](https://git-scm.com/download/win) or use **GitHub Desktop**.
+Git and GitHub CLI should already be installed (or run `winget install Git.Git` and `winget install GitHub.cli`).
 
-```bash
-cd balmores-strux-ai
-git init
-git add .
-git commit -m "Initial commit: BALMORES STRUX AI for Render"
-git branch -M main
-git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
-git push -u origin main
+**Two commands** (login once, then push + create repo):
+
+```powershell
+cd c:\Users\dell\Desktop\balmores-strux-ai
+gh auth login
+.\scripts\auto-push-to-github.ps1
 ```
 
-Replace `YOUR_USER/YOUR_REPO` with your repository.
+This creates a **public** repo named `balmores-strux-ai` on your GitHub account (if `origin` is not set yet) and pushes `main`.
+
+- Different repo name: `.\scripts\auto-push-to-github.ps1 my-custom-name`
+- Non-interactive: set a classic PAT with **repo** scope as `GH_TOKEN`, or put the PAT in one-line file `gh_token.txt` (gitignored), then run the script.
+
+Manual `git push` still works if you prefer GitHub Desktop or your own remote.
 
 ## License
 

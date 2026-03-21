@@ -38,6 +38,11 @@ if ([string]::IsNullOrWhiteSpace($repoName)) {
   $repoName = "balmores-strux-ai"
 }
 
+if (-not (Test-Path (Join-Path $repoRoot ".git"))) {
+  & $git init
+  & $git branch -M main
+}
+
 function Ensure-GhAuth {
   $oldEap = $ErrorActionPreference
   $ErrorActionPreference = "SilentlyContinue"
@@ -71,17 +76,17 @@ function Ensure-GhAuth {
   exit 1
 }
 
-# Local commit if there are changes
 & $git config user.name "BALMORES STRUX AI" 2>$null
 & $git config user.email "balmores-strux-ai@users.noreply.github.com" 2>$null
 
+Ensure-GhAuth
+
+# Commit after auth so a failed login does not leave extra local commits
 & $git add -A
 $porcelain = & $git status --porcelain
 if ($porcelain) {
   & $git commit -m "Update: BALMORES STRUX AI"
 }
-
-Ensure-GhAuth
 
 $hasOrigin = $false
 try {
