@@ -93,8 +93,12 @@ QUOTA_ERROR_MSG = (
 
 
 def _fallback_build_from_text(text: str) -> Optional[Dict[str, str]]:
-    """Parse 'N storey Xm x Ym' style without OpenAI. Returns dict with nodes, members, etc. or None."""
+    """Parse 'N storey Xm x Ym' or 'N storey bay x X m bay y Y m' style without OpenAI."""
     text = text.lower().strip()
+    n_story = None
+    bay_x = 6.0
+    bay_y = 12.0
+
     m = re.search(
         r"(\d+)\s*storey\s*(?:building|steel)?\s*"
         r"(?:(\d+(?:\.\d+)?)\s*[mx×]\s*(\d+(?:\.\d+)?)|"
@@ -102,12 +106,36 @@ def _fallback_build_from_text(text: str) -> Optional[Dict[str, str]]:
         text,
         re.I,
     )
-    if not m:
+    if m:
+        g = m.groups()
+        n_story = int(g[0])
+        bay_x = float(g[1] or g[3] or 6)
+        bay_y = float(g[2] or g[4] or 12)
+
+    if n_story is None:
+        m2 = re.search(
+            r"(\d+)\s*storey\s*(?:steel\s+)?building\s+(?:bay\s+)?"
+            r"x\s*(\d+(?:\.\d+)?)\s*m\s+(?:bay\s+)?y\s*(\d+(?:\.\d+)?)\s*m",
+            text,
+            re.I,
+        )
+        if m2:
+            n_story = int(m2.group(1))
+            bay_x = float(m2.group(2))
+            bay_y = float(m2.group(3))
+        else:
+            m3 = re.search(
+                r"(\d+)\s*storey.*?bay\s*x\s*(\d+(?:\.\d+)?)\s*m.*?bay\s*y\s*(\d+(?:\.\d+)?)\s*m",
+                text,
+                re.I | re.DOTALL,
+            )
+            if m3:
+                n_story = int(m3.group(1))
+                bay_x = float(m3.group(2))
+                bay_y = float(m3.group(3))
+
+    if n_story is None:
         return None
-    g = m.groups()
-    n_story = int(g[0])
-    bay_x = float(g[1] or g[3] or 6)
-    bay_y = float(g[2] or g[4] or 12)
     story_h = 4.0
     n_x, n_y = 2, 2
     if bay_x > bay_y:
