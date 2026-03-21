@@ -1,0 +1,68 @@
+Connect and Push to GitHub — Step by Step
+
+Your repo: https://github.com/balmores-strux-ai/balmores-strux-ai
+
+STEP 1 — Create a Personal Access Token (PAT)
+
+  a) Sign in to GitHub as the account that OWNS or has write access to balmores-strux-ai.
+     (If it's an organization, use an account that is Owner or has push rights.)
+
+  b) Open: https://github.com/settings/tokens
+
+  c) Click "Generate new token" → "Generate new token (classic)"
+
+  d) Name it: balmores-strux-push
+
+  e) Expiration: 90 days (or No expiration if you prefer)
+
+  f) Check the scope: repo (full control of private repositories)
+
+  g) Click "Generate token"
+
+  h) COPY the token (starts with ghp_...) — you won't see it again.
+
+
+STEP 2 — Save token locally (one time)
+
+  a) Create a file in your project folder:
+     c:\Users\dell\Desktop\balmores-strux-ai\gh_token.txt
+
+  b) Paste the token as the ONLY line (no spaces, no quotes).
+
+  c) Save and close. This file is in .gitignore — it won't be pushed to GitHub.
+
+
+STEP 3 — Push your code
+
+  Option A — In Cursor: say "run push" and I'll run the script for you.
+
+  Option B — In PowerShell:
+     cd c:\Users\dell\Desktop\balmores-strux-ai
+     .\scripts\auto-push-to-github.ps1
+
+  The script reads gh_token.txt, authenticates, and pushes to the repo.
+
+
+STEP 4 — After each code change
+
+  In Cursor: say "run push" or "push to GitHub"
+  OR in PowerShell:
+     cd c:\Users\dell\Desktop\balmores-strux-ai
+     git add -A
+     git commit -m "Describe your change"
+     git push
+
+  (If you used gh_token.txt once, gh stays logged in; git push may work without it.)
+
+
+TROUBLESHOOTING
+
+  • "Permission denied" — The token must be from an account with WRITE access to
+    balmores-strux-ai/balmores-strux-ai. Add balmoresopc-droid as a collaborator
+    (Settings → Collaborators) if needed.
+
+  • "Repository not found" — Check the remote:
+    git remote -v
+    Should show: origin  https://github.com/balmores-strux-ai/balmores-strux-ai.git
+
+  • Delete gh_token.txt after you're done pushing (for security).
