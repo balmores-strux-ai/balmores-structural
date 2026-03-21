@@ -1,8 +1,9 @@
 import os
+import re
 import json
 import copy
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Tuple
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -83,6 +84,85 @@ def push_history():
     }))
     if len(PROJECT_STATE["history"]) > 50:
         PROJECT_STATE["history"].pop(0)
+
+
+QUOTA_ERROR_MSG = (
+    "OpenAI API quota exceeded. Add billing at platform.openai.com or wait for monthly reset. "
+    "Try the Sample button to load a 4-storey demo and run FEM without the API."
+)
+
+
+def _fallback_build_from_text(text: str) -> Optional[Dict[str, str]]:
+    """Parse 'N storey Xm x Ym' style without OpenAI. Returns dict with nodes, members, etc. or None."""
+    text = text.lower().strip()
+    m = re.search(
+        r"(\d+)\s*storey\s*(?:building|steel)?\s*"
+        r"(?:(\d+(?:\.\d+)?)\s*[mx×]\s*(\d+(?:\.\d+)?)|"
+        r"(\d+(?:\.\d+)?)\s*m?\s*[mx×]\s*(\d+(?:\.\d+)?)\s*m?)",
+        text,
+        re.I,
+    )
+    if not m:
+        return None
+    g = m.groups()
+    n_story = int(g[0])
+    bay_x = float(g[1] or g[3] or 6)
+    bay_y = float(g[2] or g[4] or 12)
+    story_h = 4.0
+    n_x, n_y = 2, 2
+    if bay_x > bay_y:
+        n_x, n_y = 2, 3
+    elif bay_y > bay_x:
+        n_x, n_y = 3, 2
+    xs = [i * bay_x for i in range(n_x + 1)]
+    ys = [i * bay_y for i in range(n_y + 1)]
+    n_pts = (n_x + 1) * (n_y + 1)
+    nid = 1
+    node_lines = []
+    for z in [i * story_h for i in range(n_story + 1)]:
+        for y in ys:
+            for x in xs:
+                node_lines.append(f"{nid}({x} {y} {z})")
+                nid += 1
+    nodes_str = " ".join(node_lines)
+    col_per_plan = n_pts
+    mem_lines = []
+    mid = 1
+    for lev in range(n_story):
+        base = lev * col_per_plan + 1
+        next_base = (lev + 1) * col_per_plan + 1
+        for i in range(col_per_plan):
+            mem_lines.append(f"{mid}({base + i} {next_base + i})")
+            mid += 1
+    nx1, ny1 = n_x + 1, n_y + 1
+    for lev in range(n_story + 1):
+        base = lev * col_per_plan + 1
+        for row in range(ny1):
+            for col in range(n_x):
+                a = base + row * (nx1) + col
+                b = a + 1
+                mem_lines.append(f"{mid}({a} {b})")
+                mid += 1
+        for col in range(nx1):
+            for row in range(n_y):
+                a = base + row * (nx1) + col
+                b = a + (nx1)
+                mem_lines.append(f"{mid}({a} {b})")
+                mid += 1
+    members_str = " ".join(mem_lines)
+    supports_str = " ".join(f"{i} fixed" for i in range(1, col_per_plan + 1))
+    load_nodes = [n_story * col_per_plan + i for i in range(1, col_per_plan + 1)]
+    loads_str = " ".join(f"{n}(0 0 -40 0 0 0)" for n in load_nodes)
+    sections_str = "beam W360x44 column W310x60 brace HSS203x203x9.5"
+    notes = f"Built-in parser: {n_story} storey, {bay_x}m x {bay_y}m, {col_per_plan} cols/level. No OpenAI used."
+    return {
+        "nodes": nodes_str,
+        "members": members_str,
+        "supports": supports_str,
+        "loads": loads_str,
+        "sections": sections_str,
+        "notes": notes,
+    }
 
 
 def _append_message(role: str, content: str):
@@ -362,7 +442,10 @@ async def chat(payload: Dict[str, Any]):
         return {"ok": True, "message": answer, "project": PROJECT_STATE}
 
     except Exception as e:
-        return {"ok": False, "message": str(e)}
+        err = str(e)
+        if "429" in err or "quota" in err.lower() or "insufficient_quota" in err.lower():
+            return {"ok": False, "message": QUOTA_ERROR_MSG}
+        return {"ok": False, "message": err}
 
 
 def _apply_settings_from_payload(payload: Dict[str, Any]):
@@ -473,21 +556,69 @@ async def natural_language_model(payload: Dict[str, Any]):
         }
 
     except Exception as e:
-        return {"ok": False, "message": str(e)}
+        err = str(e)
+        if "429" in err or "quota" in err.lower() or "insufficient_quota" in err.lower():
+            return {"ok": False, "message": QUOTA_ERROR_MSG}
+        return {"ok": False, "message": err}
+
+
+def _run_fem_and_append():
+    """Helper: run FEM, refresh outputs, append assistant message."""
+    result = analyze_structure(
+        PROJECT_STATE["nodes"],
+        PROJECT_STATE["members"],
+        PROJECT_STATE["supports"],
+        PROJECT_STATE["nodal_loads"],
+        PROJECT_STATE["family_sections"],
+        building_code=PROJECT_STATE.get("building_code") or "US",
+    )
+    PROJECT_STATE["last_result"] = result
+    _refresh_derived_outputs()
+    if result.get("ok"):
+        _append_message("assistant", "Linear FEM finished. Check Summary, Internal forces, Graphs, and ETABS tabs.")
+    else:
+        _append_message("assistant", f"FEM: {result.get('message', '')[:500]}")
+    return result
 
 
 @app.post("/api/build-analyze")
 async def build_and_analyze(payload: Dict[str, Any]):
-    """NLM → FEM → charts/report/export in one step for instant UI refresh."""
-    if client is None:
-        return {"ok": False, "message": "OPENAI_API_KEY is missing on the server."}
-
+    """NLM → FEM → charts/report/export. Uses built-in parser for 'N storey Xm x Ym' when API fails."""
     user_message = payload.get("message", "").strip()
     if not user_message:
         return {"ok": False, "message": "Empty message."}
 
     _apply_settings_from_payload(payload)
     auto_run = payload.get("auto_analyze", True)
+    parsed = None
+
+    fallback = _fallback_build_from_text(user_message)
+    if fallback:
+        try:
+            push_history()
+            PROJECT_STATE["nodes"] = parse_nodes_text(fallback["nodes"])
+            PROJECT_STATE["members"] = parse_members_text(fallback["members"], PROJECT_STATE["nodes"])
+            PROJECT_STATE["supports"] = parse_supports_text(fallback["supports"], PROJECT_STATE["nodes"])
+            PROJECT_STATE["nodal_loads"] = parse_nodal_loads_text(fallback["loads"], PROJECT_STATE["nodes"])
+            PROJECT_STATE["family_sections"] = parse_section_setup_text(fallback["sections"])
+            _append_message("user", user_message)
+            _append_message("assistant", fallback["notes"])
+            parsed = fallback
+            if auto_run:
+                _run_fem_and_append()
+            return {
+                "ok": True,
+                "message": fallback["notes"],
+                "fem_summary": PROJECT_STATE.get("last_result", {}).get("message", ""),
+                "project": PROJECT_STATE,
+                "generated": parsed,
+                "brain_status": brain_status_message(),
+            }
+        except Exception as e:
+            return {"ok": False, "message": f"Built-in parser error: {e}"}
+
+    if client is None:
+        return {"ok": False, "message": "OPENAI_API_KEY missing. Try phrases like '4 storey 6m x 12m' — uses built-in parser."}
 
     schema = {
         "type": "object",
@@ -548,27 +679,8 @@ async def build_and_analyze(payload: Dict[str, Any]):
 
         fem_msg = ""
         if auto_run:
-            result = analyze_structure(
-                PROJECT_STATE["nodes"],
-                PROJECT_STATE["members"],
-                PROJECT_STATE["supports"],
-                PROJECT_STATE["nodal_loads"],
-                PROJECT_STATE["family_sections"],
-                building_code=PROJECT_STATE.get("building_code") or "US",
-            )
-            PROJECT_STATE["last_result"] = result
-            _refresh_derived_outputs()
-            fem_msg = result.get("message", "")
-            if result.get("ok"):
-                _append_message(
-                    "assistant",
-                    "Linear FEM finished. Open Summary, Internal forces, Designed vs analysis, Graphs, and ETABS model tabs for details.",
-                )
-            else:
-                _append_message(
-                    "assistant",
-                    f"FEM could not complete: {result.get('message', '')[:800]}",
-                )
+            res = _run_fem_and_append()
+            fem_msg = res.get("message", "")
 
         return {
             "ok": True,
@@ -580,4 +692,7 @@ async def build_and_analyze(payload: Dict[str, Any]):
         }
 
     except Exception as e:
-        return {"ok": False, "message": str(e)}
+        err = str(e)
+        if "429" in err or "quota" in err.lower() or "insufficient_quota" in err.lower():
+            return {"ok": False, "message": QUOTA_ERROR_MSG}
+        return {"ok": False, "message": err}
