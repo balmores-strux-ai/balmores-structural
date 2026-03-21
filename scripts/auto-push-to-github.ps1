@@ -39,8 +39,12 @@ if ([string]::IsNullOrWhiteSpace($repoName)) {
 }
 
 function Ensure-GhAuth {
-  & $gh auth status 2>$null
-  if ($LASTEXITCODE -eq 0) {
+  $oldEap = $ErrorActionPreference
+  $ErrorActionPreference = "SilentlyContinue"
+  $null = & $gh auth status 2>&1
+  $ok = ($LASTEXITCODE -eq 0)
+  $ErrorActionPreference = $oldEap
+  if ($ok) {
     return
   }
 
