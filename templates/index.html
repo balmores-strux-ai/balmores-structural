@@ -44,7 +44,7 @@
   <details class="engineer-guide">
     <summary>How to use this (structural engineers — click to expand)</summary>
     <div class="guide-body">
-      <p><strong>What you get.</strong> A 3D steel frame, a linear elastic FEM solve, drift check vs the code you pick (height ÷ 400 or 500), grouped suggested sections, graphs, and an ETABS-style text snapshot for manual model entry.</p>
+      <p><strong>What you get.</strong> Describe the building in plain text (e.g. 4 storey, bay x 10 m bay y 12 m). The chat response shows immediately: max beam shear & moment, column axial loads, joint reactions, max deflections, drift check. Plus 3D view, graphs, and ETABS-style export.</p>
       <p><strong>3D colors.</strong> After analysis, members shade from green to red by |M|max in that member (not a code check — a quick demand map).</p>
       <p><strong>Your trained model later.</strong> Save your PyTorch file as <code>models/strux_etabs_brain.pt</code> or set <code>BALMORES_BRAIN_PT</code>. Copy <code>models/brain_config.example.json</code> to <code>brain_config.json</code> and set <code>input_dim</code> to match your 5000-sample network.</p>
       <p><strong>PE of record.</strong> This is a screening / assistant tool — verify load combinations, connections, and foundations in ETABS or equivalent.</p>
@@ -56,7 +56,7 @@
       <div id="chatThread" class="chat-thread" aria-live="polite"></div>
       <div class="typing" id="typing" hidden>Working…</div>
       <div class="composer-bar">
-        <textarea id="messageInput" rows="3" placeholder="Describe the building like ChatGPT: bays in X and Y, height/stories, STAAD-style coordinates if you have them, loads, fc / fy / SBC in text — then press Build &amp; Analyze."></textarea>
+        <textarea id="messageInput" rows="3" placeholder="e.g. 4 storey steel building bay x 10 m bay y 12 m — or 3 storey 6m x 8m. Set f'c, fy, SBC in sidebar. Build &amp; Analyze shows beam shear/moment, column axial, reactions, deflections immediately."></textarea>
         <div class="composer-actions">
           <button type="button" class="primary" id="btnBuild">Build &amp; Analyze</button>
           <button type="button" class="ghost" id="btnAsk">Ask (follow-up)</button>

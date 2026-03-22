@@ -643,6 +643,64 @@ This run uses real 3D frame FEM stiffness analysis and actual member end forces 
     }
 
 
+def format_immediate_chat_results(result, materials=None) -> str:
+    """
+    Compact ChatGPT-style block: key metrics visible immediately in chat.
+    Beam shear/moment, column axial, reactions, deflections.
+    """
+    if not result or not result.get("ok"):
+        return "No analysis yet. Describe your building and click Build & Analyze."
+
+    r = result["results"]
+    code = result.get("building_code") or "US"
+    mf = r.get("member_forces") or []
+    rx = r.get("support_reactions") or []
+    disp = r.get("node_displacements") or []
+    z_levels = r.get("z_levels") or []
+
+    mats = materials or {}
+    mat_parts = []
+    if mats.get("fc_MPa") is not None:
+        mat_parts.append(f"f'c={mats['fc_MPa']} MPa")
+    if mats.get("fy_MPa") is not None:
+        mat_parts.append(f"fy={mats['fy_MPa']} MPa")
+    if mats.get("sbc_kPa") is not None:
+        mat_parts.append(f"SBC={mats['sbc_kPa']} kPa")
+    mat_str = " | ".join(mat_parts) if mat_parts else "-"
+
+    beams = sorted([x for x in mf if x.get("type") == "beam"], key=lambda x: x.get("moment_max_kNm") or 0, reverse=True)[:8]
+    cols = sorted([x for x in mf if x.get("type") == "column"], key=lambda x: x.get("axial_max_kN") or 0, reverse=True)[:8]
+
+    lines = [
+        "=== STRUCTURAL RESULTS (immediate) ===",
+        f"Materials: {mat_str} | Code: {code}",
+        "",
+        "> DRIFT & DEFLECTION",
+        f"  Roof disp: {_fmt(r['roof_disp_mm'])} mm  |  Limit: {_fmt(r['drift_limit_mm'])} mm  ->  {r['drift_result']}",
+        "",
+        "> BEAMS - max |M| & max V (kNm, kN)",
+    ]
+    for m in beams:
+        lines.append(f"  M{m['member_id']} ({m['start_node']}-{m['end_node']}): M={_fmt(m['moment_max_kNm'])}  V={_fmt(m['shear_max_kN'])}  P={_fmt(m['axial_max_kN'])}  [{m.get('group','-')}]")
+    lines.extend(["", "> COLUMNS - max P & max |M| (kN, kNm)"])
+    for m in cols:
+        lines.append(f"  M{m['member_id']} ({m['start_node']}-{m['end_node']}): P={_fmt(m['axial_max_kN'])}  M={_fmt(m['moment_max_kNm'])}  V={_fmt(m['shear_max_kN'])}  [{m.get('group','-')}]")
+    lines.extend(["", "> JOINT REACTIONS (kN, kNm)"])
+    for n in rx[:8]:
+        lines.append(f"  Node {n['node']}: Fx={_fmt(n['Fx_kN'])} Fy={_fmt(n['Fy_kN'])} Fz={_fmt(n['Fz_kN'])}")
+    if len(rx) > 8:
+        lines.append(f"  ... +{len(rx)-8} more")
+    lines.extend(["", "> MAX DEFLECTION BY LEVEL (mm)"])
+    level_disp = r.get("level_displacements_mm") or []
+    for i, z in enumerate(z_levels[:6]):
+        val = level_disp[i] if i < len(level_disp) else "-"
+        lines.append(f"  Z={_fmt(z)} m: max |ux| = {_fmt(val)} mm")
+    if len(z_levels) > 6:
+        lines.append(f"  ... +{len(z_levels)-6} levels")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def report_sections(result, materials=None, brain_line=""):
     """Structured blocks for the UI (analysis vs design vs narrative)."""
     materials = materials or {}

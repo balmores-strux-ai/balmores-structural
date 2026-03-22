@@ -24,6 +24,7 @@ from fem_core import (
     charts_payload_from_result,
     etabs_style_export_text,
     report_sections,
+    format_immediate_chat_results,
 )
 from brain_model import brain_recommendation_text, brain_status_message, brain_config_public
 
@@ -591,7 +592,7 @@ async def natural_language_model(payload: Dict[str, Any]):
 
 
 def _run_fem_and_append():
-    """Helper: run FEM, refresh outputs, append assistant message."""
+    """Helper: run FEM, refresh outputs, append ChatGPT-style results to chat."""
     result = analyze_structure(
         PROJECT_STATE["nodes"],
         PROJECT_STATE["members"],
@@ -603,7 +604,8 @@ def _run_fem_and_append():
     PROJECT_STATE["last_result"] = result
     _refresh_derived_outputs()
     if result.get("ok"):
-        _append_message("assistant", "Linear FEM finished. Check Summary, Internal forces, Graphs, and ETABS tabs.")
+        block = format_immediate_chat_results(result, PROJECT_STATE.get("materials"))
+        _append_message("assistant", block)
     else:
         _append_message("assistant", f"FEM: {result.get('message', '')[:500]}")
     return result
