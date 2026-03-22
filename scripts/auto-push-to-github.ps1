@@ -14,7 +14,7 @@
   Option C: put the PAT alone in a file gh_token.txt in the project root (file is gitignored),
     run this script once, then delete gh_token.txt.
 
-  Optional argument: repository name on your account (default: balmores-strux-ai)
+  Optional argument: repository name on your account (default: balmores-structural)
     .\scripts\auto-push-to-github.ps1 my-repo-name
 #>
 
@@ -35,7 +35,7 @@ if (-not (Test-Path $gh)) {
 
 $repoName = $args[0]
 if ([string]::IsNullOrWhiteSpace($repoName)) {
-  $repoName = "balmores-strux-ai"
+  $repoName = "balmores-structural"
 }
 
 if (-not (Test-Path (Join-Path $repoRoot ".git"))) {
@@ -76,8 +76,8 @@ function Ensure-GhAuth {
   exit 1
 }
 
-& $git config user.name "BALMORES STRUX AI" 2>$null
-& $git config user.email "balmores-strux-ai@users.noreply.github.com" 2>$null
+& $git config user.name "BALMORES STRUCTURAL" 2>$null
+& $git config user.email "balmores-structural@users.noreply.github.com" 2>$null
 
 Ensure-GhAuth
 
@@ -85,7 +85,7 @@ Ensure-GhAuth
 & $git add -A
 $porcelain = & $git status --porcelain
 if ($porcelain) {
-  & $git commit -m "Update: BALMORES STRUX AI"
+  & $git commit -m "Update: BALMORES STRUCTURAL"
 }
 
 $hasOrigin = $false
@@ -98,7 +98,7 @@ try {
 
 if (-not $hasOrigin) {
   Write-Host "Creating GitHub repo '$repoName' and pushing..."
-  & $gh repo create $repoName --public --source=. --remote=origin --push --description "BALMORES STRUX AI — structural FEM + chat + Render"
+  & $gh repo create $repoName --public --source=. --remote=origin --push --description "BALMORES STRUCTURAL — structural FEM + chat + Render"
 } else {
   Write-Host "Remote 'origin' exists — pushing main..."
   & $git push -u origin main

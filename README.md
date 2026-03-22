@@ -1,4 +1,4 @@
-# BALMORES STRUX AI
+# BALMORES STRUCTURAL
 
 Chat-style structural assistant: plain English → 3D frame, linear FEM, drift check, graphs, ETABS-oriented text export.
 
@@ -34,7 +34,7 @@ gh auth login
 .\scripts\auto-push-to-github.ps1
 ```
 
-This creates a **public** repo named `balmores-strux-ai` on your GitHub account (if `origin` is not set yet) and pushes `main`.
+This creates a **public** repo named `balmores-structural` on your GitHub account (if `origin` is not set yet) and pushes `main`.
 
 - Different repo name: `.\scripts\auto-push-to-github.ps1 my-custom-name`
 - Non-interactive: set a classic PAT with **repo** scope as `GH_TOKEN`, or put the PAT in one-line file `gh_token.txt` (gitignored), then run the script.

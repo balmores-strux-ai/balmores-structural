@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://balmores-strux-ai.onrender.com/sitemap.xml
+Sitemap: https://balmores-structural.onrender.com/sitemap.xml

@@ -1,7 +1,7 @@
 # Render Blueprint: https://render.com/docs/blueprint-spec
 services:
   - type: web
-    name: balmores-strux-ai
+    name: balmores-structural
     runtime: python
     plan: free
     region: oregon

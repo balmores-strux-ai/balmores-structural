@@ -37,7 +37,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-app = FastAPI(title="BALMORES STRUX AI")
+app = FastAPI(title="BALMORES STRUCTURAL")
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -251,7 +251,7 @@ def _export_engineering_bundle() -> Dict[str, Any]:
         loads[str(k)] = [float(x) for x in v]
 
     return {
-        "format": "balmores-strux-pack",
+        "format": "balmores-structural-pack",
         "version": 1,
         "building_code": PROJECT_STATE.get("building_code"),
         "materials": dict(PROJECT_STATE.get("materials") or {}),
@@ -429,7 +429,7 @@ async def chat(payload: Dict[str, Any]):
         )
 
     system_prompt = (
-        "You are BALMORES STRUX AI, a structural engineering assistant inside a web app. "
+        "You are BALMORES STRUCTURAL, a structural engineering assistant inside a web app. "
         "Answer clearly, practically, and professionally. "
         "If the user asks about the current model, use the provided model context. "
         "Do not invent solved checks that the app did not compute. "

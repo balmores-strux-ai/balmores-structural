@@ -553,7 +553,7 @@ async function downloadEngineeringPack() {
     const a = document.createElement("a");
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
     a.href = URL.createObjectURL(blob);
-    a.download = `balmores-strux-pack-${stamp}.json`;
+    a.download = `balmores-structural-pack-${stamp}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
     setStatus("Downloaded JSON pack (geometry, loads, FEM, report, ETABS text).");

@@ -1,4 +1,4 @@
-BALMORES STRUX AI — Quick start (for structural engineers)
+BALMORES STRUCTURAL — Quick start (for structural engineers)
 
 1) Install Python 3.10+ from python.org (check "Add Python to PATH" on Windows).
 
@@ -41,7 +41,7 @@ GitHub + Render (deploy online)
 2) Open PowerShell IN THIS FOLDER and run (login once in the browser):
    gh auth login
    .\scripts\auto-push-to-github.ps1
-   This creates repo "balmores-strux-ai" on your GitHub and pushes main (or use another name: .\scripts\auto-push-to-github.ps1 MY-REPO-NAME).
+   This creates repo "balmores-structural" on your GitHub and pushes main (or use another name: .\scripts\auto-push-to-github.ps1 MY-REPO-NAME).
    No browser? Set GH_TOKEN to a classic PAT with "repo" scope, or put the PAT in gh_token.txt (one line), run the script, delete the file.
 3) On https://render.com → New → Blueprint → pick this repo → deploy using render.yaml.
 4) In Render → Environment, add OPENAI_API_KEY (required). Optional: OPENAI_MODEL, BALMORES_BRAIN_PT.

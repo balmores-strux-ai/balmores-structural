@@ -1,17 +1,17 @@
 Connect and Push to GitHub — Step by Step
 
-Your repo: https://github.com/balmores-strux-ai/balmores-strux-ai
+Your repo: https://github.com/balmores-structural/balmores-structural
 
 STEP 1 — Create a Personal Access Token (PAT)
 
-  a) Sign in to GitHub as the account that OWNS or has write access to balmores-strux-ai.
+  a) Sign in to GitHub as the account that OWNS or has write access to balmores-structural.
      (If it's an organization, use an account that is Owner or has push rights.)
 
   b) Open: https://github.com/settings/tokens
 
   c) Click "Generate new token" → "Generate new token (classic)"
 
-  d) Name it: balmores-strux-push
+  d) Name it: balmores-structural-push
 
   e) Expiration: 90 days (or No expiration if you prefer)
 
@@ -58,11 +58,11 @@ STEP 4 — After each code change
 TROUBLESHOOTING
 
   • "Permission denied" — The token must be from an account with WRITE access to
-    balmores-strux-ai/balmores-strux-ai. Add balmoresopc-droid as a collaborator
+    balmores-structural/balmores-structural. Add balmoresopc-droid as a collaborator
     (Settings → Collaborators) if needed.
 
   • "Repository not found" — Check the remote:
     git remote -v
-    Should show: origin  https://github.com/balmores-strux-ai/balmores-strux-ai.git
+    Should show: origin  https://github.com/balmores-structural/balmores-structural.git
 
   • Delete gh_token.txt after you're done pushing (for security).

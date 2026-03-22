@@ -25,7 +25,7 @@ if (-not (Test-Path ".git")) {
 git add -A
 git status
 $msg = Read-Host "Commit message (Enter for default)"
-if ([string]::IsNullOrWhiteSpace($msg)) { $msg = "BALMORES STRUX AI — Render-ready" }
+if ([string]::IsNullOrWhiteSpace($msg)) { $msg = "BALMORES STRUCTURAL — Render-ready" }
 git commit -m $msg
 
 $hasOrigin = git remote get-url origin 2>$null
