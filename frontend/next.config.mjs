@@ -5,6 +5,16 @@ const backend =
 
 const nextConfig = {
   experimental: { serverActions: { allowedOrigins: ["*"] } },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "balmoreslab.com" }],
+        destination: "https://www.balmoreslab.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

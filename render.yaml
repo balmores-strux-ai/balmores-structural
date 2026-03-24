@@ -1,12 +1,16 @@
-# Custom domain SSL (balmoreslab.com): If HTTPS fails with "unsupported protocol",
-# in Cloudflare set SSL/TLS to "Full (strict)" and ensure Render custom domain shows
-# certificate active — OR set DNS records to "DNS only" (gray cloud) so Render serves TLS directly.
+# Custom domains (balmoreslab.com):
+# - List ONLY www.* in `domains` below so Render redirects apex → www (not www → apex).
+#   If you list the bare root first, Render sends www → apex and broken-apex TLS strands users.
+# - DNS: www CNAME → your-service.onrender.com; apex A → 216.24.57.1 (Render). Remove AAAA.
+# - Cloudflare: SSL "Full (strict)" OR proxy off (gray cloud) so Render terminates TLS cleanly.
+# After changing this file, sync the Blueprint in the Render dashboard (or push if auto-sync).
 services:
   - type: web
     name: balmores-structural-backend
     runtime: python
     plan: free
     rootDir: backend
+    healthCheckPath: /health
     envVars:
       # 3.10.14 is not always available on Render; 3.10.12 is stable.
       - key: PYTHON_VERSION
@@ -20,6 +24,9 @@ services:
     runtime: node
     plan: free
     rootDir: frontend
+    healthCheckPath: /
+    domains:
+      - www.balmoreslab.com
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
