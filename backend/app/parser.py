@@ -71,8 +71,8 @@ def merge_user_message(state: ProjectState, message: str, code: str) -> ProjectS
     if dim:
         px = float(dim.group(1))
         py = float(dim.group(2))
-        # If plan total: divide by bays; if span: use directly when bays match
-        if px > 50 or py > 50:  # likely plan dimensions
+        # If plan total (>20m): divide by bays; else treat as span per bay
+        if px > 20 or py > 20:  # likely plan dimensions (e.g. 30x40m)
             state.span_x_m = round(px / max(state.bays_x, 1), 3)
             state.span_y_m = round(py / max(state.bays_y, 1), 3)
         else:

@@ -15,16 +15,14 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-# Add parent for imports
+# Add parent for imports (run from backend: python scripts/train_overnight.py)
 import sys
-_backend = Path(__file__).resolve().parent.parent
+_scripts = Path(__file__).resolve().parent
+_backend = _scripts.parent
 sys.path.insert(0, str(_backend))
+sys.path.insert(0, str(_scripts))
 
-# Import train from train_brain (run from backend: python scripts/train_overnight.py)
-import importlib.util
-_spec = importlib.util.spec_from_file_location("train_brain", _backend / "scripts" / "train_brain.py")
-_tb = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_tb)
+import train_brain as _tb
 train = _tb.train
 import pandas as pd
 
