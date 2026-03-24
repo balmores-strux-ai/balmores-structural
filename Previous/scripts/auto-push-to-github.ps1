@@ -98,7 +98,7 @@ try {
 
 if (-not $hasOrigin) {
   Write-Host "Creating GitHub repo '$repoName' and pushing..."
-  & $gh repo create $repoName --public --source=. --remote=origin --push --description "BALMORES STRUCTURAL — Next.js + FastAPI + PyTorch structural analysis"
+  & $gh repo create $repoName --public --source=. --remote=origin --push --description "BALMORES STRUCTURAL — structural FEM + chat + Render"
 } else {
   Write-Host "Remote 'origin' exists — pushing main..."
   & $git push -u origin main

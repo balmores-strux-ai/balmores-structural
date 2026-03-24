@@ -1,17 +1,19 @@
-# Render Blueprint: https://render.com/docs/blueprint-spec
 services:
   - type: web
-    name: balmores-structural
+    name: balmores-structural-backend
     runtime: python
     plan: free
-    region: oregon
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+  - type: web
+    name: balmores-structural-frontend
+    runtime: node
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
     envVars:
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: OPENAI_MODEL
-        value: gpt-4o-mini
-      - key: BALMORES_BRAIN_PT
+      - key: NEXT_PUBLIC_API_URL
         sync: false

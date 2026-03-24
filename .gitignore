@@ -1,28 +1,25 @@
-# Environment & secrets
-.env
-.env.local
-*.pem
-gh_token.txt
-
 # Python
-__pycache__/
-*.py[cod]
-*$py.class
-.Python
-.venv/
-venv/
-ENV/
+backend/.venv/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/*.pyc
 
-# IDE
-.idea/
-.vscode/
-*.swp
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Trained weights (large — use BALMORES_BRAIN_PT on Render or Git LFS if you must commit)
-*.pt
-*.pth
-*.onnx
+# Logs
+*.log
+
+# Env
+.env
+.env.local
+.env*.local
+
+# Misc
+gh_token.txt

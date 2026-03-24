@@ -1,0 +1,45 @@
+BALMORES STRUCTURAL — Files to upload to GitHub
+==============================================
+
+Upload the ENTIRE project folder. GitHub expects a full repo. Use one of these methods:
+
+METHOD 1 — Push via Git (recommended)
+-------------------------------------
+1. Open PowerShell in: c:\Users\dell\Desktop\balmores-strux-ai
+2. Run: .\scripts\auto-push-to-github.ps1
+   (If gh is logged in, it will add, commit, and push automatically.)
+   Or manually: git add -A && git commit -m "BALMORES STRUCTURAL" && git push
+
+METHOD 2 — Manual upload via GitHub web
+---------------------------------------
+Create a new repo on GitHub, then upload these folders and files:
+
+FOLDERS (upload entire contents):
+  backend/          — FastAPI + PyTorch backend (includes app/, models/, requirements.txt)
+  frontend/         — Next.js + React Three Fiber frontend (app/, components/, lib/)
+  scripts/          — auto-push-to-github.ps1
+
+FILES (in project root):
+  .gitignore
+  README.md
+  render.yaml
+  run-backend.bat
+  run-frontend.bat
+  GITHUB_UPLOAD.txt (this file)
+
+IMPORTANT: backend/models/etabs_parametric_structural_brain.pt
+--------------------------------------------------------------
+This file is REQUIRED for the backend to run. If it is large (>100MB), GitHub may reject it.
+Options:
+  - Use Git LFS: git lfs track "*.pt" then commit
+  - Or host the .pt file elsewhere and set an env var to point to it (adjust model_loader.py)
+
+DO NOT UPLOAD:
+  backend/.venv/
+  backend/__pycache__/
+  frontend/node_modules/
+  frontend/.next/
+  .env
+  gh_token.txt
+
+These are in .gitignore and should be excluded automatically when using Git.

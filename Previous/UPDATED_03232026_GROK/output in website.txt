@@ -1,0 +1,13 @@
+Create me a full architecture of my website , re design my website, after my 5000 trainED models, i want YOU to COMPLETELY OVERHAUL my website based ARCHITECTURE,
+
+the output on my website when a user use my website
+1. 
+a user input building information similar talking to chatgpt style, user input size and height of building, in dimension x and y or in coordinates like staad,
+fc concrete fy steel and sbc of soil as a text format, the user input is anything but should dynamic not like should worlds must exact, 
+2. output must be a 3d structure in the same browser itself, a summary of beam columns internal forces, designed section and analysis section and recommendation and conclusion and to generate the etabs model actual and graphs, the analysis output of course taken by the trained model from etabs
+3, make the website a clean as possible similar to chat gpt or grok but the ouput must be reflected immediately in the browser itself
+
+4. a user can follow up questions like the chatgpt or recall the user previous chats waiting for the his next chat, prompt ai should ask a questions to user too related to his topic and make an assumption if a user did not specify or missing data, ai use default data and reflected to the report.
+5. SUGGEST A SAMPLE USERCHAT TO ITS TEXTBOX SO HE CAN JUST RUN FOR SAMPLE,
+
+
