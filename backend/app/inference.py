@@ -284,6 +284,16 @@ def feature_dict_from_state(state: ProjectState) -> Dict[str, float]:
     support_fixity_index = {"fixed": 1.0, "pinned": 0.35, "mixed": 0.65}[state.support_mode]
     diaphragm_constraint_index = {"rigid": 1.0, "semi_rigid": 0.65, "flexible": 0.35}[state.diaphragm_mode]
 
+    # New physics features (round5 v3 physics enhanced)
+    moment_magnification_B1_proxy = 1.0 / max(1.0 - col_p_proxy / max(Pcr, 1e-9), 0.2)
+    shear_deformation_ratio_proxy = (E / 77e6) * (I_beam / max(A_beam, 1e-9)) / max(max(span_x, span_y)**2, 1e-9)
+    overturning_moment_index = max(Veqx, Veqy) * total_h / max(total_weight * max(plan_x, plan_y) * 0.5, 1e-9)
+    story_drift_regularity_proxy = 1.0 - min(0.5, story_shear_grad / max(max(Veqx, Veqy), 1e-9) * story_h)
+    foundation_flexibility_proxy = 1.0 - 0.3 * (1.0 - support_fixity_index)
+    second_order_amplification_proxy = 1.0 / max(1.0 - buckling_ratio * 0.5, 0.3)
+    diaphragm_shear_flow_index = diaphragm_constraint_index * math.sqrt(plan_area) / max(total_h, 1e-9)
+    modal_participation_proxy = 0.85 + 0.15 * (1.0 - mass_irreg / 2.0)
+
     feature_dict = {
         "stories": stories, "bays_x": bays_x, "bays_y": bays_y,
         "span_x_m": span_x, "span_y_m": span_y, "story_height_m": story_h, "total_height_m": total_h,
@@ -337,6 +347,14 @@ def feature_dict_from_state(state: ProjectState) -> Dict[str, float]:
         "support_irregularity_index": support_irreg, "diaphragm_irregularity_index": diaphragm_irreg,
         "blast_impulse_proxy_kN_m": blast_impulse, "impact_energy_proxy_kNm": impact_energy, "story_shear_gradient_proxy": story_shear_grad,
         "robustness_proxy": robustness, "cantilever_ratio": cant_ratio,
+        "moment_magnification_B1_proxy": moment_magnification_B1_proxy,
+        "shear_deformation_ratio_proxy": shear_deformation_ratio_proxy,
+        "overturning_moment_index": overturning_moment_index,
+        "story_drift_regularity_proxy": story_drift_regularity_proxy,
+        "foundation_flexibility_proxy": foundation_flexibility_proxy,
+        "second_order_amplification_proxy": second_order_amplification_proxy,
+        "diaphragm_shear_flow_index": diaphragm_shear_flow_index,
+        "modal_participation_proxy": modal_participation_proxy,
         "brace_added": max(0.0, stories * 2.0 if state.brace_mode in {"braced", "mixed"} else 0.0),
         "brace_attempted": max(1.0, stories * 2.0),
         "bridge_members_added": 0.0, "cantilever_members_added": max(0.0, stories if state.cantilever_length_m > 0 else 0.0),
@@ -357,10 +375,17 @@ def feature_dict_from_state(state: ProjectState) -> Dict[str, float]:
     return feature_dict
 
 
+def _pred_fallback(pred: Dict[str, float], primary: str, fallback: str, default: float = 0.0) -> float:
+    v = pred.get(primary, default)
+    if v is not None and float(v) != 0:
+        return float(v)
+    return float(pred.get(fallback, default))
+
+
 def build_member_schedule(state: ProjectState, predictions: Dict[str, float]) -> Dict[str, Any]:
-    beam_m = predictions.get("max_beam_moment_kNm", predictions.get("beam_m3_grav_kNm", 0.0))
-    beam_v = predictions.get("max_beam_shear_kN", 0.0)
-    col_p = predictions.get("max_column_axial_kN", predictions.get("col_p_grav_kN", 0.0))
+    beam_m = _pred_fallback(predictions, "max_beam_moment_kNm", "beam_m3_grav_kNm")
+    beam_v = predictions.get("max_beam_shear_kN") or predictions.get("max_beam_end_shear_kN", 0.0) or 1e-6
+    col_p = _pred_fallback(predictions, "max_column_axial_kN", "col_p_grav_kN")
     story_count = max(state.stories, 1)
 
     beam_groups = []

@@ -22,16 +22,39 @@ app.add_middleware(
 )
 
 
+def _pred_val(pred: dict, primary: str, fallback: str | None = None, default: float = 0.0) -> float:
+    """Use fallback when primary is missing or zero (so trained outputs show correctly)."""
+    v = pred.get(primary, default)
+    if v is not None and float(v) != 0:
+        return float(v)
+    if fallback:
+        return float(pred.get(fallback, default))
+    return default
+
+
 def _make_cards(pred: dict) -> list[ResultCard]:
+    max_drift = _pred_val(pred, "max_drift_mm") or (_pred_val(pred, "worst_roof_disp_m") * 1000.0)
+    beam_shear = _pred_val(pred, "max_beam_shear_kN")
+    beam_moment = _pred_val(pred, "max_beam_moment_kNm", "beam_m3_grav_kNm")
+    col_axial = _pred_val(pred, "max_column_axial_kN", "col_p_grav_kN")
+    joint_v = _pred_val(pred, "max_joint_reaction_vertical_kN")
+    roof_disp = _pred_val(pred, "worst_roof_disp_m") * 1000.0
+    base_shear = _pred_val(pred, "worst_base_shear_kN") or max(
+        pred.get("base_fx_eqx_kN", 0) or 0,
+        pred.get("base_fy_eqy_kN", 0) or 0,
+        pred.get("base_fx_wx_kN", 0) or 0,
+        pred.get("base_fy_wy_kN", 0) or 0,
+    )
+    dcr = _pred_val(pred, "max_dcr_proxy")
     return [
-        ResultCard(label="Max drift", value=f"{pred.get('max_drift_mm', 0.0):.1f}", unit="mm", tone="warning" if pred.get("max_drift_mm", 0.0) > 60 else "good"),
-        ResultCard(label="Beam max shear", value=f"{pred.get('max_beam_shear_kN', 0.0):.1f}", unit="kN"),
-        ResultCard(label="Beam max moment", value=f"{pred.get('max_beam_moment_kNm', pred.get('beam_m3_grav_kNm', 0.0)):.1f}", unit="kNm"),
-        ResultCard(label="Column axial", value=f"{pred.get('max_column_axial_kN', pred.get('col_p_grav_kN', 0.0)):.1f}", unit="kN"),
-        ResultCard(label="Joint reaction V", value=f"{pred.get('max_joint_reaction_vertical_kN', 0.0):.1f}", unit="kN"),
-        ResultCard(label="Roof disp worst", value=f"{pred.get('worst_roof_disp_m', 0.0) * 1000.0:.1f}", unit="mm"),
-        ResultCard(label="Base shear worst", value=f"{pred.get('worst_base_shear_kN', 0.0):.1f}", unit="kN"),
-        ResultCard(label="DCR proxy", value=f"{pred.get('max_dcr_proxy', 0.0):.2f}", unit=None, tone="warning" if pred.get("max_dcr_proxy", 0.0) > 1.0 else "good"),
+        ResultCard(label="Max drift", value=f"{max_drift:.1f}", unit="mm", tone="warning" if max_drift > 60 else "good"),
+        ResultCard(label="Beam max shear", value=f"{beam_shear:.1f}", unit="kN"),
+        ResultCard(label="Beam max moment", value=f"{beam_moment:.1f}", unit="kNm"),
+        ResultCard(label="Column axial", value=f"{col_axial:.1f}", unit="kN"),
+        ResultCard(label="Joint reaction V", value=f"{joint_v:.1f}", unit="kN"),
+        ResultCard(label="Roof disp worst", value=f"{roof_disp:.1f}", unit="mm"),
+        ResultCard(label="Base shear worst", value=f"{base_shear:.1f}", unit="kN"),
+        ResultCard(label="DCR proxy", value=f"{dcr:.2f}", unit=None, tone="warning" if dcr > 1.0 else "good"),
     ]
 
 
@@ -65,16 +88,28 @@ def chat(req: ChatRequest) -> ChatResponse:
     cards = _make_cards(pred)
     member_schedule = build_member_schedule(state, pred)
 
+    max_drift = _pred_val(pred, "max_drift_mm") or (_pred_val(pred, "worst_roof_disp_m") * 1000.0)
+    beam_shear = _pred_val(pred, "max_beam_shear_kN")
+    beam_m = _pred_val(pred, "max_beam_moment_kNm", "beam_m3_grav_kNm")
+    col_p = _pred_val(pred, "max_column_axial_kN", "col_p_grav_kN")
+    joint_v = _pred_val(pred, "max_joint_reaction_vertical_kN")
+    roof_disp = _pred_val(pred, "worst_roof_disp_m") * 1000.0
+    base_shear = _pred_val(pred, "worst_base_shear_kN") or max(
+        pred.get("base_fx_eqx_kN", 0) or 0,
+        pred.get("base_fy_eqy_kN", 0) or 0,
+        pred.get("base_fx_wx_kN", 0) or 0,
+        pred.get("base_fy_wy_kN", 0) or 0,
+    )
+
     summary = (
         f"I interpreted your project as a {state.stories}-storey {state.building_type} building "
         f"with {state.bays_x}x{state.bays_y} bays, spans {state.span_x_m:.2f} m x {state.span_y_m:.2f} m, "
         f"{state.support_mode} supports, {state.diaphragm_mode} diaphragm, and {state.brace_mode} brace mode."
     )
     conclusion = (
-        f"Predicted max drift is about {pred.get('max_drift_mm', 0.0):.1f} mm, beam max shear about "
-        f"{pred.get('max_beam_shear_kN', 0.0):.1f} kN, beam max moment about "
-        f"{pred.get('max_beam_moment_kNm', pred.get('beam_m3_grav_kNm', 0.0)):.1f} kNm, "
-        f"and column axial about {pred.get('max_column_axial_kN', pred.get('col_p_grav_kN', 0.0)):.1f} kN."
+        f"Predicted max drift is about {max_drift:.1f} mm, beam max shear about "
+        f"{beam_shear:.1f} kN, beam max moment about {beam_m:.1f} kNm, "
+        f"and column axial about {col_p:.1f} kN."
     )
     ai_message = summary + " " + conclusion
 
@@ -82,15 +117,15 @@ def chat(req: ChatRequest) -> ChatResponse:
 
     charts = {
         "beamColumnSummary": {
-            "beamShear": pred.get("max_beam_shear_kN", 0.0),
-            "beamMoment": pred.get("max_beam_moment_kNm", pred.get("beam_m3_grav_kNm", 0.0)),
-            "columnAxial": pred.get("max_column_axial_kN", pred.get("col_p_grav_kN", 0.0)),
-            "jointReactionV": pred.get("max_joint_reaction_vertical_kN", 0.0),
+            "beamShear": beam_shear,
+            "beamMoment": beam_m,
+            "columnAxial": col_p,
+            "jointReactionV": joint_v,
         },
         "driftAndBase": {
-            "maxDriftMm": pred.get("max_drift_mm", 0.0),
-            "roofDispMm": pred.get("worst_roof_disp_m", 0.0) * 1000.0,
-            "baseShear": pred.get("worst_base_shear_kN", 0.0),
+            "maxDriftMm": max_drift,
+            "roofDispMm": roof_disp,
+            "baseShear": base_shear,
         },
     }
 
