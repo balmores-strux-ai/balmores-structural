@@ -152,6 +152,8 @@ def train(
     scheduler_mode: str = "plateau",
     ema_decay: float | None = None,
     init_state_dict: dict | None = None,
+    augment_noise_x: float = 0.008,
+    augment_noise_y: float = 0.005,
 ):
     if max_wall_seconds is not None:
         patience = max(patience, 999999)
@@ -163,7 +165,12 @@ def train(
     print("=" * 60)
 
     print("\nLoading CSV...")
-    X_raw, y_raw = load_and_prepare(csv_path, target_total)
+    X_raw, y_raw = load_and_prepare(
+        csv_path,
+        target_total,
+        augment_noise_x=augment_noise_x,
+        augment_noise_y=augment_noise_y,
+    )
     n_samples = len(X_raw)
     print(f"  Total samples: {n_samples}")
 
