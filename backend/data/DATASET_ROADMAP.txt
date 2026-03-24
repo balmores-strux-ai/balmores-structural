@@ -1,0 +1,16 @@
+BALMORES STRUCTURAL — dataset scale (accuracy follows real ETABS rows)
+
+Goal: 100,000 teacher rows for maximum brain fidelity (ETABS/STAAD-class behaviour).
+
+How:
+  - Each ETABS run adds at most ETABS_MAX_NEW_PER_RUN rows (default 2500 in etabs_brain_full.py).
+  - Set ETABS_TARGET_TOTAL=100000 (default) so the script keeps appending until the CSV reaches that count.
+  - Re-run run-etabs-then-10hr.bat (or etabs_brain_full.py) until rows approach 100k.
+  - After each large append, run train_10hr.py --hours 10 (included in run-etabs-then-10hr.bat).
+
+Env vars (optional):
+  ETABS_TARGET_TOTAL=100000
+  ETABS_MAX_NEW_PER_RUN=2500
+  ETABS_SKIP_TRAIN=1   (only collect CSV; train separately)
+
+Synthetic rows (--augment-extra) are a fallback; real ETABS rows dominate accuracy.

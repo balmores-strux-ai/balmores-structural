@@ -30,11 +30,14 @@ import torch
 import torch.nn as nn
 
 # --- CONFIG ---
-SCRIPT_VERSION = "etabs_brain_full_round5_6000_all_features"
+SCRIPT_VERSION = "etabs_brain_full_round6_100k_roadmap"
 
 CONFIG = {
-    "TARGET_TOTAL_MODELS": 6000,
-    "TARGET_NEW_MODELS_IF_NO_EXISTING": 6000,
+    # Long-term dataset goal (env: ETABS_TARGET_TOTAL). Each run adds at most MAX_NEW_PER_RUN.
+    "TARGET_TOTAL_MODELS": 100_000,
+    # Cap per run so one session does not try to build 100k models at once (weeks of runtime).
+    "MAX_NEW_PER_RUN": 2500,
+    "TARGET_NEW_MODELS_IF_NO_EXISTING": 2500,
     "RANDOM_SEED": 42,
     "APPEND_DATASET": True,
     "PRESENT_UNITS": 6,  # kN-m-C (SI)
@@ -42,6 +45,20 @@ CONFIG = {
     "RESTART_AFTER_CONSECUTIVE_FAILS": 5,
     "RESTART_SLOW_MODEL_THRESHOLD_S": 60,
 }
+
+
+def _env_int(name: str, default: int) -> int:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+def _env_bool(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
 
 # Path resolution — output files go to backend/data and backend/models
 _BACKEND = Path(__file__).resolve().parent.parent
@@ -1621,8 +1638,8 @@ def main() -> None:
     print("ETABS Brain Full Pipeline — Parametric Models + Analysis + Train")
     print(f"  Version: {SCRIPT_VERSION}")
     print("=" * 70)
-    print(f"  TARGET_TOTAL_MODELS: {CONFIG['TARGET_TOTAL_MODELS']}")
-    print(f"  TARGET_NEW_MODELS_IF_NO_EXISTING: {CONFIG['TARGET_NEW_MODELS_IF_NO_EXISTING']}")
+    print(f"  Default TARGET_TOTAL_MODELS: {CONFIG['TARGET_TOTAL_MODELS']} (override: ETABS_TARGET_TOTAL)")
+    print(f"  Default MAX_NEW_PER_RUN: {CONFIG['MAX_NEW_PER_RUN']} (override: ETABS_MAX_NEW_PER_RUN)")
     print(f"  DATASET_CSV: {DATASET_CSV}")
     print(f"  MODEL_FILE: {MODEL_FILE}")
     print(f"  Demand groups: {DEMAND_GROUPS_CREATED}")
@@ -1640,14 +1657,17 @@ def main() -> None:
         ]
 
     current_count = get_current_row_count(DATASET_CSV)
-    target_total = CONFIG["TARGET_TOTAL_MODELS"]
-    target_new = max(0, target_total - current_count)
-    if target_new == 0 and current_count == 0:
-        target_new = CONFIG["TARGET_NEW_MODELS_IF_NO_EXISTING"]
+    target_total = _env_int("ETABS_TARGET_TOTAL", CONFIG["TARGET_TOTAL_MODELS"])
+    max_new = _env_int("ETABS_MAX_NEW_PER_RUN", CONFIG["MAX_NEW_PER_RUN"])
+    gap = max(0, target_total - current_count)
+    target_new = min(max_new, gap)
+    if current_count == 0 and target_new == 0:
+        target_new = min(max_new, CONFIG["TARGET_NEW_MODELS_IF_NO_EXISTING"])
     start_id = current_count + 1
 
     print(f"  Current rows: {current_count}")
-    print(f"  Target total: {target_total}")
+    print(f"  Target total (roadmap): {target_total}")
+    print(f"  Max new this run: {max_new}")
     print(f"  New samples to generate: {target_new}")
     print()
 
@@ -1706,8 +1726,15 @@ def main() -> None:
         df_out = pd.read_csv(DATASET_CSV)
         print("  No new samples needed. Using existing dataset for training.")
 
-    print("\nTraining structural brain...")
-    train_brain(df_out, MODEL_FILE)
+    skip_train = _env_bool("ETABS_SKIP_TRAIN")
+    if skip_train:
+        print("\nETABS_SKIP_TRAIN=1 — skipping inline training.")
+        print("  Run next:  cd backend")
+        print("            python scripts/train_10hr.py --hours 10")
+        print("  Or:        run-train-10hr.bat")
+    else:
+        print("\nTraining structural brain (short pass)...")
+        train_brain(df_out, MODEL_FILE)
     metrics = {"script_version": SCRIPT_VERSION, "dataset_rows": len(df_out)}
     with open(METRICS_JSON, "w") as f:
         json.dump(metrics, f, indent=2)
