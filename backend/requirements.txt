@@ -4,6 +4,7 @@ pydantic==2.9.2
 numpy>=1.24,<2
 torch>=2.0.0
 python-multipart==0.0.9
+# ETABS / training scripts only (not needed for Render API — use requirements-render.txt there)
 pandas>=2.0
 comtypes>=1.2.0
 psutil>=5.9.0

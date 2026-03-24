@@ -1,0 +1,8 @@
+# Minimal deps for FastAPI + brain inference on Render (Linux).
+# Torch is installed in render.yaml buildCommand from PyTorch CPU wheel first.
+# For ETABS scripts locally, use requirements.txt (pandas, comtypes, psutil).
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+numpy>=1.24,<2
+python-multipart==0.0.9

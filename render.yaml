@@ -8,9 +8,11 @@ services:
     plan: free
     rootDir: backend
     envVars:
+      # 3.10.14 is not always available on Render; 3.10.12 is stable.
       - key: PYTHON_VERSION
-        value: "3.10.14"
-    buildCommand: pip install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+        value: "3.10.12"
+    # Install CPU torch from PyTorch index first (avoids huge CUDA wheel + OOM on free tier).
+    buildCommand: pip install --no-cache-dir torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu && pip install --no-cache-dir -r requirements-render.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
   - type: web
