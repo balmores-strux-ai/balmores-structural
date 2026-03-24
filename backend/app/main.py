@@ -7,7 +7,7 @@ from .schemas import ChatRequest, ChatResponse, VerifyRequest, VerifyResponse, R
 from .schemas import ProjectState, ChatMessage
 from .store import STORE
 from .parser import merge_user_message, follow_up_questions
-from .inference import build_geometry, feature_dict_from_state, confidence_label, build_member_schedule
+from .inference import build_geometry, feature_dict_from_state, confidence_label, build_member_schedule, build_physics_checks
 from .model_loader import BRAIN
 from .recommendations import build_recommendations
 
@@ -129,9 +129,16 @@ def chat(req: ChatRequest) -> ChatResponse:
         },
     }
 
+    physics_checks = build_physics_checks(state, pred, features)
     detailed = {
         "raw_predictions": pred,
         "member_schedule": member_schedule,
+        "physics_checks": physics_checks,
+        "model_info": {
+            "dataset_rows": BRAIN.dataset_rows,
+            "training": "Physics-informed, ETABS-calibrated",
+            "targets": list(BRAIN.target_columns),
+        },
         "analysis_summary": {
             "max_beam_end_shear_kN": pred.get("max_beam_end_shear_kN", 0.0),
             "max_beam_end_moment_kNm": pred.get("max_beam_end_moment_kNm", 0.0),

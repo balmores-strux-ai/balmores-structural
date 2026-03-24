@@ -9,9 +9,10 @@ type Card = { label: string; value: string; unit?: string; tone?: string };
 type Recommendation = { title: string; detail: string; severity: string };
 type Message = { role: string; content: string };
 
-const TABS = ["Results", "Assumptions", "Member Schedule", "Recommendations", "Follow-ups"] as const;
+const TABS = ["Results", "Physics", "Assumptions", "Member Schedule", "Recommendations", "Follow-ups"] as const;
 
 const initialPrompt = `Design-check a 4-storey steel building, 12m x 18m, 3 bays by 3 bays, fc 30 MPa, fy 420 MPa, SBC 150 kPa, fixed supports, rigid diaphragm, braced frame, use Canada code. Give beam shear, beam moments, column axial, joint reactions, drift in mm, and recommended beam/column groups.`;
+const COORDINATE_HINT = "Tip: Use natural language, coordinates (30x40m), or dimensions like '4 storey, 3x4 bays, 6m spans'.";
 
 export default function HomePage() {
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -85,10 +86,10 @@ export default function HomePage() {
       <div className="topbar">
         <div className="brand">
           <div className="brand-badge" />
-          <div>
-            <div>BALMORES STRUCTURAL</div>
-            <div className="small-muted">5000-model prototype · instant structural analysis workspace</div>
-          </div>
+            <div>
+              <div>BALMORES STRUCTURAL</div>
+              <div className="small-muted">Physics-informed · ETABS-calibrated · Instant structural analysis</div>
+            </div>
         </div>
         <div className="small-muted">Confidence: {confidence}</div>
       </div>
@@ -132,6 +133,7 @@ export default function HomePage() {
             <button className="btn" onClick={onSend} disabled={loading}>
               {loading ? "Thinking..." : "Send"}
             </button>
+            <div className="small-muted">{COORDINATE_HINT}</div>
             <div className="small-muted">{verifyStatus}</div>
           </div>
         </div>
@@ -143,7 +145,7 @@ export default function HomePage() {
               <div className="overlay">
                 <div className="tag">3D Model</div>
                 <div className="tag">Live browser output</div>
-                <div className="tag">ETABS-trained brain</div>
+                <div className="tag">ETABS-calibrated</div>
               </div>
             </div>
             <div className="bottom-split">
@@ -180,6 +182,39 @@ export default function HomePage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {activeTab === "Physics" && (
+              <div className="section">
+                <div className="physics-grid">
+                  {details?.physics_checks && (
+                    <>
+                      <div className="physics-card">
+                        <strong>Physics Checks</strong>
+                        <div className="li">Base shear: {details.physics_checks.base_shear_check}</div>
+                        <div className="li">Column axial: {details.physics_checks.column_axial_check}</div>
+                        <div className="li">Drift compliance: {details.physics_checks.drift_compliance}</div>
+                      </div>
+                      <div className="physics-card">
+                        <strong>Analysis Basis</strong>
+                        <div className="li">{details.physics_checks.physics_basis}</div>
+                        <div className="li">Units: {details.physics_checks.units}</div>
+                        <div className="li small-muted">{details.physics_checks.equilibrium_note}</div>
+                      </div>
+                      {details?.model_info && (
+                        <div className="physics-card small-muted">
+                          <strong>Model</strong>
+                          <div className="li">Trained on {details.model_info.dataset_rows} ETABS samples</div>
+                          <div className="li">{details.model_info.training}</div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+                {!details?.physics_checks && (
+                  <div className="li small-muted">Run analysis to see physics-informed checks.</div>
+                )}
               </div>
             )}
 

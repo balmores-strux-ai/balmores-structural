@@ -1481,9 +1481,17 @@ def collect_dataset(sap_model: Any, target_new: int, start_id: int, csv_columns:
     return rows
 
 
-def train_brain(df: pd.DataFrame, output_path: Path, epochs: int = 300, patience: int = 60,
+# Physics-critical targets: higher weight = ETABS-level precision
+_PHYSICS_TARGET_WEIGHTS = {
+    "max_beam_moment_kNm": 2.5, "max_column_axial_kN": 2.5, "max_drift_mm": 2.5,
+    "max_beam_shear_kN": 2.0, "max_beam_end_shear_kN": 2.0, "max_beam_end_moment_kNm": 2.0,
+    "max_beam_deflection_mm": 1.8, "max_joint_reaction_vertical_kN": 1.5,
+}
+
+
+def train_brain(df: pd.DataFrame, output_path: Path, epochs: int = 800, patience: int = 150,
                 width: int = 448, head_dim: int = 224) -> None:
-    """Train StructuralBrain on the dataset."""
+    """Train StructuralBrain on the dataset with physics-informed weighted loss."""
     n_samples = len(df)
     X_raw = np.zeros((n_samples, len(FEATURE_COLUMNS)), dtype=np.float64)
     for i, c in enumerate(FEATURE_COLUMNS):
@@ -1522,10 +1530,16 @@ def train_brain(df: pd.DataFrame, output_path: Path, epochs: int = 300, patience
 
     in_dim = X.shape[1]
     out_dim = y.shape[1]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    target_weights = np.ones(out_dim, dtype=np.float32)
+    for i, c in enumerate(TARGET_COLUMNS):
+        if c in _PHYSICS_TARGET_WEIGHTS:
+            target_weights[i] = _PHYSICS_TARGET_WEIGHTS[c]
+    target_weights_t = torch.tensor(target_weights, dtype=torch.float32).to(device)
+
     model = StructuralBrain(in_dim, out_dim, width=width, head_dim=head_dim)
     opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode="min", factor=0.5, patience=30, min_lr=1e-6)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
     train_ds = torch.utils.data.TensorDataset(
@@ -1546,7 +1560,9 @@ def train_brain(df: pd.DataFrame, output_path: Path, epochs: int = 300, patience
         for xb, yb in train_loader:
             xb, yb = xb.to(device), yb.to(device)
             opt.zero_grad()
-            loss = nn.functional.mse_loss(model(xb), yb)
+            pred = model(xb)
+            w = target_weights_t.unsqueeze(0).expand_as(pred)
+            loss = (w * (pred - yb) ** 2).mean()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
@@ -1555,7 +1571,9 @@ def train_brain(df: pd.DataFrame, output_path: Path, epochs: int = 300, patience
 
         model.eval()
         with torch.no_grad():
-            val_loss = nn.functional.mse_loss(model(x_val_t), y_val_t).item()
+            val_pred = model(x_val_t)
+            w = target_weights_t.unsqueeze(0).expand_as(val_pred)
+            val_loss = (w * (val_pred - y_val_t) ** 2).mean().item()
         scheduler.step(val_loss)
 
         if val_loss < best_val_loss:
@@ -1592,7 +1610,7 @@ def train_brain(df: pd.DataFrame, output_path: Path, epochs: int = 300, patience
         "y_scaler": y_scaler,
         "training_ranges": training_ranges,
         "dataset_rows": int(n_samples),
-        "config": {"epochs": epochs, "width": width, "head_dim": head_dim},
+        "config": {"epochs": epochs, "width": width, "head_dim": head_dim, "physics_weights": True},
     }
     torch.save(bundle, output_path)
     print(f"\nSaved model: {output_path}")

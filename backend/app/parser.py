@@ -59,12 +59,25 @@ def merge_user_message(state: ProjectState, message: str, code: str) -> ProjectS
         if by:
             state.bays_y = by
 
-    dim = re.search(r'(\d+(?:\.\d+)?)\s*(?:m|meter|metre)s?\s*(?:x|by)\s*(\d+(?:\.\d+)?)\s*(?:m|meter|metre)s?', low)
+    # Plan dimensions: "30x40", "30 x 40", "30x40m", "30 by 40 m", "30m x 40m"
+    dim = re.search(r'(\d+(?:\.\d+)?)\s*(?:m|meter|metre)s?\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)\s*(?:m|meter|metre)s?', low)
+    if not dim:
+        dim = re.search(r'(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)\s*(?:m|meter|metre)?', low)
+    if not dim:
+        dim = re.search(r'plan\s+(\d+(?:\.\d+)?)\s*(?:x|by)\s*(\d+(?:\.\d+)?)', low)
+    if not dim:
+        # Two standalone numbers: "30 40" or "30, 40" as plan dims (if context suggests dimensions)
+        dim = re.search(r'(?:^|,|\.)\s*(\d+(?:\.\d+)?)\s*[,x\s]\s*(\d+(?:\.\d+)?)\s*(?:m|$)', low)
     if dim:
         px = float(dim.group(1))
         py = float(dim.group(2))
-        state.span_x_m = round(px / max(state.bays_x, 1), 3)
-        state.span_y_m = round(py / max(state.bays_y, 1), 3)
+        # If plan total: divide by bays; if span: use directly when bays match
+        if px > 50 or py > 50:  # likely plan dimensions
+            state.span_x_m = round(px / max(state.bays_x, 1), 3)
+            state.span_y_m = round(py / max(state.bays_y, 1), 3)
+        else:
+            state.span_x_m = round(px, 3)
+            state.span_y_m = round(py, 3)
     else:
         sx = _find_number(r'span\s*x\s*(\d+(?:\.\d+)?)', low) or _find_number(r'(\d+(?:\.\d+)?)\s*m\s*span', low)
         sy = _find_number(r'span\s*y\s*(\d+(?:\.\d+)?)', low)
