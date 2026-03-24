@@ -1,3 +1,6 @@
+# Custom domain SSL (balmoreslab.com): If HTTPS fails with "unsupported protocol",
+# in Cloudflare set SSL/TLS to "Full (strict)" and ensure Render custom domain shows
+# certificate active — OR set DNS records to "DNS only" (gray cloud) so Render serves TLS directly.
 services:
   - type: web
     name: balmores-structural-backend
@@ -18,5 +21,9 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
+      # Server-side proxy target (browser calls same-origin /api/backend/*)
+      - key: BACKEND_PROXY_URL
+        value: https://balmores-structural-backend.onrender.com
+      # Leave unset (or empty) so the app uses /api/backend → BACKEND_PROXY_URL (avoids mixed-content HTTP API).
       - key: NEXT_PUBLIC_API_URL
         sync: false

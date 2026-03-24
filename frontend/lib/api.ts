@@ -1,4 +1,12 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+/** Production: same-origin /api/backend/* (rewritten to BACKEND_PROXY_URL). Override with NEXT_PUBLIC_API_URL if needed. */
+function apiBase(): string {
+  const explicit = process.env.NEXT_PUBLIC_API_URL;
+  if (explicit !== undefined && explicit !== "") return explicit.replace(/\/$/, "");
+  if (process.env.NODE_ENV === "production") return "/api/backend";
+  return "http://localhost:8000";
+}
+
+export const API_URL = apiBase();
 
 export async function sendChat(payload: Record<string, unknown>) {
   const res = await fetch(`${API_URL}/chat`, {
