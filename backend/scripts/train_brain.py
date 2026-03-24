@@ -10,11 +10,15 @@ Usage:
   python scripts/train_brain.py --physics --epochs 800  # physics-informed mode
 
 Output: backend/models/etabs_parametric_structural_brain.pt
+
+Extended 10h run: python scripts/train_10hr.py (cosine warm-restarts, EMA, checkpoints).
 """
 from __future__ import annotations
 
 import argparse
 import sys
+import time
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -31,14 +35,14 @@ TARGET_COLUMNS = BRAIN.target_columns
 
 # Physics-critical targets: higher weight = model learns them with ETABS-level precision
 PHYSICS_TARGET_WEIGHTS = {
-    "max_beam_moment_kNm": 2.5,
-    "max_column_axial_kN": 2.5,
-    "max_drift_mm": 2.5,
-    "max_beam_shear_kN": 2.0,
-    "max_beam_end_shear_kN": 2.0,
-    "max_beam_end_moment_kNm": 2.0,
-    "max_beam_deflection_mm": 1.8,
-    "max_joint_reaction_vertical_kN": 1.5,
+    "max_beam_moment_kNm": 3.0,
+    "max_column_axial_kN": 3.0,
+    "max_drift_mm": 3.0,
+    "max_beam_shear_kN": 2.2,
+    "max_beam_end_shear_kN": 2.2,
+    "max_beam_end_moment_kNm": 2.2,
+    "max_beam_deflection_mm": 2.0,
+    "max_joint_reaction_vertical_kN": 1.6,
 }
 
 
@@ -104,6 +108,30 @@ def load_and_prepare(
     return X, y
 
 
+def _bundle_from_state(
+    state_dict: dict,
+    x_scaler: dict,
+    y_scaler: dict,
+    training_ranges: dict,
+    n_samples: int,
+    feature_columns: list,
+    target_columns: list,
+    checkpoint_epoch: int,
+    best_val_loss: float,
+) -> dict:
+    return {
+        "feature_columns": feature_columns,
+        "target_columns": target_columns,
+        "model_state_dict": deepcopy(state_dict),
+        "x_scaler": x_scaler,
+        "y_scaler": y_scaler,
+        "training_ranges": training_ranges,
+        "dataset_rows": int(n_samples),
+        "metrics": {"checkpoint_epoch": checkpoint_epoch, "checkpoint_val_loss": best_val_loss},
+        "config": {"checkpoint": True},
+    }
+
+
 def train(
     csv_path: Path,
     output_path: Path,
@@ -118,9 +146,20 @@ def train(
     use_3res: bool = True,
     use_huber: bool = True,
     use_physics_weights: bool = True,
+    max_wall_seconds: float | None = None,
+    checkpoint_path: Path | None = None,
+    checkpoint_interval_sec: float = 1800.0,
+    scheduler_mode: str = "plateau",
+    ema_decay: float | None = None,
+    init_state_dict: dict | None = None,
 ):
+    if max_wall_seconds is not None:
+        patience = max(patience, 999999)
+
     print("=" * 60)
     print("BALMORES STRUCTURAL — Rigorous Physics Brain Training")
+    if max_wall_seconds:
+        print(f"  Time budget: {max_wall_seconds/3600:.2f} h | checkpoints every {checkpoint_interval_sec/60:.0f} min")
     print("=" * 60)
 
     print("\nLoading CSV...")
@@ -157,6 +196,14 @@ def train(
     X_val = X[val_idx]
     y_val = y[val_idx]
 
+    x_scaler = {"mean": x_mean.tolist(), "std": x_std.tolist()}
+    y_scaler = {"mean": y_mean.tolist(), "std": y_std.tolist()}
+    training_ranges = {}
+    for i, c in enumerate(FEATURE_COLUMNS):
+        if c in ("stories", "bays_x", "bays_y", "span_x_m", "span_y_m", "story_height_m", "total_height_m"):
+            col_vals = X_raw[:, i]
+            training_ranges[c] = [float(np.min(col_vals)), float(np.max(col_vals))]
+
     print(f"  Train: {len(train_idx)}, Val: {len(val_idx)}")
 
     in_dim = X.shape[1]
@@ -167,10 +214,19 @@ def train(
         model = StructuralBrain3Res(in_dim, out_dim, width=width, head_dim=head_dim)
     else:
         model = StructuralBrainModel(in_dim, width, out_dim, head_dim)
+    if init_state_dict is not None:
+        model.load_state_dict(init_state_dict)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        opt, mode="min", factor=0.5, patience=30, min_lr=1e-6
-    )
+    if scheduler_mode == "cosine_warm":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            opt, T_0=120, T_mult=2, eta_min=1e-7
+        )
+        plateau_scheduler = None
+    else:
+        scheduler = None
+        plateau_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            opt, mode="min", factor=0.5, patience=30, min_lr=1e-6
+        )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     # Build target weights for physics-critical outputs
@@ -182,7 +238,16 @@ def train(
     target_weights_t = torch.tensor(target_weights, dtype=torch.float32).to(device)
 
     print(f"  Device: {device} | width={width} | head={head_dim} | 3res={use_3res}")
-    print(f"  Epochs: {epochs} | patience={patience} | lr={lr} | physics_weights={use_physics_weights}\n")
+    print(
+        f"  Epochs: {epochs} | patience={patience} | lr={lr} | physics_weights={use_physics_weights} | sched={scheduler_mode}\n"
+    )
+
+    ema_shadow: dict[str, torch.Tensor] | None = None
+    if ema_decay is not None and ema_decay > 0:
+        ema_shadow = {k: v.detach().clone() for k, v in model.state_dict().items()}
+
+    wall_start = time.monotonic()
+    last_ckpt = wall_start
 
     train_ds = torch.utils.data.TensorDataset(
         torch.tensor(X_train, dtype=torch.float32),
@@ -198,6 +263,7 @@ def train(
     best_val_loss = float("inf")
     best_state = None
     bad_epochs = 0
+    stop_reason = "max_epochs"
 
     def loss_fn(pred, target):
         if use_physics_weights:
@@ -218,6 +284,11 @@ def train(
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
+            if ema_shadow is not None:
+                with torch.no_grad():
+                    for k, v in model.state_dict().items():
+                        if k in ema_shadow:
+                            ema_shadow[k].mul_(ema_decay).add_(v.detach(), alpha=1.0 - ema_decay)
             total_loss += loss.item()
 
         train_loss = total_loss / len(train_loader)
@@ -228,7 +299,10 @@ def train(
             val_loss = loss_fn(val_pred, y_val_t).item()
         model.train()
 
-        scheduler.step(val_loss)
+        if plateau_scheduler is not None:
+            plateau_scheduler.step(val_loss)
+        if scheduler is not None:
+            scheduler.step()
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -237,32 +311,68 @@ def train(
         else:
             bad_epochs += 1
 
+        elapsed = time.monotonic() - wall_start
         if (ep + 1) % 25 == 0 or ep == 0:
-            print(f"  Epoch {ep+1:4d} | train={train_loss:.6f} | val={val_loss:.6f} | best_val={best_val_loss:.6f}")
+            lr_now = opt.param_groups[0]["lr"]
+            print(
+                f"  Epoch {ep+1:4d} | train={train_loss:.6f} | val={val_loss:.6f} | best={best_val_loss:.6f} | lr={lr_now:.2e} | t={elapsed/60:.1f}m"
+            )
+
+        if checkpoint_path is not None and (time.monotonic() - last_ckpt) >= checkpoint_interval_sec:
+            if best_state is not None:
+                ck_bundle = _bundle_from_state(
+                    best_state,
+                    x_scaler,
+                    y_scaler,
+                    training_ranges,
+                    n_samples,
+                    FEATURE_COLUMNS,
+                    TARGET_COLUMNS,
+                    ep + 1,
+                    best_val_loss,
+                )
+                checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+                torch.save(ck_bundle, checkpoint_path)
+                print(f"  Checkpoint saved: {checkpoint_path}")
+            last_ckpt = time.monotonic()
+
+        if max_wall_seconds is not None and elapsed >= max_wall_seconds:
+            print(f"\n  Wall-clock limit reached ({max_wall_seconds/3600:.2f} h) at epoch {ep+1}")
+            stop_reason = "wall_clock"
+            break
 
         if bad_epochs >= patience:
             print(f"\n  Early stopping at epoch {ep+1} (patience={patience})")
+            stop_reason = "patience"
             break
 
     if best_state is not None:
-        model.load_state_dict(best_state)
+        model.load_state_dict({k: v.to(device) for k, v in best_state.items()})
+
+    if (
+        ema_shadow is not None
+        and max_wall_seconds is not None
+        and best_state is not None
+    ):
+        model.eval()
+        with torch.no_grad():
+            loss_best = loss_fn(model(x_val), y_val_t).item()
+        ema_cpu = {k: v.detach().cpu().clone() for k, v in ema_shadow.items()}
+        model.load_state_dict({k: v.to(device) for k, v in ema_cpu.items()})
+        with torch.no_grad():
+            loss_ema = loss_fn(model(x_val), y_val_t).item()
+        if loss_ema < loss_best:
+            print(f"  Exporting EMA weights (val {loss_ema:.6f} < snapshot {loss_best:.6f})")
+            best_state = ema_cpu
+        else:
+            model.load_state_dict({k: v.to(device) for k, v in best_state.items()})
+
     model.eval()
-
-    # Build bundle
-    x_scaler = {"mean": x_mean.tolist(), "std": x_std.tolist()}
-    y_scaler = {"mean": y_mean.tolist(), "std": y_std.tolist()}
-
-    training_ranges = {}
-    for i, c in enumerate(FEATURE_COLUMNS):
-        if c in ("stories", "bays_x", "bays_y", "span_x_m", "span_y_m", "story_height_m", "total_height_m"):
-            col_vals = X_raw[:, i]
-            training_ranges[c] = [float(np.min(col_vals)), float(np.max(col_vals))]
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     # Validation metrics (RMSE in original units for key targets)
     y_mean_a = np.array(y_scaler["mean"])
     y_std_a = np.array(y_scaler["std"])
-    model.cpu()
     with torch.no_grad():
         val_pred_scaled = model(torch.tensor(X_val, dtype=torch.float32)).numpy()
     val_pred_raw = np.exp(val_pred_scaled * y_std_a + y_mean_a)
@@ -275,10 +385,12 @@ def train(
     if metrics:
         print("  Physics target RMSE (val):", {k: f"{v:.2f}" for k, v in metrics.items()})
 
+    export_state = best_state if best_state is not None else {k: v.cpu() for k, v in model.state_dict().items()}
+
     bundle = {
         "feature_columns": FEATURE_COLUMNS,
         "target_columns": TARGET_COLUMNS,
-        "model_state_dict": model.state_dict(),
+        "model_state_dict": export_state,
         "x_scaler": x_scaler,
         "y_scaler": y_scaler,
         "training_ranges": training_ranges,
@@ -291,7 +403,10 @@ def train(
             "width": width,
             "head_dim": head_dim,
             "val_split": 0.15,
-            "early_stopped": bad_epochs >= patience,
+            "early_stopped": stop_reason == "patience",
+            "stop_reason": stop_reason,
+            "max_wall_seconds": max_wall_seconds,
+            "scheduler_mode": scheduler_mode,
             "use_3res": use_3res,
             "physics_weights": use_physics_weights,
         },

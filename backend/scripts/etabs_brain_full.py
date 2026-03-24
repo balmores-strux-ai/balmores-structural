@@ -1483,9 +1483,9 @@ def collect_dataset(sap_model: Any, target_new: int, start_id: int, csv_columns:
 
 # Physics-critical targets: higher weight = ETABS-level precision
 _PHYSICS_TARGET_WEIGHTS = {
-    "max_beam_moment_kNm": 2.5, "max_column_axial_kN": 2.5, "max_drift_mm": 2.5,
-    "max_beam_shear_kN": 2.0, "max_beam_end_shear_kN": 2.0, "max_beam_end_moment_kNm": 2.0,
-    "max_beam_deflection_mm": 1.8, "max_joint_reaction_vertical_kN": 1.5,
+    "max_beam_moment_kNm": 3.0, "max_column_axial_kN": 3.0, "max_drift_mm": 3.0,
+    "max_beam_shear_kN": 2.2, "max_beam_end_shear_kN": 2.2, "max_beam_end_moment_kNm": 2.2,
+    "max_beam_deflection_mm": 2.0, "max_joint_reaction_vertical_kN": 1.6,
 }
 
 
