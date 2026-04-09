@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import os
 from pathlib import Path
 from typing import Dict, List
 
@@ -109,15 +110,29 @@ class StructuralBrain3Res(nn.Module):
         return self.head(x)
 
 
+def _resolve_brain_pt_path() -> Path:
+    """Default: backend/models/etabs_parametric_structural_brain.pt. Override with BALMORES_BRAIN_PT (absolute or relative to backend/)."""
+    backend_root = Path(__file__).resolve().parent.parent
+    raw = os.getenv("BALMORES_BRAIN_PT", "").strip()
+    if not raw:
+        return backend_root / "models" / "etabs_parametric_structural_brain.pt"
+    p = Path(raw)
+    if not p.is_absolute():
+        p = backend_root / p
+    return p
+
+
 class BrainBundle:
     def __init__(self, model_path: Path) -> None:
-        bundle = torch.load(model_path, map_location="cpu")
+        self.model_path = Path(model_path).resolve()
+        bundle = torch.load(self.model_path, map_location="cpu")
         self.feature_columns: List[str] = bundle["feature_columns"]
         self.target_columns: List[str] = bundle["target_columns"]
         self.training_ranges: Dict[str, List[float]] = bundle.get("training_ranges", {})
         self.metrics: Dict = bundle.get("metrics", {})
         self.dataset_rows: int = int(bundle.get("dataset_rows", 0))
         self.config: Dict = bundle.get("config", {})
+        self.physics_training_manifest: Dict = bundle.get("physics_training_manifest", {})
 
         state = bundle["model_state_dict"]
         # Resolve tensor keys (plain or DataParallel "module." prefix)
@@ -166,5 +181,31 @@ class BrainBundle:
         return out
 
 
-MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "etabs_parametric_structural_brain.pt"
-BRAIN = BrainBundle(MODEL_PATH)
+MODEL_PATH = _resolve_brain_pt_path()
+
+_brain: BrainBundle | None = None
+_brain_error: str | None = None
+
+
+def get_brain() -> BrainBundle:
+    """Load the checkpoint on first use so the API can start without a .pt file (e.g. FEA-only)."""
+    global _brain, _brain_error
+    if _brain_error is not None:
+        raise RuntimeError(_brain_error)
+    if _brain is None:
+        try:
+            _brain = BrainBundle(MODEL_PATH)
+        except Exception as e:
+            _brain_error = f"Neural checkpoint unavailable: {e}"
+            raise RuntimeError(_brain_error) from e
+    return _brain
+
+
+class _LazyBrain:
+    """Backward-compatible proxy: ``BRAIN.predict`` loads the bundle on first access."""
+
+    def __getattr__(self, name: str):
+        return getattr(get_brain(), name)
+
+
+BRAIN = _LazyBrain()

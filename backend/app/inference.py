@@ -4,7 +4,7 @@ import math
 from typing import Any, Dict, List, Tuple
 
 from .schemas import GeometryPayload, GeometryNode, GeometryMember, ProjectState
-from .model_loader import BRAIN
+from .model_loader import get_brain
 
 
 def clamp(v: float, lo: float, hi: float) -> float:
@@ -44,18 +44,14 @@ def i_J(d: float, bf: float, tf: float, tw: float) -> float:
     return (2.0 * bf * tf**3 + web_h * tw**3) / 3.0
 
 
-def support_mode_id(mode: str) -> float:
-    return {"fixed": 1.0, "pinned": 2.0, "mixed": 3.0}.get(mode, 1.0)
-
-
-def diaphragm_mode_id(mode: str) -> float:
-    return {"rigid": 1.0, "semi_rigid": 2.0, "flexible": 3.0}.get(mode, 1.0)
-
-
-def structural_system_id(building_type: str, brace_mode: str) -> float:
-    base = 1.0 if building_type == "steel" else 2.0
-    brace = {"braced": 0.0, "unbraced": 1.0, "mixed": 2.0}.get(brace_mode, 0.0)
-    return base * 10.0 + brace
+# --- Teacher CSV alignment (etabs_brain_full.run_analysis_and_extract) ---
+# The ETABS pipeline currently writes constant mode IDs on each row while still
+# varying physics proxies (brace_*, support_fixity_index, etc.). Using different
+# ID encodings here than in the teacher file pushes the network off-manifold.
+TEACHER_ROW_SUPPORT_MODE_ID = 1.0
+TEACHER_ROW_DIAPHRAGM_MODE_ID = 1.0
+TEACHER_ROW_STRUCTURAL_SYSTEM_ID = 2.0
+TEACHER_ROW_ANALYSIS_DIMENSIONALITY_ID = 6.0
 
 
 def build_geometry(state: ProjectState) -> GeometryPayload:
@@ -313,17 +309,18 @@ def feature_dict_from_state(state: ProjectState) -> Dict[str, float]:
         "cluster_tower_count": 1.0, "bridge_levels_n": 0.0, "bridge_links_per_level": 0.0, "bridge_span_m": 0.0,
         "beam_release_fraction": 0.15 if state.support_mode == "pinned" else 0.02,
         "beam_release_mode_id": 2.0 if state.support_mode == "pinned" else 1.0,
-        "support_mode_id": support_mode_id(state.support_mode), "diaphragm_mode_id": diaphragm_mode_id(state.diaphragm_mode),
+        "support_mode_id": TEACHER_ROW_SUPPORT_MODE_ID,
+        "diaphragm_mode_id": TEACHER_ROW_DIAPHRAGM_MODE_ID,
         "support_fixity_index": support_fixity_index, "diaphragm_constraint_index": diaphragm_constraint_index,
         "mass_source_factor": 1.0, "live_load_reduction_factor": 0.9 if stories >= 10 else 1.0,
         "wind_attack_angle_deg": 0.0, "k_factor_col": 1.0 if state.brace_mode != "unbraced" else 1.4,
-        "soft_story_factor": 1.0, "structural_system_id": structural_system_id(state.building_type, state.brace_mode),
+        "soft_story_factor": 1.0, "structural_system_id": TEACHER_ROW_STRUCTURAL_SYSTEM_ID,
         "floor_stiffness_gradient": 1.0, "in_floor_stiffness_variation": 0.08, "story_mass_gradient": 1.0,
         "live_impact_factor": 1.05, "site_class_factor": 1.0 if state.code != "Philippines" else 1.1,
         "damping_ratio_model": 0.02, "response_mod_factor": 5.0 if state.brace_mode == "braced" else 3.5, "redundancy_factor": 1.0,
         "panel_zone_flexibility": 0.12, "snow_drift_factor": 1.0, "ponding_factor": 1.0,
         "cantilever_fraction": state.cantilever_fraction, "cantilever_length_m": state.cantilever_length_m, "cantilever_levels_n": max(1.0, stories * state.cantilever_fraction) if state.cantilever_fraction > 0 else 0.0,
-        "analysis_dimensionality_id": 3.0, "two_d_branch_flag": 0.0,
+        "analysis_dimensionality_id": TEACHER_ROW_ANALYSIS_DIMENSIONALITY_ID, "two_d_branch_flag": 0.0,
         "impact_coeff_x": 0.02, "impact_coeff_y": 0.02, "blast_coeff_x": 0.03, "blast_coeff_y": 0.03,
         "A_beam_m2": A_beam, "I_beam_m4": I_beam, "Iy_beam_m4": Iy_beam, "J_beam_m4": J_beam,
         "A_col_m2": A_col, "I_col_m4": I_col, "Iy_col_m4": Iy_col, "J_col_m4": J_col,
@@ -368,11 +365,141 @@ def feature_dict_from_state(state: ProjectState) -> Dict[str, float]:
     }
 
     # Fill missing feature columns defensively
-    for col in BRAIN.feature_columns:
+    for col in get_brain().feature_columns:
         feature_dict.setdefault(col, 1e-9)
         if feature_dict[col] == 0:
             feature_dict[col] = 1e-9
     return feature_dict
+
+
+def _finite_nonzero(v: float, eps: float) -> bool:
+    return math.isfinite(v) and abs(v) >= eps
+
+
+def _pick_pred(pred: Dict[str, float], keys: list[str], eps: float, default: float = 0.0) -> float:
+    """First key whose value passes magnitude check (model sometimes emits ~1e-13 instead of real numbers)."""
+    for k in keys:
+        if k not in pred:
+            continue
+        v = float(pred[k])
+        if _finite_nonzero(v, eps):
+            return v
+    return default
+
+
+def _span_m(features: Dict[str, float] | None) -> float:
+    if not features:
+        return 12.0
+    return max(float(features.get("span_x_m", 12.0)), float(features.get("span_y_m", 12.0)), 1e-6)
+
+
+def surface_metrics_from_brain(
+    pred: Dict[str, float],
+    features: Dict[str, float] | None = None,
+) -> Dict[str, float]:
+    """Map raw NN outputs to headline SI metrics.
+
+    The checkpoint often returns near-zero (~1e-13) for some max_* heads while physics-proxy
+    targets (beam_m3_grav_kNm, col_p_grav_kN, worst_roof_disp_m, …) are well-scaled.
+    We treat tiny magnitudes as untrusted and fall back to proxies and mechanics-based estimates.
+    """
+    eps_kn = 1e-3
+    eps_knm = 1e-3
+    eps_mm = 1e-4
+
+    beam_moment = _pick_pred(
+        pred,
+        ["max_beam_moment_kNm", "max_beam_end_moment_kNm"],
+        eps_knm,
+        0.0,
+    )
+    mg = float(pred.get("beam_m3_grav_kNm") or 0.0)
+    ms = float(pred.get("beam_m3_snow_kNm") or 0.0)
+    if not _finite_nonzero(beam_moment, eps_knm):
+        beam_moment = max(mg, ms) if max(mg, ms) > eps_knm else mg + ms
+
+    beam_shear = _pick_pred(pred, ["max_beam_shear_kN", "max_beam_end_shear_kN"], eps_kn, 0.0)
+    if not _finite_nonzero(beam_shear, eps_kn) and _finite_nonzero(beam_moment, eps_knm):
+        span = _span_m(features)
+        beam_shear = 2.0 * beam_moment / span
+
+    col_axial = _pick_pred(pred, ["max_column_axial_kN"], eps_kn, 0.0)
+    cg = float(pred.get("col_p_grav_kN") or 0.0)
+    if not _finite_nonzero(col_axial, eps_kn):
+        col_axial = cg
+
+    joint_v = _pick_pred(pred, ["max_joint_reaction_vertical_kN"], eps_kn, 0.0)
+    if not _finite_nonzero(joint_v, eps_kn):
+        joint_v = max(col_axial, cg) if max(col_axial, cg) > eps_kn else col_axial
+
+    worst_roof_m = float(pred.get("worst_roof_disp_m") or 0.0)
+    roof_disp_mm = worst_roof_m * 1000.0
+    if not _finite_nonzero(roof_disp_mm, eps_mm):
+        horiz = max(
+            abs(float(pred.get("roof_ux_eqx_m") or 0.0)),
+            abs(float(pred.get("roof_uy_eqy_m") or 0.0)),
+            abs(float(pred.get("roof_ux_wx_m") or 0.0)),
+            abs(float(pred.get("roof_uy_wy_m") or 0.0)),
+        )
+        roof_disp_mm = horiz * 1000.0
+
+    max_drift_mm = _pick_pred(pred, ["max_drift_mm"], eps_mm, 0.0)
+    if not _finite_nonzero(max_drift_mm, eps_mm):
+        max_drift_mm = roof_disp_mm
+    if not _finite_nonzero(max_drift_mm, eps_mm):
+        horiz = max(
+            abs(float(pred.get("roof_ux_eqx_m") or 0.0)),
+            abs(float(pred.get("roof_uy_eqy_m") or 0.0)),
+        )
+        max_drift_mm = horiz * 1000.0
+
+    base_shear = _pick_pred(pred, ["worst_base_shear_kN"], eps_kn, 0.0)
+    if not _finite_nonzero(base_shear, eps_kn):
+        base_shear = max(
+            float(pred.get("base_fx_eqx_kN") or 0.0),
+            float(pred.get("base_fy_eqy_kN") or 0.0),
+            float(pred.get("base_fx_wx_kN") or 0.0),
+            float(pred.get("base_fy_wy_kN") or 0.0),
+        )
+
+    dcr = float(pred.get("max_dcr_proxy") or 0.0)
+    brace_p = float(pred.get("brace_p_eq_kN") or 0.0)
+
+    return {
+        "max_drift_mm": max_drift_mm,
+        "beam_shear_kN": beam_shear,
+        "beam_moment_kNm": beam_moment,
+        "col_axial_kN": col_axial,
+        "joint_reaction_vertical_kN": joint_v,
+        "roof_disp_mm": roof_disp_mm,
+        "base_shear_kN": base_shear,
+        "dcr_proxy": dcr,
+        "brace_p_eq_kN": brace_p,
+    }
+
+
+def brain_target_rows(pred: Dict[str, float]) -> list[dict[str, str | float]]:
+    """All trained targets for transparency (raw checkpoint keys)."""
+    def unit_for(k: str) -> str:
+        if k.endswith("_kN"):
+            return "kN"
+        if k.endswith("_kNm"):
+            return "kNm"
+        if k.endswith("_mm"):
+            return "mm"
+        if k.endswith("_m") and not k.endswith("_kNm"):
+            return "m"
+        if k.endswith("_rad"):
+            return "rad"
+        if k.endswith("_s"):
+            return "s"
+        return ""
+
+    rows: list[dict[str, str | float]] = []
+    for k in get_brain().target_columns:
+        v = float(pred.get(k, 0.0))
+        rows.append({"key": k, "label": k.replace("_", " "), "value": v, "unit": unit_for(k)})
+    return rows
 
 
 def _pred_fallback(pred: Dict[str, float], primary: str, fallback: str, default: float = 0.0) -> float:
@@ -433,16 +560,29 @@ def build_member_schedule(state: ProjectState, predictions: Dict[str, float]) ->
     return {"beam_groups": beam_groups, "column_groups": column_groups}
 
 
-def build_physics_checks(state: ProjectState, pred: Dict[str, float], features: Dict[str, float]) -> Dict[str, Any]:
+def build_physics_checks(
+    state: ProjectState,
+    pred: Dict[str, float],
+    features: Dict[str, float],
+    surf: Dict[str, float] | None = None,
+) -> Dict[str, Any]:
     """Physics-informed sanity checks: equilibrium, order-of-magnitude, code hints."""
     plan_x = state.bays_x * state.span_x_m
     plan_y = state.bays_y * state.span_y_m
     total_weight = features.get("total_weight_kN", plan_x * plan_y * state.stories * 15.0)
     n_cols = (state.bays_x + 1) * (state.bays_y + 1)
     base_shear = pred.get("worst_base_shear_kN") or pred.get("base_fx_eqx_kN", 0) or pred.get("base_fy_eqy_kN", 0) or (total_weight * max(state.eq_coeff_x, state.eq_coeff_y))
+    if surf:
+        base_shear = surf.get("base_shear_kN") or base_shear
     col_axial = pred.get("max_column_axial_kN") or pred.get("col_p_grav_kN", total_weight / max(n_cols, 1))
+    if surf:
+        col_axial = surf.get("col_axial_kN") or col_axial
     beam_m = pred.get("max_beam_moment_kNm") or pred.get("beam_m3_grav_kNm", 0)
+    if surf:
+        beam_m = surf.get("beam_moment_kNm") or beam_m
     drift_mm = pred.get("max_drift_mm") or (pred.get("worst_roof_disp_m", 0) * 1000)
+    if surf:
+        drift_mm = surf.get("max_drift_mm") or surf.get("roof_disp_mm") or drift_mm
     expected_base = total_weight * max(state.eq_coeff_x, state.eq_coeff_y) * 0.7
     expected_col = total_weight / max(n_cols, 1) * 1.2
     base_ok = 0.2 <= (base_shear / max(expected_base, 1e-6)) <= 5.0
@@ -465,9 +605,9 @@ def confidence_label(state: ProjectState) -> str:
     keys = ["stories", "bays_x", "bays_y", "span_x_m", "span_y_m", "story_height_m", "total_height_m"]
     fdict = feature_dict_from_state(state)
     for k in keys:
-        if k in BRAIN.training_ranges:
+        if k in get_brain().training_ranges:
             total += 1
-            lo, hi = BRAIN.training_ranges[k]
+            lo, hi = get_brain().training_ranges[k]
             if lo <= fdict[k] <= hi:
                 in_range += 1
     ratio = in_range / max(total, 1)

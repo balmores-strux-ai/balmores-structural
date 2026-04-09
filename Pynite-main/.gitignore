@@ -1,0 +1,20 @@
+*.pyc
+.vscode/
+Resources/Full Logo No Buffer - Transparent.png
+Resources/Full Logo No Buffer.jpg
+Resources/Full Logo With Buffer - Transparent.png
+Resources/Full Logo With Buffer.jpg
+Resources/Full Logo With Buffer.png
+PyNiteFEA.egg-info/*
+build/*
+dist/*
+GUI/*
+docs/.venv/*
+docs/_build/*
+Derivations/*.ipynb_checkpoints
+Pynite Report.pdf
+*.fbp
+gui.py
+wxTableBases.py
+.env
+apps/*
