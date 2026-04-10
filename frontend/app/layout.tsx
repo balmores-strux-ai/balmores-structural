@@ -4,18 +4,18 @@ import type { Metadata, Viewport } from "next";
 export const metadata: Metadata = {
   title: "BALMORES STRUCTURAL",
   description:
-    "Parametric 3D building frame — PyNite finite element analysis in the browser, plus an optional neural assistant.",
+    "Natural-language structural brief to PyNite 3D frame analysis — reactions, beam and column envelopes, drift, P-Δ.",
   openGraph: {
     title: "BALMORES STRUCTURAL",
     description:
-      "PyNite FEA for regular grids — spans, loads, steel sections — with 3D preview and force envelopes.",
+      "Describe spans and loads in plain English; get PyNite FEM results, storey drift, and support reactions.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "BALMORES STRUCTURAL",
     description:
-      "PyNite FEA for parametric frames — forces, deflections, reactions — with optional AI assistant.",
+      "PyNite 3D FEA from a design brief — irregular grids, DL/LL, wind, simplified seismic, P-Δ.",
   },
 };
 

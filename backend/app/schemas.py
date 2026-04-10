@@ -155,3 +155,28 @@ class FeaBuildingResponse(BaseModel):
     base_reactions_sample: List[Dict[str, Any]]
     totals: Dict[str, Any]
     pynite_path: str = ""
+
+
+class FeaPromptRequest(BaseModel):
+    message: str = Field(..., min_length=12, max_length=32000)
+    run_p_delta: bool = True
+
+
+class FeaPromptResponse(BaseModel):
+    """Chat-style prompt → parsed inputs + full PyNite irregular-grid FEA."""
+
+    input_summary: str
+    parse_notes: List[str]
+    engine: str
+    load_combination: str
+    geometry: GeometryPayload
+    result_cards: List[ResultCard]
+    assumptions: List[str]
+    summary_markdown: str
+    beams: List[Dict[str, Any]]
+    columns: List[Dict[str, Any]]
+    base_reactions: List[Dict[str, Any]]
+    storey_drifts: List[Dict[str, Any]]
+    p_delta_note: str
+    totals: Dict[str, Any]
+    pynite_path: str = ""

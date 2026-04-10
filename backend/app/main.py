@@ -23,6 +23,8 @@ from .schemas import (
     ChatResponse,
     FeaBuildingRequest,
     FeaBuildingResponse,
+    FeaPromptRequest,
+    FeaPromptResponse,
     VerifyRequest,
     VerifyResponse,
 )
@@ -229,6 +231,71 @@ def fea_analyze(req: FeaBuildingRequest) -> FeaBuildingResponse:
         beams=raw["beams"],
         columns=raw["columns"],
         base_reactions_sample=raw["base_reactions_sample"],
+        totals=raw["totals"],
+        pynite_path=raw.get("pynite_path", ""),
+    )
+
+
+@app.post(
+    "/fea/analyze-prompt",
+    response_model=FeaPromptResponse,
+    dependencies=[Depends(require_api_key_if_configured)],
+)
+def fea_analyze_prompt(req: FeaPromptRequest) -> FeaPromptResponse:
+    """Parse a design brief in plain English, then run irregular-grid PyNite FEA (DL/LL, wind, optional seismic push)."""
+    from .fea_prompt_parser import parse_structural_prompt
+    from .pynite_fea import run_irregular_frame_analysis
+    from .schemas import GeometryPayload, ResultCard
+
+    try:
+        params, parse_notes = parse_structural_prompt(req.message)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    mat = "Steel" if params.get("material_steel") else "Concrete"
+    sx = params["spans_x_m"]
+    sy = params["spans_y_m"]
+    sh = params["story_heights_m"]
+    input_summary = (
+        "**Model read from your text**\n\n"
+        f"- **Storeys:** {len(sh)} · typical height {sh[0]:.2f} m each (uniform).\n"
+        f"- **X spans (m):** {', '.join(str(v) for v in sx)} → {len(sx)} bays, plan length **{sum(sx):.2f} m**.\n"
+        f"- **Y spans (m):** {', '.join(str(v) for v in sy)} → {len(sy)} bays, plan width **{sum(sy):.2f} m**.\n"
+        f"- **Loads:** DL **{params['dl_kpa']:.2f}** kPa + slab SW **{params['slab_sw_kpa']:.2f}** kPa on beams; "
+        f"LL **{params['ll_kpa']:.2f}** kPa.\n"
+        f"- **Material:** {mat} (default section sizes for this demo).\n"
+    )
+    if params.get("wind_pressure_kpa"):
+        input_summary += f"- **Wind:** {params['wind_pressure_kpa']} kPa on façade (simplified nodal pattern).\n"
+    if params.get("lateral_roof_fraction_of_gravity", 0) > 0:
+        input_summary += (
+            f"- **Seismic (placeholder):** roof shear ≈ **{params['lateral_roof_fraction_of_gravity']:.0%}** "
+            "of estimated gravity.\n"
+        )
+    if params.get("sbc_kpa") is not None:
+        input_summary += f"- **Allowable bearing (your input):** **{params['sbc_kpa']}** kPa.\n"
+
+    try:
+        raw = run_irregular_frame_analysis(**params, run_p_delta=req.run_p_delta)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PyNite analysis failed: {e}") from e
+
+    return FeaPromptResponse(
+        input_summary=input_summary,
+        parse_notes=parse_notes,
+        engine=raw["engine"],
+        load_combination=raw["load_combination"],
+        geometry=GeometryPayload.model_validate(raw["geometry"]),
+        result_cards=[ResultCard(**c) for c in raw["result_cards"]],
+        assumptions=raw["assumptions"],
+        summary_markdown=raw["summary_markdown"],
+        beams=raw["beams"],
+        columns=raw["columns"],
+        base_reactions=raw["base_reactions"],
+        storey_drifts=raw["storey_drifts"],
+        p_delta_note=raw["p_delta_note"],
         totals=raw["totals"],
         pynite_path=raw.get("pynite_path", ""),
     )

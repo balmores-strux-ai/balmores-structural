@@ -243,6 +243,66 @@ export async function runFeaAnalyze(body: FeaBuildingRequest): Promise<FeaBuildi
   return (await res.json()) as FeaBuildingResponse;
 }
 
+export type FeaPromptResponse = {
+  input_summary: string;
+  parse_notes: string[];
+  engine: string;
+  load_combination: string;
+  geometry: ViewerGeometry;
+  result_cards: FeaResultCard[];
+  assumptions: string[];
+  summary_markdown: string;
+  beams: { id: string; floor_z_m: number; M_max_kNm: number; V_max_kN: number; deflection_mm: number }[];
+  columns: {
+    id: string;
+    P_max_kN: number;
+    My_max_kNm: number;
+    Mz_max_kNm: number;
+    T_max_kNm: number;
+  }[];
+  base_reactions: {
+    node: string;
+    x_m: number;
+    y_m: number;
+    Rx_kN: number;
+    Ry_kN: number;
+    Rz_kN: number;
+    Mx_kNm: number;
+    My_kNm: number;
+    Mz_kNm: number;
+  }[];
+  storey_drifts: {
+    storey_index: number;
+    z_top_m: number;
+    height_m: number;
+    max_drift_mm: number;
+    drift_ratio_h: number;
+  }[];
+  p_delta_note: string;
+  totals: Record<string, number | null | undefined>;
+  pynite_path?: string;
+};
+
+export async function analyzeFeaPrompt(
+  message: string,
+  opts?: { run_p_delta?: boolean },
+): Promise<FeaPromptResponse> {
+  const res = await fetchWithRetry(
+    `${API_URL}/fea/analyze-prompt`,
+    {
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify({
+        message,
+        run_p_delta: opts?.run_p_delta !== false,
+      }),
+    },
+    { retries: 1 },
+  );
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as FeaPromptResponse;
+}
+
 export async function downloadEtabsExport(projectId: string, format: "txt" | "json"): Promise<void> {
   const path = format === "json" ? `/export/etabs/${projectId}/json` : `/export/etabs/${projectId}`;
   const res = await fetchWithRetry(
