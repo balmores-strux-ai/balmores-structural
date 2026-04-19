@@ -311,7 +311,7 @@ export default function HomePage() {
       </div>
 
       <footer className="site-footer">
-        <span>Balmores Structural</span>
+        <span>© 2026 Balmores Strux AI — Developed by Louie Balmores</span>
         <span className="footer-sep" aria-hidden />
         <span className="small-muted">PyNite open-source FEM · verify with your code</span>
         <span className="footer-sep" aria-hidden />
