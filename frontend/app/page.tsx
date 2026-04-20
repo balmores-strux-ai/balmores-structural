@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 const shell: CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "#0b0d12",
+  background: "#0a2540",
   color: "#e6e8ee",
   display: "grid",
   gridTemplateRows: "1fr auto",
