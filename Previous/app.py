@@ -102,8 +102,8 @@ def _fallback_build_from_text(text: str) -> Optional[Dict[str, str]]:
 
     m = re.search(
         r"(\d+)\s*storey\s*(?:building|steel)?\s*"
-        r"(?:(\d+(?:\.\d+)?)\s*[mx×]\s*(\d+(?:\.\d+)?)|"
-        r"(\d+(?:\.\d+)?)\s*m?\s*[mx×]\s*(\d+(?:\.\d+)?)\s*m?)",
+        r"(?:(\d+(?:\.\d+)?)\s*[mxÃ—]\s*(\d+(?:\.\d+)?)|"
+        r"(\d+(?:\.\d+)?)\s*m?\s*[mxÃ—]\s*(\d+(?:\.\d+)?)\s*m?)",
         text,
         re.I,
     )
@@ -236,7 +236,7 @@ def read_response_text(response) -> str:
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
 
 
 def _export_engineering_bundle() -> Dict[str, Any]:
@@ -280,7 +280,7 @@ async def get_state():
 
 @app.get("/api/export-pack")
 async def export_pack():
-    """One JSON file: geometry, loads, FEM output, ETABS text — for records or your own scripts."""
+    """One JSON file: geometry, loads, FEM output, ETABS text â€” for records or your own scripts."""
     return JSONResponse(_export_engineering_bundle())
 
 
@@ -613,7 +613,7 @@ def _run_fem_and_append():
 
 @app.post("/api/build-analyze")
 async def build_and_analyze(payload: Dict[str, Any]):
-    """NLM → FEM → charts/report/export. Uses built-in parser for 'N storey Xm x Ym' when API fails."""
+    """NLM â†’ FEM â†’ charts/report/export. Uses built-in parser for 'N storey Xm x Ym' when API fails."""
     user_message = payload.get("message", "").strip()
     if not user_message:
         return {"ok": False, "message": "Empty message."}
@@ -648,7 +648,7 @@ async def build_and_analyze(payload: Dict[str, Any]):
             return {"ok": False, "message": f"Built-in parser error: {e}"}
 
     if client is None:
-        return {"ok": False, "message": "OPENAI_API_KEY missing. Try phrases like '4 storey 6m x 12m' — uses built-in parser."}
+        return {"ok": False, "message": "OPENAI_API_KEY missing. Try phrases like '4 storey 6m x 12m' â€” uses built-in parser."}
 
     schema = {
         "type": "object",
