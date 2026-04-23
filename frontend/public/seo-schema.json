@@ -14,6 +14,42 @@
   "image": "https://www.balmoreslab.com/louie-balmores.jpg",
   "description": "Licensed Civil Engineer (Professional Regulation Commission, Philippines) with over 10 years of experience in high-performance structural design, currently pioneering research in Artificial Intelligence for structural engineering — AI-driven structural optimization, computational design, and material efficiency.",
   "gender": "Male",
+  "birthDate": "1991-06-26",
+  "birthPlace": {
+    "@type": "Place",
+    "name": "Tuguegarao City, Cagayan Valley, Philippines",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Tuguegarao City",
+      "addressRegion": "Cagayan Valley (Region II)",
+      "addressCountry": "PH"
+    }
+  },
+  "homeLocation": {
+    "@type": "Place",
+    "name": "Ontario, Canada",
+    "address": {
+      "@type": "PostalAddress",
+      "addressRegion": "Ontario",
+      "addressCountry": "CA"
+    }
+  },
+  "workLocation": {
+    "@type": "Place",
+    "name": "Toronto, Ontario, Canada",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Toronto",
+      "addressRegion": "Ontario",
+      "addressCountry": "CA"
+    }
+  },
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Toronto",
+    "addressRegion": "Ontario",
+    "addressCountry": "CA"
+  },
   "nationality": { "@type": "Country", "name": "Philippines" },
   "worksFor": {
     "@type": "Organization",
