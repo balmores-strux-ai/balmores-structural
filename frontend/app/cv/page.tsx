@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Script from "next/script";
 
 const SITE_URL = "https://www.balmoreslab.com";
 
 export const metadata: Metadata = {
-  title: "Curriculum Vitae — Louie Doniego Balmores",
+  title: "Curriculum Vitae â€” Louie Doniego Balmores",
   description:
-    "Public CV of Louie Doniego Balmores, Registered Civil Engineer (PRC Philippines, 2013, Seq. 350). 10+ years structural design · AI-driven structural optimization research.",
+    "Public CV of Louie Doniego Balmores, Registered Civil Engineer (PRC Philippines, 2013, Seq. 350). 10+ years structural design Â· AI-driven structural optimization research.",
   alternates: { canonical: "/cv" },
   openGraph: {
     type: "profile",
     url: `${SITE_URL}/cv`,
-    title: "CV — Louie Doniego Balmores",
+    title: "CV â€” Louie Doniego Balmores",
     description:
-      "Structural Engineer (PRC PH) and AI researcher. CV / resume · Balmores Laboratory.",
+      "Structural Engineer (PRC PH) and AI researcher. CV / resume Â· Balmores Laboratory.",
   },
 };
 
@@ -34,7 +33,7 @@ const resumeLd = {
   alumniOf: [
     {
       "@type": "EducationalOrganization",
-      name: "Civil Engineering — Philippines",
+      name: "Civil Engineering â€” Philippines",
     },
   ],
   hasCredential: [
@@ -48,7 +47,7 @@ const resumeLd = {
         url: "https://prc.gov.ph",
       },
       datePublished: "2013-11-27",
-      identifier: "Nov 2013 CE Licensure Examination — Sequence No. 350",
+      identifier: "Nov 2013 CE Licensure Examination â€” Sequence No. 350",
     },
   ],
   knowsAbout: [
@@ -116,10 +115,8 @@ const S = {
 export default function CVPage() {
   return (
     <main style={S.page}>
-      <Script
-        id="ld-json-resume"
+      <script
         type="application/ld+json"
-        strategy="beforeInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(resumeLd) }}
       />
 
@@ -143,14 +140,14 @@ export default function CVPage() {
             <a className="u-url" style={S.link} href={SITE_URL} itemProp="url">
               Balmores Laboratory
             </a>{" "}
-            — research initiative on AI-driven structural optimization.
+            â€” research initiative on AI-driven structural optimization.
           </p>
         </header>
 
         <h2 style={S.h2}>Credentials</h2>
         <div style={S.card}>
-          <p style={S.role}>Registered Civil Engineer — PRC Philippines</p>
-          <p style={S.period}>November 2013 · Sequence No. 350 ·{" "}
+          <p style={S.role}>Registered Civil Engineer â€” PRC Philippines</p>
+          <p style={S.period}>November 2013 Â· Sequence No. 350 Â·{" "}
             <a style={S.link} href="https://prc.gov.ph" rel="noopener external" target="_blank">
               prc.gov.ph
             </a>
@@ -158,30 +155,30 @@ export default function CVPage() {
         </div>
         <div style={S.card}>
           <p style={S.role}>P.Eng License Candidate</p>
-          <p style={S.period}>Professional Engineers Ontario · target 2027</p>
+          <p style={S.period}>Professional Engineers Ontario Â· target 2027</p>
         </div>
         <div style={S.card}>
           <p style={S.role}>PE License Candidate</p>
-          <p style={S.period}>NCEES (USA) · target 2028</p>
+          <p style={S.period}>NCEES (USA) Â· target 2028</p>
         </div>
 
         <h2 style={S.h2}>Experience</h2>
         <div style={S.card}>
-          <p style={S.role}>Founder · Balmores Laboratory</p>
-          <p style={S.period}>2023 – present · balmoreslab.com</p>
+          <p style={S.role}>Founder Â· Balmores Laboratory</p>
+          <p style={S.period}>2023 â€“ present Â· balmoreslab.com</p>
           <p style={S.p}>
             Research on AI-driven structural optimization. Building
-            Balmores Strux AI — natural-language-to-PyNite 3D FEM
+            Balmores Strux AI â€” natural-language-to-PyNite 3D FEM
             pipeline with PyTorch surrogate models trained on parametric
             ETABS datasets.
           </p>
         </div>
         <div style={S.card}>
           <p style={S.role}>Structural Engineer (consulting, various)</p>
-          <p style={S.period}>2013 – present · Philippines</p>
+          <p style={S.period}>2013 â€“ present Â· Philippines</p>
           <p style={S.p}>
             10+ years of practice in reinforced-concrete and steel design
-            for mid- and high-rise buildings. Seismic analysis, P-Δ
+            for mid- and high-rise buildings. Seismic analysis, P-Î”
             effects, drift control, foundation design.
           </p>
         </div>
@@ -211,13 +208,13 @@ export default function CVPage() {
 
         <h2 style={S.h2}>Selected Projects</h2>
         <div style={S.card}>
-          <p style={S.role}>Balmores Strux AI (2024–present)</p>
+          <p style={S.role}>Balmores Strux AI (2024â€“present)</p>
           <p style={S.p}>
             Open-source structural-AI playground. Chat with a PyNite FEM
             backend in plain English to produce 3D frame models with
-            reactions, storey drift, member envelopes, and P-Δ. PyTorch
+            reactions, storey drift, member envelopes, and P-Î”. PyTorch
             surrogate trained on ~5000 parametric ETABS models.{" "}
-            <Link href="/" style={S.link}>View demo →</Link>
+            <Link href="/" style={S.link}>View demo â†’</Link>
           </p>
         </div>
 
@@ -227,9 +224,9 @@ export default function CVPage() {
           <a className="u-url" style={S.link} href={SITE_URL}>
             balmoreslab.com
           </a>{" "}
-          · Profile:{" "}
+          Â· Profile:{" "}
           <Link style={S.link} href="/about">/about</Link>{" "}
-          · LinkedIn:{" "}
+          Â· LinkedIn:{" "}
           <a
             className="u-url"
             style={S.link}
@@ -239,7 +236,7 @@ export default function CVPage() {
           >
             louiebalmores
           </a>
-          {" · "}
+          {" Â· "}
           X:{" "}
           <a
             className="u-url"
