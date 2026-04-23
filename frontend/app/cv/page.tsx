@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ProfileBadges from "@/components/ProfileBadges";
 
 const SITE_URL = "https://www.balmoreslab.com";
 
@@ -267,36 +268,18 @@ export default function CVPage() {
           </p>
         </div>
 
-        <h2 style={S.h2}>Contact</h2>
+        <h2 style={S.h2}>Contact & Identity</h2>
         <p style={S.p}>
           Website:{" "}
           <a className="u-url" style={S.link} href={SITE_URL}>
             balmoreslab.com
           </a>{" "}
           · Profile:{" "}
-          <Link style={S.link} href="/about">/about</Link>{" "}
-          · LinkedIn:{" "}
-          <a
-            className="u-url"
-            style={S.link}
-            href="https://www.linkedin.com/in/louiebalmores/"
-            rel="me noopener external"
-            target="_blank"
-          >
-            louiebalmores
-          </a>
-          {" · "}
-          X:{" "}
-          <a
-            className="u-url"
-            style={S.link}
-            href="https://x.com/louiedbalmores"
-            rel="me noopener external"
-            target="_blank"
-          >
-            @louiedbalmores
-          </a>
+          <Link style={S.link} href="/about">/about</Link>
         </p>
+        <div style={{ marginTop: 16 }}>
+          <ProfileBadges align="left" showOrcidPill />
+        </div>
       </article>
     </main>
   );
