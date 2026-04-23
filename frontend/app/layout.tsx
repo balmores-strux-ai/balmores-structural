@@ -173,6 +173,42 @@ const structuredData = {
         caption: "Louie Doniego Balmores - Structural Engineer & AI Researcher",
       },
       gender: "Male",
+      birthDate: "1991-06-26",
+      birthPlace: {
+        "@type": "Place",
+        name: "Tuguegarao City, Cagayan Valley, Philippines",
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Tuguegarao City",
+          addressRegion: "Cagayan Valley (Region II)",
+          addressCountry: "PH",
+        },
+      },
+      homeLocation: {
+        "@type": "Place",
+        name: "Ontario, Canada",
+        address: {
+          "@type": "PostalAddress",
+          addressRegion: "Ontario",
+          addressCountry: "CA",
+        },
+      },
+      workLocation: {
+        "@type": "Place",
+        name: "Toronto, Ontario, Canada",
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Toronto",
+          addressRegion: "Ontario",
+          addressCountry: "CA",
+        },
+      },
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Toronto",
+        addressRegion: "Ontario",
+        addressCountry: "CA",
+      },
       nationality: { "@type": "Country", name: "Philippines" },
       worksFor: { "@id": orgId },
       founder: { "@id": orgId },
