@@ -3,11 +3,67 @@ from __future__ import annotations
 import math
 import os
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import numpy as np
-import torch
-import torch.nn as nn
+
+# Defensive torch import. If the Render build step failed to install torch
+# (e.g. --extra-index-url for the CPU wheel was stripped from the dashboard's
+# override build command), the FastAPI app must still boot and bind to $PORT
+# so /health and /fea/* endpoints stay reachable. Torch-dependent endpoints
+# (/chat) will surface a clear 503 on first call via get_brain().
+#
+# To keep class-definition statements below working even without torch, we
+# install a fake `nn` namespace whose `nn.Module` is a no-op shell that raises
+# only when __init__ actually runs. That way `class X(nn.Module):` is legal
+# at import time, but instantiating X triggers a clear RuntimeError.
+try:
+    import torch  # type: ignore
+    import torch.nn as nn  # type: ignore
+    _TORCH_AVAILABLE = True
+    _TORCH_IMPORT_ERROR: "str | None" = None
+except Exception as _torch_exc:  # pragma: no cover - only hit on broken deploys
+    _TORCH_AVAILABLE = False
+    _TORCH_IMPORT_ERROR = f"{type(_torch_exc).__name__}: {_torch_exc}"
+
+    class _TorchMissingModule:
+        """Raise a clear error only when someone actually tries to use torch."""
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise RuntimeError(
+                "PyTorch is not installed in this deploy. The /chat endpoint "
+                "needs it. Reinstall with: pip install torch==2.2.2+cpu "
+                "--extra-index-url https://download.pytorch.org/whl/cpu"
+            )
+
+    class _FakeNN:
+        Module = _TorchMissingModule
+        Linear = _TorchMissingModule
+        GELU = _TorchMissingModule
+        Sequential = _TorchMissingModule
+        Dropout = _TorchMissingModule
+        Identity = _TorchMissingModule
+
+    class _FakeTorch:
+        Tensor = object
+
+        @staticmethod
+        def load(*args: Any, **kwargs: Any) -> Any:
+            raise RuntimeError(_TORCH_IMPORT_ERROR or "torch missing")
+
+        @staticmethod
+        def no_grad() -> Any:
+            from contextlib import nullcontext
+            return nullcontext()
+
+        @staticmethod
+        def tensor(*args: Any, **kwargs: Any) -> Any:
+            raise RuntimeError(_TORCH_IMPORT_ERROR or "torch missing")
+
+        float32 = None
+
+    torch = _FakeTorch()  # type: ignore
+    nn = _FakeNN()  # type: ignore
 
 
 class ResidualBlock(nn.Module):
@@ -190,6 +246,11 @@ _brain_error: str | None = None
 def get_brain() -> BrainBundle:
     """Load the checkpoint on first use so the API can start without a .pt file (e.g. FEA-only)."""
     global _brain, _brain_error
+    if not _TORCH_AVAILABLE:
+        raise RuntimeError(
+            f"Neural checkpoint unavailable: PyTorch not installed on this "
+            f"deploy ({_TORCH_IMPORT_ERROR}). FEA and health endpoints still work."
+        )
     if _brain_error is not None:
         raise RuntimeError(_brain_error)
     if _brain is None:
