@@ -665,6 +665,9 @@ export default function AboutPage() {
             <a style={S.chip} href="https://x.com/louiedbalmores" rel="me noopener external" target="_blank" itemProp="sameAs">
               X / Twitter
             </a>
+            <a style={S.chip} href="https://orcid.org/0009-0008-5479-4033" rel="me noopener external" target="_blank" itemProp="sameAs">
+              ORCID
+            </a>
             <a style={S.chip} href="https://about.me/louiebalmoresdesign/" rel="me noopener external" target="_blank" itemProp="sameAs">
               about.me
             </a>
