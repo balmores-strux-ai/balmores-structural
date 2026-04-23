@@ -243,9 +243,28 @@ export async function runFeaAnalyze(body: FeaBuildingRequest): Promise<FeaBuildi
   return (await res.json()) as FeaBuildingResponse;
 }
 
+/** Parameters returned from the server after parsing the chat message (for diagrams / UI). */
+export type FeaParsedModel = {
+  spans_x_m: number[];
+  spans_y_m: number[];
+  story_heights_m?: number[];
+  dl_kpa?: number;
+  ll_kpa?: number;
+  slab_sw_kpa?: number;
+  wind_pressure_kpa?: number;
+  lateral_roof_fraction_of_gravity?: number;
+  two_way_fraction?: number;
+  material_steel?: boolean;
+  beam_width_m?: number;
+  beam_depth_m?: number;
+  column_width_m?: number;
+  sbc_kpa?: number | null;
+};
+
 export type FeaPromptResponse = {
   input_summary: string;
   parse_notes: string[];
+  parsed_model?: FeaParsedModel;
   engine: string;
   load_combination: string;
   geometry: ViewerGeometry;
