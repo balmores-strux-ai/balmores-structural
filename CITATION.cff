@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use or reference Balmores Strux AI, please cite as below."
+title: "Balmores Strux AI — Natural-language-to-PyNite 3D FEM for irregular frames"
+abstract: >-
+  An open-source structural-AI playground. Natural-language building
+  briefs are parsed into 3D PyNite finite-element models producing
+  reactions, storey drift, member envelopes, and P-Delta effects.
+  A PyTorch surrogate model, trained on parametric ETABS datasets,
+  supports member-demand prediction and preliminary sizing.
+authors:
+  - family-names: Balmores
+    given-names: Louie Doniego
+    affiliation: Balmores Laboratory
+    website: "https://www.balmoreslab.com"
+    orcid: ""
+repository-code: "https://github.com/balmores-strux-ai/balmores-structural"
+url: "https://www.balmoreslab.com"
+version: "0.2.0"
+date-released: "2026-04-22"
+license: MIT
+keywords:
+  - structural engineering
+  - artificial intelligence
+  - finite element analysis
+  - PyNite
+  - structural optimization
+  - computational design
+  - reinforced concrete
+  - seismic design
