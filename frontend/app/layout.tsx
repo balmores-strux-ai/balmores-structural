@@ -144,6 +144,7 @@ const BASE_SAME_AS = [
   "https://x.com/louiedbalmores",
   "https://twitter.com/louiedbalmores",
   "https://about.me/louiebalmoresdesign/",
+  "https://orcid.org/0009-0008-5479-4033",
   "https://worldchess.com/profile/422673",
   "https://prc.gov.ph",
 ];
