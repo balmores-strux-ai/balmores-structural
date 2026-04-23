@@ -1,5 +1,4 @@
-# Minimal deps for FastAPI + brain inference on Render (Linux).
-# Torch is installed in render.yaml buildCommand from PyTorch CPU wheel first.
+# Minimal deps for FastAPI + PyNite FEA on Render (Linux).
 # For ETABS scripts locally, use requirements.txt (pandas, comtypes, psutil).
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
@@ -10,3 +9,8 @@ python-multipart==0.0.9
 sqlalchemy>=2.0.36
 sentry-sdk[fastapi]>=2.0.0
 psycopg2-binary>=2.9.9
+# PyNite transitive deps — Pynite/__init__.py eagerly imports ShearWall,
+# which imports prettytable and matplotlib. Without these, any PyNite call
+# fails at import with "No module named 'prettytable'".
+prettytable>=3.10
+matplotlib>=3.7

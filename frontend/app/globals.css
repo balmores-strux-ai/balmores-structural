@@ -1674,3 +1674,20 @@ select:focus, .field:focus {
   transform: translateY(-1px);
   outline: none;
 }
+
+/* Links kept in the DOM for search engines (sameAs / rel=me) but removed
+   from the visual and assistive-tech layout. Uses the standard sr-only
+   pattern so crawlers still read the anchor's href + text. */
+.profile-badges__seo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  list-style: none;
+}

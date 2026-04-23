@@ -9,6 +9,13 @@ type Profile = {
   href: string;
   hoverColor: string;
   svg: React.ReactNode;
+  /**
+   * When true the badge is kept in the DOM (so search engines still see the
+   * rel=me / schema.org sameAs link) but is visually hidden from users and
+   * screen readers. Used for identity-graph platforms whose public badge is
+   * off-topic for visitors.
+   */
+  hidden?: boolean;
 };
 
 const Ico = {
@@ -99,6 +106,7 @@ const PROFILES: Profile[] = [
     href: "https://github.com/balmores-strux-ai/balmores-structural",
     hoverColor: "#ffffff",
     svg: Ico.github,
+    hidden: true,
   },
   {
     id: "aboutme",
@@ -113,6 +121,7 @@ const PROFILES: Profile[] = [
     href: "https://worldchess.com/profile/422673",
     hoverColor: "#d4d4d4",
     svg: Ico.chess,
+    hidden: true,
   },
   {
     id: "wikidata",
@@ -213,7 +222,7 @@ export default function ProfileBadges({
           gap: compact ? 6 : 10,
         }}
       >
-        {PROFILES.map((p) => (
+        {PROFILES.filter((p) => !p.hidden).map((p) => (
           <li key={p.id} style={{ display: "inline-flex" }}>
             <a
               className="profile-badges__link"
@@ -244,6 +253,26 @@ export default function ProfileBadges({
           </li>
         ))}
       </ul>
+
+      {/* Identity-graph links kept in the DOM for crawlers (schema.org sameAs
+          + rel=me) but visually hidden so they don't clutter the UI. Google,
+          Bing and Mastodon verifiers still read these. */}
+      {PROFILES.some((p) => p.hidden) ? (
+        <ul className="profile-badges__seo" aria-hidden="true">
+          {PROFILES.filter((p) => p.hidden).map((p) => (
+            <li key={p.id}>
+              <a
+                href={p.href}
+                rel="me noopener noreferrer"
+                itemProp="sameAs"
+                tabIndex={-1}
+              >
+                {p.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

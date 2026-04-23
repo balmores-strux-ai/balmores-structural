@@ -5,8 +5,10 @@ sqlalchemy>=2.0.36
 sentry-sdk[fastapi]>=2.0.0
 numpy>=1.24,<2
 scipy>=1.10.0
-torch>=2.0.0
 python-multipart==0.0.9
+# PyNite transitive deps (Pynite/__init__.py imports ShearWall → prettytable + matplotlib)
+prettytable>=3.10
+matplotlib>=3.7
 # ETABS / training scripts only (not needed for Render API — use requirements-render.txt there)
 pandas>=2.0
 comtypes>=1.2.0
