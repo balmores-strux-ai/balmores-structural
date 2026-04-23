@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Script from "next/script";
 
 const SITE_URL = "https://www.balmoreslab.com";
 
 export const metadata: Metadata = {
-  title: "About Louie Doniego Balmores — Structural Engineer & AI Researcher",
+  title: "About Louie Doniego Balmores â€” Structural Engineer & AI Researcher",
   description:
-    "Louie Doniego Balmores, P.Eng (Candidate), PE (Candidate) — Registered Civil Engineer (PRC Philippines, Nov 2013, Sequence No. 350) with 10+ years in high-performance building design and active AI research in structural optimization.",
+    "Louie Doniego Balmores, P.Eng (Candidate), PE (Candidate) â€” Registered Civil Engineer (PRC Philippines, Nov 2013, Sequence No. 350) with 10+ years in high-performance building design and active AI research in structural optimization.",
   alternates: { canonical: "/about" },
   openGraph: {
     type: "profile",
     url: `${SITE_URL}/about`,
-    title: "About Louie Doniego Balmores — Structural Engineer & AI Researcher",
+    title: "About Louie Doniego Balmores â€” Structural Engineer & AI Researcher",
     description:
       "Registered Civil Engineer (PRC Philippines, 2013) with 10+ years in structural design, researching AI-driven structural optimization.",
     firstName: "Louie",
@@ -29,7 +28,7 @@ const aboutPageLd = {
   url: `${SITE_URL}/about`,
   name: "About Louie Doniego Balmores",
   description:
-    "Profile of Louie Doniego Balmores — Registered Civil Engineer (PRC Philippines) and AI researcher focused on structural optimization.",
+    "Profile of Louie Doniego Balmores â€” Registered Civil Engineer (PRC Philippines) and AI researcher focused on structural optimization.",
   mainEntity: { "@id": `${SITE_URL}/#person` },
   breadcrumb: {
     "@type": "BreadcrumbList",
@@ -40,7 +39,7 @@ const aboutPageLd = {
   },
 };
 
-// FAQPage schema — this is the single highest-converting schema for
+// FAQPage schema â€” this is the single highest-converting schema for
 // Knowledge-Panel adjacency, because it feeds Google's "People Also Ask"
 // module. When PAA questions mention the canonical entity, Google treats
 // that as strong co-occurrence signal.
@@ -55,7 +54,7 @@ const faqLd = {
       acceptedAnswer: {
         "@type": "Answer",
         text:
-          "Louie Doniego Balmores is a Filipino structural engineer and AI researcher. He is a Registered Civil Engineer (Professional Regulation Commission of the Philippines, November 2013, Sequence No. 350) with over 10 years of professional practice, and is the founder of Balmores Laboratory — a research initiative on AI-driven structural optimization.",
+          "Louie Doniego Balmores is a Filipino structural engineer and AI researcher. He is a Registered Civil Engineer (Professional Regulation Commission of the Philippines, November 2013, Sequence No. 350) with over 10 years of professional practice, and is the founder of Balmores Laboratory â€” a research initiative on AI-driven structural optimization.",
       },
     },
     {
@@ -82,7 +81,7 @@ const faqLd = {
       acceptedAnswer: {
         "@type": "Answer",
         text:
-          "Balmores Laboratory (balmoreslab.com) is an independent research initiative founded by Louie Doniego Balmores. Its mission is to transition traditional structural engineering workflows into automated, intelligent systems — combining classical finite-element methods with neural surrogate models.",
+          "Balmores Laboratory (balmoreslab.com) is an independent research initiative founded by Louie Doniego Balmores. Its mission is to transition traditional structural engineering workflows into automated, intelligent systems â€” combining classical finite-element methods with neural surrogate models.",
       },
     },
     {
@@ -251,22 +250,18 @@ const S = {
 export default function AboutPage() {
   return (
     <main style={S.page} itemScope itemType="https://schema.org/ProfilePage">
-      <Script
-        id="ld-json-aboutpage"
+      <script
         type="application/ld+json"
-        strategy="beforeInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageLd) }}
       />
-      <Script
-        id="ld-json-faq"
+      <script
         type="application/ld+json"
-        strategy="beforeInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
 
       <nav style={S.topnav} aria-label="Primary">
         <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-          <span style={S.brandTitle}>BALMORES · LAB</span>
+          <span style={S.brandTitle}>BALMORES Â· LAB</span>
         </Link>
         <div>
           <Link href="/" style={S.link}>Home</Link>
@@ -287,11 +282,11 @@ export default function AboutPage() {
 
         {/* HERO */}
         <header style={S.hero}>
-          <div style={S.eyebrow}>Official Profile · balmoreslab.com</div>
+          <div style={S.eyebrow}>Official Profile Â· balmoreslab.com</div>
           <h1 style={S.h1}>
             <span itemProp="name">Louie Doniego Balmores</span>
             <span style={{ color: "#94a3b8", fontWeight: 500, fontSize: 22 }}>
-              {" "}· <span itemProp="honorificSuffix">P.Eng (Candidate), PE (Candidate)</span>
+              {" "}Â· <span itemProp="honorificSuffix">P.Eng (Candidate), PE (Candidate)</span>
             </span>
           </h1>
           <p style={S.title} itemProp="jobTitle">
@@ -300,13 +295,13 @@ export default function AboutPage() {
           <p style={S.lede} itemProp="description">
             Over <strong>10 years</strong> of structural engineering experience in
             high-performance building design. Currently conducting advanced research
-            in <strong>AI-driven structural optimization</strong> — transforming
+            in <strong>AI-driven structural optimization</strong> â€” transforming
             traditional structural analysis into automated, intelligent workflows at{" "}
             <Link href="/" style={S.extLink}>Balmores Laboratory</Link>.
           </p>
           <div>
             <span style={S.badge}>Civil Engineer, PRC PH</span>
-            <span style={S.badge}>AI · Structural Optimization</span>
+            <span style={S.badge}>AI Â· Structural Optimization</span>
             <span style={S.badge}>10+ Years Experience</span>
           </div>
         </header>
@@ -323,13 +318,13 @@ export default function AboutPage() {
           >
             <h3 style={S.h3}>
               <span itemProp="name">Registered Civil Engineer</span>
-              <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 16 }}> — Philippines</span>
+              <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 16 }}> â€” Philippines</span>
             </h3>
             <meta itemProp="credentialCategory" content="Professional License" />
             <p style={S.p}>
               Issued by the{" "}
               <strong>Professional Regulation Commission (PRC)</strong> of the
-              Republic of the Philippines — the official government body that
+              Republic of the Philippines â€” the official government body that
               regulates licensed engineering practice.
             </p>
 
@@ -356,7 +351,7 @@ export default function AboutPage() {
                   itemType="https://schema.org/GovernmentOrganization"
                 >
                   <span itemProp="name">Professional Regulation Commission (PRC)</span>
-                  {" · "}
+                  {" Â· "}
                   <a
                     href="https://prc.gov.ph"
                     style={S.extLink}
@@ -380,7 +375,7 @@ export default function AboutPage() {
               itemType="https://schema.org/EducationalOccupationalCredential"
             >
               <div style={{ color: "#a5b4fc", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                Candidate · 2027
+                Candidate Â· 2027
               </div>
               <h4 style={{ margin: "6px 0 6px", fontSize: 17, color: "#f1f5f9" }} itemProp="name">
                 P.Eng License Candidate
@@ -394,7 +389,7 @@ export default function AboutPage() {
                 >
                   <span itemProp="name">Professional Engineers Ontario (PEO)</span>
                 </span>
-                {" · Canada"}
+                {" Â· Canada"}
               </p>
             </div>
             <div
@@ -404,7 +399,7 @@ export default function AboutPage() {
               itemType="https://schema.org/EducationalOccupationalCredential"
             >
               <div style={{ color: "#a5b4fc", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                Candidate · 2028
+                Candidate Â· 2028
               </div>
               <h4 style={{ margin: "6px 0 6px", fontSize: 17, color: "#f1f5f9" }} itemProp="name">
                 PE License Candidate
@@ -418,7 +413,7 @@ export default function AboutPage() {
                 >
                   <span itemProp="name">NCEES (USA)</span>
                 </span>
-                {" · United States"}
+                {" Â· United States"}
               </p>
             </div>
           </div>
@@ -432,7 +427,7 @@ export default function AboutPage() {
             <strong>Focus.</strong> Developing AI models for{" "}
             <span itemProp="knowsAbout">structural integrity</span>,{" "}
             <span itemProp="knowsAbout">computational design</span>, and{" "}
-            <span itemProp="knowsAbout">material efficiency</span> — pairing
+            <span itemProp="knowsAbout">material efficiency</span> â€” pairing
             modern deep-learning surrogate models with classical finite element
             analysis (PyNite, ETABS) to compress design-cycle time without
             compromising code compliance.
@@ -441,7 +436,7 @@ export default function AboutPage() {
             <strong>Goal.</strong> Transitioning traditional structural analysis
             into automated, intelligent workflows: a design brief in plain
             English becomes a validated 3D frame model with reactions, drift,
-            envelopes, and optimization hints — in seconds, not days.
+            envelopes, and optimization hints â€” in seconds, not days.
           </p>
 
           <div style={{ ...S.grid2, marginTop: 20 }}>
@@ -457,7 +452,7 @@ export default function AboutPage() {
               <p style={{ ...S.p, marginTop: 8 }}>
                 Natural-language-to-FEM pipelines powering{" "}
                 <Link href="/" style={S.extLink}>Balmores Strux AI</Link>{" "}
-                — open-source PyNite 3D analysis from a chat prompt.
+                â€” open-source PyNite 3D analysis from a chat prompt.
               </p>
             </div>
             <div style={S.card}>
@@ -470,7 +465,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* FAQ (visible) — mirrors the FAQ JSON-LD above. Must stay in
+        {/* FAQ (visible) â€” mirrors the FAQ JSON-LD above. Must stay in
             sync with the schema, otherwise Google treats it as hidden
             structured-data spam. */}
         <section style={S.section} aria-labelledby="faq-h">
@@ -484,7 +479,7 @@ export default function AboutPage() {
               (Professional Regulation Commission of the Philippines,
               November 2013, Sequence No. 350) with over 10 years of
               professional practice, and is the founder of Balmores
-              Laboratory — a research initiative on AI-driven structural
+              Laboratory â€” a research initiative on AI-driven structural
               optimization.
             </p>
           </details>
@@ -520,7 +515,7 @@ export default function AboutPage() {
               Balmores Laboratory (balmoreslab.com) is an independent
               research initiative founded by Louie Doniego Balmores. Its
               mission is to transition traditional structural engineering
-              workflows into automated, intelligent systems — combining
+              workflows into automated, intelligent systems â€” combining
               classical finite-element methods with neural surrogate
               models.
             </p>
@@ -567,7 +562,7 @@ export default function AboutPage() {
       </article>
 
       <footer style={S.footer}>
-        © {new Date().getFullYear()} Louie Doniego Balmores · Balmores Laboratory ·{" "}
+        Â© {new Date().getFullYear()} Louie Doniego Balmores Â· Balmores Laboratory Â·{" "}
         <Link href="/" style={S.extLink}>balmoreslab.com</Link>
       </footer>
     </main>
