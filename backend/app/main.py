@@ -242,9 +242,13 @@ def fea_analyze(req: FeaBuildingRequest) -> FeaBuildingResponse:
     dependencies=[Depends(require_api_key_if_configured)],
 )
 def fea_analyze_prompt(req: FeaPromptRequest) -> FeaPromptResponse:
-    """Parse a design brief in plain English, then run irregular-grid PyNite FEA (DL/LL, wind, optional seismic push)."""
+    """Parse a natural-language structural brief (2D beam, 2D frame, or 3D building) and solve in PyNite."""
     from .fea_prompt_parser import parse_structural_prompt
-    from .pynite_fea import run_irregular_frame_analysis
+    from .pynite_fea import (
+        run_beam_analysis,
+        run_frame_2d_analysis,
+        run_irregular_frame_analysis,
+    )
     from .schemas import GeometryPayload, ResultCard
 
     try:
@@ -252,53 +256,112 @@ def fea_analyze_prompt(req: FeaPromptRequest) -> FeaPromptResponse:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    mat = "Steel" if params.get("material_steel") else "Concrete"
-    sx = params["spans_x_m"]
-    sy = params["spans_y_m"]
-    sh = params["story_heights_m"]
-    input_summary = (
-        "**Model read from your text**\n\n"
-        f"- **Storeys:** {len(sh)} · typical height {sh[0]:.2f} m each (uniform).\n"
-        f"- **X spans (m):** {', '.join(str(v) for v in sx)} → {len(sx)} bays, plan length **{sum(sx):.2f} m**.\n"
-        f"- **Y spans (m):** {', '.join(str(v) for v in sy)} → {len(sy)} bays, plan width **{sum(sy):.2f} m**.\n"
-        f"- **Loads:** DL **{params['dl_kpa']:.2f}** kPa + slab SW **{params['slab_sw_kpa']:.2f}** kPa on beams; "
-        f"LL **{params['ll_kpa']:.2f}** kPa.\n"
-        f"- **Material:** {mat} (default section sizes for this demo).\n"
-    )
-    if params.get("wind_pressure_kpa"):
-        input_summary += f"- **Wind:** {params['wind_pressure_kpa']} kPa on façade (simplified nodal pattern).\n"
-    if params.get("lateral_roof_fraction_of_gravity", 0) > 0:
-        input_summary += (
-            f"- **Seismic (placeholder):** roof shear ≈ **{params['lateral_roof_fraction_of_gravity']:.0%}** "
-            "of estimated gravity.\n"
-        )
-    if params.get("sbc_kpa") is not None:
-        input_summary += f"- **Allowable bearing (your input):** **{params['sbc_kpa']}** kPa.\n"
+    atype = params.pop("analysis_type", "building_3d")
 
     try:
-        raw = run_irregular_frame_analysis(**params, run_p_delta=req.run_p_delta)
+        if atype == "beam_2d":
+            input_summary = _summary_beam(params)
+            raw = run_beam_analysis(**params)
+        elif atype == "frame_2d":
+            input_summary = _summary_frame_2d(params)
+            raw = run_frame_2d_analysis(**params, run_p_delta=bool(req.run_p_delta))
+        else:
+            input_summary = _summary_building(params)
+            raw = run_irregular_frame_analysis(**params, run_p_delta=bool(req.run_p_delta))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PyNite analysis failed: {e}") from e
 
+    parsed_model = {k: v for k, v in params.items() if _is_jsonable(v)}
+    parsed_model["analysis_type"] = atype
+
     return FeaPromptResponse(
+        analysis_type=raw.get("analysis_type", atype),
         input_summary=input_summary,
         parse_notes=parse_notes,
+        parsed_model=parsed_model,
         engine=raw["engine"],
         load_combination=raw["load_combination"],
         geometry=GeometryPayload.model_validate(raw["geometry"]),
         result_cards=[ResultCard(**c) for c in raw["result_cards"]],
         assumptions=raw["assumptions"],
         summary_markdown=raw["summary_markdown"],
-        beams=raw["beams"],
-        columns=raw["columns"],
-        base_reactions=raw["base_reactions"],
-        storey_drifts=raw["storey_drifts"],
-        p_delta_note=raw["p_delta_note"],
-        totals=raw["totals"],
+        beams=raw.get("beams", []),
+        columns=raw.get("columns", []),
+        base_reactions=raw.get("base_reactions", []),
+        storey_drifts=raw.get("storey_drifts", []),
+        p_delta_note=raw.get("p_delta_note", ""),
+        totals=raw.get("totals", {}),
+        diagrams=raw.get("diagrams", {}),
         pynite_path=raw.get("pynite_path", ""),
     )
+
+
+def _is_jsonable(value) -> bool:
+    try:
+        json.dumps(value)
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
+def _summary_beam(p: dict) -> str:
+    pts = p.get("point_loads") or []
+    line_loads = (
+        f"DL **{p.get('dl_kN_per_m', 0):.2f}** kN/m + LL **{p.get('ll_kN_per_m', 0):.2f}** kN/m"
+    )
+    pt_str = (
+        "; ".join(f"**{pl['P_kN']} kN** @ {pl['x_m']} m" for pl in pts) if pts else "none"
+    )
+    return (
+        "**2D beam model read from your text**\n\n"
+        f"- **Span:** {p['span_m']:.2f} m · **supports:** {p.get('support_left','pin').title()} – {p.get('support_right','roller').title()}\n"
+        f"- **Overhangs:** left {p.get('cantilever_left_m', 0):.2f} m, right {p.get('cantilever_right_m', 0):.2f} m\n"
+        f"- **Distributed loads:** {line_loads}\n"
+        f"- **Point loads:** {pt_str}\n"
+        f"- **Material:** {str(p.get('material','concrete')).title()} · section {p.get('beam_width_m',0.3)} × {p.get('beam_depth_m',0.6)} m\n"
+    )
+
+
+def _summary_frame_2d(p: dict) -> str:
+    sx = p.get("spans_m", [])
+    sh = p.get("story_heights_m", [])
+    lat = p.get("lateral_fx_per_floor_kN", 0)
+    return (
+        "**2D moment frame model read from your text**\n\n"
+        f"- **Bays (X spans, m):** {', '.join(f'{x:g}' for x in sx)} → {len(sx)} bay(s), width **{sum(sx):.2f} m**.\n"
+        f"- **Storeys:** {len(sh)} · heights {', '.join(f'{h:g}' for h in sh)} m.\n"
+        f"- **Loads:** DL **{p.get('dl_kN_per_m', 0):.2f}** kN/m, LL **{p.get('ll_kN_per_m', 0):.2f}** kN/m on every beam.\n"
+        f"- **Lateral per floor:** **{lat:.2f}** kN at windward column (ULS).\n"
+        f"- **Material:** {str(p.get('material','concrete')).title()} · beam {p.get('beam_width_m',0.3)}×{p.get('beam_depth_m',0.6)} m, column {p.get('column_width_m',0.45)} m square.\n"
+    )
+
+
+def _summary_building(p: dict) -> str:
+    mat = "Steel" if p.get("material_steel") else "Concrete"
+    sx = p["spans_x_m"]
+    sy = p["spans_y_m"]
+    sh = p["story_heights_m"]
+    out = (
+        "**3D building model read from your text**\n\n"
+        f"- **Storeys:** {len(sh)} · typical height {sh[0]:.2f} m each (uniform).\n"
+        f"- **X spans (m):** {', '.join(str(v) for v in sx)} → {len(sx)} bays, plan length **{sum(sx):.2f} m**.\n"
+        f"- **Y spans (m):** {', '.join(str(v) for v in sy)} → {len(sy)} bays, plan width **{sum(sy):.2f} m**.\n"
+        f"- **Loads:** DL **{p['dl_kpa']:.2f}** kPa + slab SW **{p['slab_sw_kpa']:.2f}** kPa on beams; "
+        f"LL **{p['ll_kpa']:.2f}** kPa.\n"
+        f"- **Material:** {mat} (default section sizes).\n"
+    )
+    if p.get("wind_pressure_kpa"):
+        out += f"- **Wind:** {p['wind_pressure_kpa']} kPa on façade (simplified nodal pattern).\n"
+    if p.get("lateral_roof_fraction_of_gravity", 0) > 0:
+        out += (
+            f"- **Seismic (placeholder):** roof shear ≈ **{p['lateral_roof_fraction_of_gravity']:.0%}** "
+            "of estimated gravity.\n"
+        )
+    if p.get("sbc_kpa") is not None:
+        out += f"- **Allowable bearing (your input):** **{p['sbc_kpa']}** kPa.\n"
+    return out
 
 
 @app.post("/chat", response_model=ChatResponse, dependencies=[Depends(require_api_key_if_configured)])

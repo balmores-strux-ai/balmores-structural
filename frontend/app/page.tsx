@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AssistantMarkdown from "@/components/AssistantMarkdown";
+import BeamDiagrams from "@/components/BeamDiagrams";
 import FeaDiagrams from "@/components/FeaDiagrams";
 import ProfileBadges from "@/components/ProfileBadges";
 import {
@@ -21,20 +22,66 @@ const ThreeViewer = dynamic(() => import("@/components/ThreeViewer"), {
   ),
 });
 
-const PLACEHOLDER = `Example: 5-storey RC frame, X-spans (10, 12, 7m), Y-spans (8, 10, 6, 5, 12m), 5m storey heights, 4.5 kPa DL, 3.0 kPa LL, 200mm slab, 1.2 kPa wind, Seismic Zone 4, 150 kPa SBC.`;
+const PLACEHOLDER = `Examples you can paste:
 
-const WELCOME_ASSISTANT = `**PyNite structural chat**
+• Simply supported steel beam, span 8 m, UDL 15 kN/m DL, 10 kN/m LL, 40 kN point load at midspan.
+• 2D RC moment frame, 3 bays of 6 m, 4 storeys at 3.5 m, 20 kN/m DL, 8 kN/m LL, 25 kN lateral per floor.
+• 6-storey RC building, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab, 1 kPa wind, Seismic Zone 3.`;
 
-Describe a building like you would to a colleague: **number of storeys**, **X- and Y-bay spans in metres**, **DL / LL in kPa**, optional **slab thickness (mm)**, **wind (kPa)**, **seismic zone**, and **SBC (kPa)**.
+const WELCOME_ASSISTANT = `**Balmores Structural — PyNite assistant**
 
-I parse your message into a **3D irregular frame**, run **PyNite** from this project’s FEM library, and show **3D geometry** (members coloured by demand), **plan / elevation schematics**, **drift**, and **reactions**.
+I am powered by the **open-source PyNite** finite-element library, integrated directly into this app. Describe any of the three kinds of problems below in plain English and I will build, analyse, and report them:
 
-Tip: include explicit span lists, e.g. \`X-spans (6, 8, 6m) and Y-spans (5, 5m)\`.`;
+1. **2D beam** — spans, supports (pin/roller/fixed/cantilever), UDLs, point loads. Output includes **shear / moment / deflection diagrams**.
+2. **2D moment frame** — bay spans, storey heights, gravity and lateral per-floor loads. Output includes member envelopes, reactions and drift.
+3. **3D building** — X- and Y-bay spans (m), storey heights, DL/LL (kPa), wind / seismic zone, SBC. Output includes a coloured 3D geometry, plan/elevation schematics, envelopes and reactions.
 
-const QUICK_PROMPTS = [
-  "4-storey RC building, X-spans (6, 6, 6m), Y-spans (5, 5m), 4m storey heights, 4.5 kPa DL, 2 kPa LL, 200mm slab, Seismic Zone 3.",
-  "5-storey steel frame, X-spans (8, 10, 8m), Y-spans (6, 6m), 3.5m floors, 3 kPa DL, 4 kPa LL, 1.0 kPa wind, 200 kPa SBC.",
+Tip: include explicit numbers and units, e.g. \`UDL 15 kN/m\`, \`3 bays of 6 m\`, \`X-spans (6, 8, 6m)\`.`;
+
+type QuickPrompt = {
+  variant: "beam" | "frame" | "building";
+  label: string;
+  prompt: string;
+};
+
+const QUICK_PROMPTS: QuickPrompt[] = [
+  {
+    variant: "beam",
+    label: "2D beam · simply supported",
+    prompt:
+      "Simply supported steel beam, span 8 m, UDL 12 kN/m DL and 8 kN/m LL, with a 40 kN point load at midspan. Section 250 mm wide by 450 mm deep.",
+  },
+  {
+    variant: "beam",
+    label: "2D beam · fixed cantilever",
+    prompt:
+      "Concrete cantilever beam, fixed at the left, span 4 m, 25 kN point load at 4 m from the left, DL 8 kN/m, LL 4 kN/m.",
+  },
+  {
+    variant: "frame",
+    label: "2D frame · 3 bays × 4 storeys",
+    prompt:
+      "2D RC moment frame, 3 bays of 6 m, 4 storeys at 3.5 m, DL 20 kN/m LL 8 kN/m on each beam, 25 kN lateral per floor.",
+  },
+  {
+    variant: "building",
+    label: "3D RC building · zone 3",
+    prompt:
+      "6-storey RC building, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab, 1.0 kPa wind, Seismic Zone 3, 200 kPa SBC.",
+  },
+  {
+    variant: "building",
+    label: "3D steel building · irregular",
+    prompt:
+      "5-storey structural steel frame, X-spans (8, 10, 8m), Y-spans (6, 6m), 3.8m storey heights, 3 kPa DL, 4 kPa LL, 1.2 kPa wind, 150 kPa SBC.",
+  },
 ];
+
+function analysisLabel(t?: string): string {
+  if (t === "beam_2d") return "2D beam";
+  if (t === "frame_2d") return "2D frame";
+  return "3D building";
+}
 
 const APP_VERSION =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_VERSION
@@ -78,10 +125,16 @@ export default function HomePage() {
 
   const parsedForDiagrams: FeaParsedModel | null = useMemo(() => {
     const p = result?.parsed_model;
-    if (!p || !Array.isArray(p.spans_x_m) || !Array.isArray(p.spans_y_m)) return null;
-    if (p.spans_x_m.length < 1 || p.spans_y_m.length < 1) return null;
-    return p as FeaParsedModel;
+    if (!p) return null;
+    if (p.analysis_type === "building_3d" || (!p.analysis_type && Array.isArray(p.spans_x_m))) {
+      if (!Array.isArray(p.spans_x_m) || !Array.isArray(p.spans_y_m)) return null;
+      if (p.spans_x_m.length < 1 || p.spans_y_m.length < 1) return null;
+      return p as FeaParsedModel;
+    }
+    return null;
   }, [result]);
+
+  const is3D = result?.analysis_type === "building_3d" || (!result?.analysis_type && !!parsedForDiagrams);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -130,13 +183,22 @@ export default function HomePage() {
           <div className="brand-badge" aria-hidden />
           <div>
             <div className="brand-title">BALMORES STRUCTURAL</div>
-            <div className="small-muted">Chat → PyNite 3D FEA · diagrams · coloured demand map</div>
+            <div className="small-muted">
+              Natural-language FEA · PyNite kernel · 2D beams · 2D frames · 3D buildings
+            </div>
           </div>
         </div>
-        <label className="pdelta-toggle small-muted">
-          <input type="checkbox" checked={pDelta} onChange={(e) => setPDelta(e.target.checked)} />
-          P-Δ analysis
-        </label>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {result ? (
+            <span className="analysis-type-badge" title="Detected from your message">
+              {analysisLabel(result.analysis_type)}
+            </span>
+          ) : null}
+          <label className="pdelta-toggle small-muted">
+            <input type="checkbox" checked={pDelta} onChange={(e) => setPDelta(e.target.checked)} />
+            P-Δ analysis
+          </label>
+        </div>
       </header>
 
       <div className="layout layout-fea-3">
@@ -179,13 +241,14 @@ export default function HomePage() {
                   key={i}
                   type="button"
                   className="fea-chip"
+                  data-variant={q.variant}
                   disabled={loading}
                   onClick={() => {
-                    setDraft(q);
+                    setDraft(q.prompt);
                     textareaRef.current?.focus();
                   }}
                 >
-                  Quick example {i + 1}
+                  {q.label}
                 </button>
               ))}
             </div>
@@ -234,12 +297,15 @@ export default function HomePage() {
               </div>
             </div>
             <div className="fea-diagrams-scroll">
-              <FeaDiagrams
-                parsed={parsedForDiagrams}
-                storeyDrifts={result?.storey_drifts ?? []}
-                totals={result?.totals ?? {}}
-                loadCombination={result?.load_combination ?? "—"}
-              />
+              {is3D ? (
+                <FeaDiagrams
+                  parsed={parsedForDiagrams}
+                  storeyDrifts={result?.storey_drifts ?? []}
+                  totals={result?.totals ?? {}}
+                  loadCombination={result?.load_combination ?? "—"}
+                />
+              ) : null}
+              {result?.diagrams ? <BeamDiagrams diagrams={result.diagrams} /> : null}
             </div>
           </div>
         </section>
@@ -286,10 +352,12 @@ export default function HomePage() {
                 <div className="report-section">
                   <h3 className="report-h">Analysis summary</h3>
                   <AssistantMarkdown content={result.summary_markdown} streaming={false} />
-                  <p className="small-muted report-pdelta">{result.p_delta_note}</p>
-                  {result.pynite_path ? (
-                    <p className="small-muted">FEM source: <code className="fea-code-path">{result.pynite_path}</code></p>
+                  {result.p_delta_note ? (
+                    <p className="small-muted report-pdelta">{result.p_delta_note}</p>
                   ) : null}
+                  <p className="small-muted">
+                    Solver: <strong>Integrated PyNite FEM</strong> (open-source, MIT-licensed).
+                  </p>
                 </div>
 
                 <div className="report-section">
@@ -331,33 +399,35 @@ export default function HomePage() {
                   <p className="small-muted">Forces kN, moments kN·m — PyNite sign convention.</p>
                 </div>
 
-                <div className="report-section">
-                  <h3 className="report-h">Storey drift (horizontal, ULS)</h3>
-                  <div className="table-wrap">
-                    <table className="table table-striped table-compact">
-                      <thead>
-                        <tr>
-                          <th>Storey</th>
-                          <th>z top (m)</th>
-                          <th>h (m)</th>
-                          <th>Max drift (mm)</th>
-                          <th>Drift / h</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.storey_drifts.map((s) => (
-                          <tr key={s.storey_index}>
-                            <td>{s.storey_index}</td>
-                            <td>{s.z_top_m}</td>
-                            <td>{s.height_m}</td>
-                            <td>{s.max_drift_mm}</td>
-                            <td>{s.drift_ratio_h}</td>
+                {result.storey_drifts.length ? (
+                  <div className="report-section">
+                    <h3 className="report-h">Storey drift (horizontal, ULS)</h3>
+                    <div className="table-wrap">
+                      <table className="table table-striped table-compact">
+                        <thead>
+                          <tr>
+                            <th>Storey</th>
+                            <th>z top (m)</th>
+                            <th>h (m)</th>
+                            <th>Max drift (mm)</th>
+                            <th>Drift / h</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {result.storey_drifts.map((s) => (
+                            <tr key={s.storey_index}>
+                              <td>{s.storey_index}</td>
+                              <td>{s.z_top_m}</td>
+                              <td>{s.height_m}</td>
+                              <td>{s.max_drift_mm}</td>
+                              <td>{s.drift_ratio_h}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+                ) : null}
 
                 <div className="report-section">
                   <h3 className="report-h">Beams — envelope (|M|, |V|, deflection)</h3>
@@ -389,35 +459,37 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="report-section">
-                  <h3 className="report-h">Columns — P, M, T envelope</h3>
-                  <div className="table-wrap table-scroll">
-                    <table className="table table-striped table-compact">
-                      <thead>
-                        <tr>
-                          <th>Member</th>
-                          <th>|P| (kN)</th>
-                          <th>|My| (kN·m)</th>
-                          <th>|Mz| (kN·m)</th>
-                          <th>|T| (kN·m)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.columns.map((c) => (
-                          <tr key={c.id}>
-                            <td>
-                              <code>{c.id}</code>
-                            </td>
-                            <td>{c.P_max_kN}</td>
-                            <td>{c.My_max_kNm}</td>
-                            <td>{c.Mz_max_kNm}</td>
-                            <td>{c.T_max_kNm}</td>
+                {result.columns.length ? (
+                  <div className="report-section">
+                    <h3 className="report-h">Columns — P, M, T envelope</h3>
+                    <div className="table-wrap table-scroll">
+                      <table className="table table-striped table-compact">
+                        <thead>
+                          <tr>
+                            <th>Member</th>
+                            <th>|P| (kN)</th>
+                            <th>|My| (kN·m)</th>
+                            <th>|Mz| (kN·m)</th>
+                            <th>|T| (kN·m)</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {result.columns.map((c) => (
+                            <tr key={c.id}>
+                              <td>
+                                <code>{c.id}</code>
+                              </td>
+                              <td>{c.P_max_kN}</td>
+                              <td>{c.My_max_kNm}</td>
+                              <td>{c.Mz_max_kNm}</td>
+                              <td>{c.T_max_kNm}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+                ) : null}
 
                 <div className="report-section">
                   <h3 className="report-h">Assumptions & limits</h3>
@@ -457,7 +529,7 @@ export default function HomePage() {
           </a>
         </span>
         <span className="footer-sep" aria-hidden />
-        <span className="small-muted">PyNite open-source FEM · verify with your code</span>
+        <span className="small-muted">Integrated PyNite open-source FEM · verify with your code</span>
         <span className="footer-sep" aria-hidden />
         <a href="/about" style={{ color: "inherit" }}>About</a>
         <span className="footer-sep" aria-hidden />

@@ -163,10 +163,18 @@ class FeaPromptRequest(BaseModel):
 
 
 class FeaPromptResponse(BaseModel):
-    """Chat-style prompt → parsed inputs + full PyNite irregular-grid FEA."""
+    """Chat-style prompt → parsed inputs + PyNite FEA result (2D beam, 2D frame, or 3D building)."""
 
+    analysis_type: str = Field(
+        default="building_3d",
+        description="One of: 'beam_2d', 'frame_2d', 'building_3d'.",
+    )
     input_summary: str
     parse_notes: List[str]
+    parsed_model: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="JSON-safe parameters extracted from the message (spans, loads, etc.) for diagrams/UI.",
+    )
     engine: str
     load_combination: str
     geometry: GeometryPayload
@@ -179,4 +187,8 @@ class FeaPromptResponse(BaseModel):
     storey_drifts: List[Dict[str, Any]]
     p_delta_note: str
     totals: Dict[str, Any]
+    diagrams: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Optional diagram arrays (shear, moment, deflection) for 2D beam / frame models.",
+    )
     pynite_path: str = ""

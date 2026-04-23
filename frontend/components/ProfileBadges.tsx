@@ -216,14 +216,15 @@ export default function ProfileBadges({
         {PROFILES.map((p) => (
           <li key={p.id} style={{ display: "inline-flex" }}>
             <a
+              className="profile-badges__link"
               href={p.href}
               target={p.id === "rss" ? undefined : "_blank"}
               rel={p.id === "rss" ? undefined : "me noopener noreferrer"}
               itemProp={p.id === "rss" || p.id === "prc" ? undefined : "sameAs"}
               aria-label={p.label}
               title={p.label}
-              data-hover={p.hoverColor}
               style={{
+                ["--pb-hover" as unknown as string]: p.hoverColor,
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -234,24 +235,9 @@ export default function ProfileBadges({
                 background: "rgba(255,255,255,0.03)",
                 color: "#cbd5e1",
                 textDecoration: "none",
-                transition: "transform 0.15s ease, color 0.15s ease, border-color 0.15s ease, background 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.color = p.hoverColor;
-                (e.currentTarget as HTMLAnchorElement).style.borderColor =
-                  "rgba(165,180,252,0.45)";
-                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-1px)";
-                (e.currentTarget as HTMLAnchorElement).style.background =
-                  "rgba(255,255,255,0.06)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.color = "#cbd5e1";
-                (e.currentTarget as HTMLAnchorElement).style.borderColor =
-                  "rgba(255,255,255,0.10)";
-                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
-                (e.currentTarget as HTMLAnchorElement).style.background =
-                  "rgba(255,255,255,0.03)";
-              }}
+                transition:
+                  "transform 0.15s ease, color 0.15s ease, border-color 0.15s ease, background 0.15s ease",
+              } as React.CSSProperties}
             >
               {p.svg}
             </a>

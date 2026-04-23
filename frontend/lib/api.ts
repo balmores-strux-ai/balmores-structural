@@ -245,8 +245,10 @@ export async function runFeaAnalyze(body: FeaBuildingRequest): Promise<FeaBuildi
 
 /** Parameters returned from the server after parsing the chat message (for diagrams / UI). */
 export type FeaParsedModel = {
-  spans_x_m: number[];
-  spans_y_m: number[];
+  analysis_type?: "beam_2d" | "frame_2d" | "building_3d";
+  // 3D building
+  spans_x_m?: number[];
+  spans_y_m?: number[];
   story_heights_m?: number[];
   dl_kpa?: number;
   ll_kpa?: number;
@@ -255,13 +257,40 @@ export type FeaParsedModel = {
   lateral_roof_fraction_of_gravity?: number;
   two_way_fraction?: number;
   material_steel?: boolean;
+  sbc_kpa?: number | null;
+  // 2D frame
+  spans_m?: number[];
+  dl_kN_per_m?: number;
+  ll_kN_per_m?: number;
+  lateral_fx_per_floor_kN?: number;
+  // 2D beam
+  span_m?: number;
+  support_left?: string;
+  support_right?: string;
+  cantilever_left_m?: number;
+  cantilever_right_m?: number;
+  point_loads?: { P_kN: number; x_m: number; case?: string }[];
+  // Common section
+  material?: string;
   beam_width_m?: number;
   beam_depth_m?: number;
   column_width_m?: number;
-  sbc_kpa?: number | null;
+};
+
+/** Diagram arrays returned for 2D beam/frame analyses. `[xs, ys]` pairs. */
+export type FeaDiagrams = {
+  /** beam_2d only */
+  shear_kN?: [number[], number[]];
+  moment_kNm?: [number[], number[]];
+  deflection_mm?: [number[], number[]];
+  /** frame_2d only */
+  moment_per_level_kNm?: Record<string, [number[], number[]]>;
+  shear_per_level_kN?: Record<string, [number[], number[]]>;
+  x_label_m?: string;
 };
 
 export type FeaPromptResponse = {
+  analysis_type: "beam_2d" | "frame_2d" | "building_3d";
   input_summary: string;
   parse_notes: string[];
   parsed_model?: FeaParsedModel;
@@ -282,12 +311,12 @@ export type FeaPromptResponse = {
   base_reactions: {
     node: string;
     x_m: number;
-    y_m: number;
+    y_m?: number;
     Rx_kN: number;
-    Ry_kN: number;
-    Rz_kN: number;
-    Mx_kNm: number;
-    My_kNm: number;
+    Ry_kN?: number;
+    Rz_kN?: number;
+    Mx_kNm?: number;
+    My_kNm?: number;
     Mz_kNm: number;
   }[];
   storey_drifts: {
@@ -299,6 +328,7 @@ export type FeaPromptResponse = {
   }[];
   p_delta_note: string;
   totals: Record<string, number | null | undefined>;
+  diagrams?: FeaDiagrams;
   pynite_path?: string;
 };
 
