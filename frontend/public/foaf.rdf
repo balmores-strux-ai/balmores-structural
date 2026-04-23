@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:foaf="http://xmlns.com/foaf/0.1/"
+  xmlns:owl="http://www.w3.org/2002/07/owl#"
+  xmlns:schema="http://schema.org/">
+
+  <foaf:Person rdf:about="https://www.balmoreslab.com/#person">
+    <foaf:name>Louie Doniego Balmores</foaf:name>
+    <foaf:givenName>Louie</foaf:givenName>
+    <foaf:familyName>Balmores</foaf:familyName>
+    <foaf:nick>Louie Balmores</foaf:nick>
+    <foaf:gender>male</foaf:gender>
+    <foaf:title>Structural Engineer &amp; AI Researcher</foaf:title>
+    <foaf:homepage rdf:resource="https://www.balmoreslab.com"/>
+    <foaf:workplaceHomepage rdf:resource="https://www.balmoreslab.com"/>
+    <foaf:account>
+      <foaf:OnlineAccount>
+        <foaf:accountServiceHomepage rdf:resource="https://www.linkedin.com/"/>
+        <foaf:accountName>louiebalmores</foaf:accountName>
+      </foaf:OnlineAccount>
+    </foaf:account>
+    <foaf:account>
+      <foaf:OnlineAccount>
+        <foaf:accountServiceHomepage rdf:resource="https://x.com/"/>
+        <foaf:accountName>louiedbalmores</foaf:accountName>
+      </foaf:OnlineAccount>
+    </foaf:account>
+    <foaf:account>
+      <foaf:OnlineAccount>
+        <foaf:accountServiceHomepage rdf:resource="https://about.me/"/>
+        <foaf:accountName>louiebalmoresdesign</foaf:accountName>
+      </foaf:OnlineAccount>
+    </foaf:account>
+    <owl:sameAs rdf:resource="https://www.linkedin.com/in/louiebalmores/"/>
+    <owl:sameAs rdf:resource="https://x.com/louiedbalmores"/>
+    <owl:sameAs rdf:resource="https://about.me/louiebalmoresdesign/"/>
+    <owl:sameAs rdf:resource="https://worldchess.com/profile/422673"/>
+    <rdfs:seeAlso rdf:resource="https://www.balmoreslab.com/seo-schema.json"/>
+    <schema:description>Licensed Civil Engineer (PRC Philippines, November 2013, Sequence No. 350) with over 10 years in high-performance structural design, researching AI-driven structural optimization at Balmores Laboratory.</schema:description>
+  </foaf:Person>
+
+</rdf:RDF>
