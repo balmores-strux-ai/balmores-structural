@@ -28,8 +28,33 @@ const aboutPageLd = {
   url: `${SITE_URL}/about`,
   name: "About Louie Doniego Balmores",
   description:
-    "Profile of Louie Doniego Balmores - Registered Civil Engineer (PRC Philippines) and AI researcher focused on structural optimization.",
+    "Profile of Louie Doniego Balmores - born June 26, 1991 in Tuguegarao City, Cagayan Valley, Philippines; Registered Civil Engineer (PRC Philippines, 2013) and AI researcher based in Ontario, Canada.",
   mainEntity: { "@id": `${SITE_URL}/#person` },
+  about: {
+    "@type": "Person",
+    "@id": `${SITE_URL}/#person`,
+    name: "Louie Doniego Balmores",
+    birthDate: "1991-06-26",
+    birthPlace: {
+      "@type": "Place",
+      name: "Tuguegarao City, Cagayan Valley, Philippines",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Tuguegarao City",
+        addressRegion: "Cagayan Valley (Region II)",
+        addressCountry: "PH",
+      },
+    },
+    homeLocation: {
+      "@type": "Place",
+      name: "Ontario, Canada",
+      address: {
+        "@type": "PostalAddress",
+        addressRegion: "Ontario",
+        addressCountry: "CA",
+      },
+    },
+  },
   citation: [
     {
       "@type": "CreativeWork",
@@ -285,6 +310,25 @@ export default function AboutPage() {
         <meta itemProp="givenName" content="Louie" />
         <meta itemProp="additionalName" content="Doniego" />
         <meta itemProp="familyName" content="Balmores" />
+        <meta itemProp="birthDate" content="1991-06-26" />
+        <meta itemProp="gender" content="Male" />
+        <meta itemProp="nationality" content="Philippines" />
+        <span
+          itemProp="birthPlace"
+          itemScope
+          itemType="https://schema.org/Place"
+          style={{ display: "none" }}
+        >
+          <meta itemProp="name" content="Tuguegarao City, Cagayan Valley, Philippines" />
+        </span>
+        <span
+          itemProp="homeLocation"
+          itemScope
+          itemType="https://schema.org/Place"
+          style={{ display: "none" }}
+        >
+          <meta itemProp="name" content="Ontario, Canada" />
+        </span>
 
         {/* HERO */}
         <header style={S.hero}>
@@ -311,6 +355,51 @@ export default function AboutPage() {
             <span style={S.badge}>10+ Years Experience</span>
           </div>
         </header>
+
+        {/* AT A GLANCE */}
+        <section style={S.section} aria-labelledby="glance-h">
+          <h2 id="glance-h" style={S.h2}>At a Glance</h2>
+          <div style={S.card}>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Full Name</div>
+              <div style={S.kvVal}>Louie Doniego Balmores</div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Born</div>
+              <div style={S.kvVal}>
+                <time dateTime="1991-06-26">June 26, 1991</time>
+              </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Birthplace</div>
+              <div style={S.kvVal}>
+                Tuguegarao City, Cagayan Valley (Region II), Philippines
+              </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Nationality</div>
+              <div style={S.kvVal}>Filipino</div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Currently Based</div>
+              <div style={S.kvVal}>Toronto, Ontario, Canada</div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Profession</div>
+              <div style={S.kvVal}>Structural Engineer &amp; AI Researcher</div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Founder of</div>
+              <div style={S.kvVal}>
+                <Link href="/" style={S.extLink}>Balmores Laboratory</Link>
+              </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Languages</div>
+              <div style={S.kvVal}>English, Filipino (Tagalog)</div>
+            </div>
+          </div>
+        </section>
 
         {/* PROFESSIONAL LICENSURE */}
         <section style={S.section} aria-labelledby="licensure-h">
