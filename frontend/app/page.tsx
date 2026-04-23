@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AssistantMarkdown from "@/components/AssistantMarkdown";
 import FeaDiagrams from "@/components/FeaDiagrams";
+import ProfileBadges from "@/components/ProfileBadges";
 import {
   analyzeFeaPrompt,
   type FeaParsedModel,
@@ -436,6 +437,16 @@ export default function HomePage() {
             ) : null}
           </div>
         </section>
+      </div>
+
+      <div
+        style={{
+          padding: "28px 16px 10px",
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          background: "rgba(8,10,15,0.6)",
+        }}
+      >
+        <ProfileBadges align="center" showOrcidPill />
       </div>
 
       <footer className="site-footer">
