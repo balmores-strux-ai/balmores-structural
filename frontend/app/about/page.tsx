@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ProfileBadges from "@/components/ProfileBadges";
 
 const SITE_URL = "https://www.balmoreslab.com";
 
@@ -658,25 +659,8 @@ export default function AboutPage() {
             <code style={{ margin: "0 6px", color: "#a5b4fc" }}>sameAs</code>
             entry in the page&apos;s JSON-LD.
           </p>
-          <div style={S.socials}>
-            <a style={S.chip} href="https://www.linkedin.com/in/louiebalmores/" rel="me noopener external" target="_blank" itemProp="sameAs">
-              LinkedIn
-            </a>
-            <a style={S.chip} href="https://x.com/louiedbalmores" rel="me noopener external" target="_blank" itemProp="sameAs">
-              X / Twitter
-            </a>
-            <a style={S.chip} href="https://orcid.org/0009-0008-5479-4033" rel="me noopener external" target="_blank" itemProp="sameAs">
-              ORCID
-            </a>
-            <a style={S.chip} href="https://about.me/louiebalmoresdesign/" rel="me noopener external" target="_blank" itemProp="sameAs">
-              about.me
-            </a>
-            <a style={S.chip} href="https://worldchess.com/profile/422673" rel="me noopener external" target="_blank" itemProp="sameAs">
-              WorldChess
-            </a>
-            <a style={S.chip} href="https://prc.gov.ph" rel="noopener external" target="_blank" itemProp="sameAs">
-              PRC Philippines
-            </a>
+          <div style={{ padding: "12px 0 4px" }}>
+            <ProfileBadges align="left" showOrcidPill />
           </div>
         </section>
       </article>
