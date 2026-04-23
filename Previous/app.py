@@ -41,6 +41,13 @@ app = FastAPI(title="BALMORES STRUCTURAL")
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+# Disable Jinja2's internal LRU template cache. Its key construction breaks on
+# Python 3.14's stricter tuple hashing (it tries to put a dict inside a tuple
+# key, which was tolerated on <=3.13 but now raises TypeError). Setting
+# env.cache to None makes Jinja2 reload templates from disk every call, which
+# is perfectly fine for our low-traffic backend and makes the /`home`/
+# endpoint impossible to crash on any Python version.
+templates.env.cache = None
 
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
@@ -102,8 +109,8 @@ def _fallback_build_from_text(text: str) -> Optional[Dict[str, str]]:
 
     m = re.search(
         r"(\d+)\s*storey\s*(?:building|steel)?\s*"
-        r"(?:(\d+(?:\.\d+)?)\s*[mxÃ—]\s*(\d+(?:\.\d+)?)|"
-        r"(\d+(?:\.\d+)?)\s*m?\s*[mxÃ—]\s*(\d+(?:\.\d+)?)\s*m?)",
+        r"(?:(\d+(?:\.\d+)?)\s*[mxÃƒâ€”]\s*(\d+(?:\.\d+)?)|"
+        r"(\d+(?:\.\d+)?)\s*m?\s*[mxÃƒâ€”]\s*(\d+(?:\.\d+)?)\s*m?)",
         text,
         re.I,
     )
@@ -236,7 +243,24 @@ def read_response_text(response) -> str:
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse(request, "index.html")
+    # Ultra-defensive root page. We deliberately bypass Jinja2 entirely here
+    # (even with cache=None) by reading the static index.html file and
+    # returning it as-is. index.html has no per-request template variables
+    # anyway - all dynamic data is fetched via the JSON API endpoints below.
+    # This guarantees a 200 on every Python version on Render.
+    index_path = TEMPLATES_DIR / "index.html"
+    try:
+        html_text = index_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        html_text = (
+            "<!doctype html><html><head><meta charset='utf-8'>"
+            "<title>Balmores Structural</title></head><body>"
+            "<h1>Balmores Structural backend is live.</h1>"
+            "<p>Service is up. The HTML shell is missing on this deploy; "
+            "API endpoints are still functional.</p>"
+            "</body></html>"
+        )
+    return HTMLResponse(content=html_text)
 
 
 def _export_engineering_bundle() -> Dict[str, Any]:
@@ -280,7 +304,7 @@ async def get_state():
 
 @app.get("/api/export-pack")
 async def export_pack():
-    """One JSON file: geometry, loads, FEM output, ETABS text â€” for records or your own scripts."""
+    """One JSON file: geometry, loads, FEM output, ETABS text Ã¢â‚¬â€ for records or your own scripts."""
     return JSONResponse(_export_engineering_bundle())
 
 
@@ -613,7 +637,7 @@ def _run_fem_and_append():
 
 @app.post("/api/build-analyze")
 async def build_and_analyze(payload: Dict[str, Any]):
-    """NLM â†’ FEM â†’ charts/report/export. Uses built-in parser for 'N storey Xm x Ym' when API fails."""
+    """NLM Ã¢â€ â€™ FEM Ã¢â€ â€™ charts/report/export. Uses built-in parser for 'N storey Xm x Ym' when API fails."""
     user_message = payload.get("message", "").strip()
     if not user_message:
         return {"ok": False, "message": "Empty message."}
@@ -648,7 +672,7 @@ async def build_and_analyze(payload: Dict[str, Any]):
             return {"ok": False, "message": f"Built-in parser error: {e}"}
 
     if client is None:
-        return {"ok": False, "message": "OPENAI_API_KEY missing. Try phrases like '4 storey 6m x 12m' â€” uses built-in parser."}
+        return {"ok": False, "message": "OPENAI_API_KEY missing. Try phrases like '4 storey 6m x 12m' Ã¢â‚¬â€ uses built-in parser."}
 
     schema = {
         "type": "object",
