@@ -621,9 +621,23 @@ def run_irregular_frame_analysis(
     p_delta_note = "First-order linear analysis only (P-Δ not requested)."
     if run_p_delta:
         try:
-            m.analyze_PDelta(log=False, check_stability=True, max_iter=30, sparse=True, combo_tags=[combo])
+            # NOTE: `combo_tags` in PyNite filters by a combo's tags, *not* its
+            # name. Our ULS combo has no tags, so passing `combo_tags=["ULS"]`
+            # would make `_identify_combos` return an empty list. P-Δ would
+            # then run zero iterations while `_prepare_model` inside it has
+            # already cleared every node's displacement dict, zeroing all
+            # member forces and deflections. We want P-Δ on the only combo
+            # we built, so we simply don't pass `combo_tags`.
+            m.analyze_PDelta(log=False, check_stability=True, max_iter=30, sparse=True)
             p_delta_note = "P-Δ (second-order) analysis completed for ULS in PyNite."
         except Exception as ex:
+            # Fall back to the already-computed first-order results. Re-run
+            # the first-order solver so displacements (which P-Δ's prepare
+            # step may have cleared) are restored.
+            try:
+                m.analyze(check_statics=False)
+            except Exception:
+                pass
             p_delta_note = f"P-Δ not applied: {str(ex)[:200]}. Showing first-order ULS member forces."
 
     def hor_mm(nid: str) -> float:
@@ -1297,9 +1311,15 @@ def run_frame_2d_analysis(
     p_delta_note = "First-order linear analysis only."
     if run_p_delta:
         try:
-            m.analyze_PDelta(log=False, check_stability=True, max_iter=30, sparse=True, combo_tags=[combo])
+            # See note in run_irregular_frame_analysis: passing combo_tags=[name]
+            # is a bug in PyNite's contract — tags are distinct from combo names.
+            m.analyze_PDelta(log=False, check_stability=True, max_iter=30, sparse=True)
             p_delta_note = "P-Δ (second-order) analysis completed on ULS."
         except Exception as ex:
+            try:
+                m.analyze(check_statics=False)
+            except Exception:
+                pass
             p_delta_note = f"P-Δ skipped: {str(ex)[:160]}"
 
     max_M = max_V = max_def = 0.0
