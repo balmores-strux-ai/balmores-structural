@@ -8,7 +8,7 @@ const PERSON_NAME = "Louie Doniego Balmores";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Louie Doniego Balmores — Structural Engineer & AI Researcher | Balmores Laboratory",
+    default: "Louie Doniego Balmores - Structural Engineer & AI Researcher | Balmores Laboratory",
     template: "%s | Balmores Laboratory",
   },
   description:
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: "Louie Doniego Balmores — Structural Engineer & AI Researcher",
+    title: "Louie Doniego Balmores - Structural Engineer & AI Researcher",
     description:
       "Licensed Civil Engineer (PRC Philippines) with 10+ years of structural design experience, researching AI-driven structural optimization at Balmores Laboratory.",
     images: [
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@louiedbalmores",
     creator: "@louiedbalmores",
-    title: "Louie Doniego Balmores — Structural Engineer & AI Researcher",
+    title: "Louie Doniego Balmores - Structural Engineer & AI Researcher",
     description:
       "Licensed Civil Engineer researching AI-driven structural optimization. PyNite 3D FEA from a design brief.",
     images: ["/og-image.png"],
@@ -170,7 +170,7 @@ const structuredData = {
       image: {
         "@type": "ImageObject",
         url: `${SITE_URL}/louie-balmores.jpg`,
-        caption: "Louie Doniego Balmores — Structural Engineer & AI Researcher",
+        caption: "Louie Doniego Balmores - Structural Engineer & AI Researcher",
       },
       gender: "Male",
       nationality: { "@type": "Country", name: "Philippines" },
@@ -225,7 +225,7 @@ const structuredData = {
             },
           },
           datePublished: "2013-11-27",
-          identifier: "Nov 2013 Civil Engineer Licensure Examination — Sequence No. 350",
+          identifier: "Nov 2013 Civil Engineer Licensure Examination - Sequence No. 350",
         },
         {
           "@type": "EducationalOccupationalCredential",
@@ -244,7 +244,7 @@ const structuredData = {
           name: "PE License Candidate",
           recognizedBy: {
             "@type": "Organization",
-            name: "NCEES — National Council of Examiners for Engineering and Surveying",
+            name: "NCEES - National Council of Examiners for Engineering and Surveying",
             url: "https://ncees.org",
           },
           validFrom: "2028-01-01",
@@ -265,7 +265,7 @@ const structuredData = {
         "https://x.com/louiedbalmores",
       ],
       description:
-        "Balmores Laboratory researches AI-driven structural engineering — converting traditional structural analysis workflows into automated, intelligent systems.",
+        "Balmores Laboratory researches AI-driven structural engineering - converting traditional structural analysis workflows into automated, intelligent systems.",
       knowsAbout: [
         "Structural AI",
         "Computational Structural Design",
@@ -279,7 +279,7 @@ const structuredData = {
       url: SITE_URL,
       name: SITE_NAME,
       description:
-        "Official website of Louie Doniego Balmores and Balmores Laboratory — AI-driven structural engineering.",
+        "Official website of Louie Doniego Balmores and Balmores Laboratory - AI-driven structural engineering.",
       publisher: { "@id": personId },
       inLanguage: "en",
       potentialAction: {
@@ -350,15 +350,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="//x.com" />
         <link rel="dns-prefetch" href="//prc.gov.ph" />
 
-        {/* Plain <script> tag so the JSON-LD lands inside the initial static
-            HTML that every crawler sees (including Bing's first pass, AI
-            entity-extractors, and non-JS-executing indexers). Using next/script
-            with strategy="beforeInteractive" would defer injection via the RSC
-            streaming payload, which breaks static entity discovery. */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </head>
       <body>{children}</body>
     </html>
