@@ -10,6 +10,9 @@ class SessionStore:
         self.projects: Dict[str, ProjectState] = {}
         self.messages: Dict[str, List[ChatMessage]] = {}
 
+    def has_project(self, project_id: str) -> bool:
+        return project_id in self.projects
+
     def create_project(self, state: ProjectState) -> str:
         project_id = str(uuid.uuid4())
         self.projects[project_id] = state
@@ -30,3 +33,21 @@ class SessionStore:
 
 
 STORE = SessionStore()
+
+_impl: SessionStore | None = None
+
+
+def get_store() -> SessionStore:
+    """Memory store by default; set DATABASE_URL for Postgres or SQLite persistence."""
+    global _impl
+    if _impl is None:
+        import os
+
+        dsn = os.getenv("DATABASE_URL", "").strip()
+        if dsn:
+            from .sql_store import SqlStore
+
+            _impl = SqlStore(dsn)
+        else:
+            _impl = SessionStore()
+    return _impl
