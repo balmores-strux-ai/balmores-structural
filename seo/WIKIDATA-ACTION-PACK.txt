@@ -1,0 +1,132 @@
+================================================================================
+  WIKIDATA KNOWLEDGE-PANEL PACK for Louie Doniego Balmores (Q139544451)
+  Date: 2026-04-22
+================================================================================
+
+You already have the Wikidata item:
+  https://www.wikidata.org/wiki/Q139544451
+
+This file has 3 parts:
+  PART A - FASTEST PATH: QuickStatements batch you paste once
+  PART B - MANUAL PATH: exactly what to click, property by property
+  PART C - AFTER WIKIDATA: connect the Q-number to your website
+
+
+================================================================================
+  PART A - FASTEST PATH (recommended) - QuickStatements batch
+================================================================================
+
+1) Open: https://quickstatements.toolforge.org/
+2) Top right: Log in with Wikidata (authorize once).
+3) Click "New batch" - Version 2 commands.
+4) Paste everything BETWEEN the === lines below (do NOT include the === lines)
+   into the big text box.
+5) Click "Import V1 commands" (yes, V1 - that's what matches the TSV syntax).
+   If it warns, click "Run" anyway.
+6) Let it run. Each row takes ~1 second.
+
+Copy from here:
+================================================================================
+Q139544451	Len	"Louie Doniego Balmores"
+Q139544451	Den	"Filipino structural engineer and AI researcher; founder of Balmores Laboratory"
+Q139544451	Aen	"Louie Balmores"
+Q139544451	Aen	"Engr. Louie Balmores"
+Q139544451	Aen	"Louie D. Balmores"
+Q139544451	P21	Q6581097	S854	"https://www.balmoreslab.com/about"	S813	+2026-04-22T00:00:00Z/11
+Q139544451	P27	Q928	S854	"https://www.balmoreslab.com/about"	S813	+2026-04-22T00:00:00Z/11
+Q139544451	P106	Q13219330	S854	"https://www.balmoreslab.com/about"	S813	+2026-04-22T00:00:00Z/11
+Q139544451	P106	Q1650915	S854	"https://www.balmoreslab.com/about"	S813	+2026-04-22T00:00:00Z/11
+Q139544451	P856	"https://www.balmoreslab.com"	S854	"https://www.balmoreslab.com/about"	S813	+2026-04-22T00:00:00Z/11
+Q139544451	P6634	"louiebalmores"	S854	"https://www.linkedin.com/in/louiebalmores/"	S813	+2026-04-22T00:00:00Z/11
+Q139544451	P2002	"louiedbalmores"	S854	"https://x.com/louiedbalmores"	S813	+2026-04-22T00:00:00Z/11
+Q139544451	P495	Q928	S854	"https://www.balmoreslab.com/about"	S813	+2026-04-22T00:00:00Z/11
+================================================================================
+
+What each row means:
+  Len  = English label
+  Den  = English description
+  Aen  = English alias (you can have many)
+  P21  = sex or gender        -> Q6581097 (male)
+  P27  = country of citizenship -> Q928 (Philippines)
+  P106 = occupation           -> Q13219330 (structural engineer) + Q1650915 (researcher)
+  P856 = official website     -> balmoreslab.com
+  P6634= LinkedIn profile ID  -> louiebalmores
+  P2002= X username           -> louiedbalmores
+  P495 = country of origin    -> Q928 (Philippines)
+
+Every statement includes a source:
+  S854 = reference URL  -> balmoreslab.com/about (your authoritative self-page)
+  S813 = retrieved date -> today
+
+Already done (from your screenshot): P31 = Q5 (human).
+Skip P735 (given name) + P734 (family name) - these require finding specific
+Q-items for "Louie" and "Balmores" and there's no reliable match. Not needed
+for the Knowledge Panel.
+
+
+================================================================================
+  PART B - MANUAL PATH - if QuickStatements feels scary
+================================================================================
+
+On https://www.wikidata.org/wiki/Q139544451 click "+ add statement" for each
+of the rows below. In the VALUE box, always pick the autocomplete suggestion
+(do NOT just type the Q-number).
+
+ #  | Property (type this)              | Value (pick from autocomplete)
+----+------------------------------------+----------------------------------
+ 1  | instance of                        | human (Q5)            [DONE]
+ 2  | sex or gender                      | male (Q6581097)
+ 3  | country of citizenship             | Philippines (Q928)
+ 4  | occupation                         | structural engineer (Q13219330)
+    | (on same row click "+ add value")  | researcher (Q1650915)
+ 5  | official website                   | https://www.balmoreslab.com
+ 6  | LinkedIn personal profile ID       | louiebalmores
+ 7  | X username (or Twitter username)   | louiedbalmores
+
+On each of these rows (do it at least on 5 and 6):
+  Click "+ add reference"
+  - reference URL:  https://www.balmoreslab.com/about
+  - retrieved:      (today's date, format: 22 April 2026)
+  Click "publish"
+
+If Wikidata flags "constraint violation" on LinkedIn ID or X username, ignore -
+those are informational warnings.
+
+
+================================================================================
+  PART C - AFTER WIKIDATA: make your site announce the Q-number
+================================================================================
+
+Your Q-number is:  Q139544451
+
+1) Open https://dashboard.render.com
+2) Click your FRONTEND Next.js service (the one serving balmoreslab.com)
+3) Left sidebar -> Environment
+4) Click "Add Environment Variable":
+      Key   : NEXT_PUBLIC_WIKIDATA_ID
+      Value : Q139544451
+5) Save Changes -> wait for auto-redeploy (3-5 min, green "Live" badge)
+6) Tell me when it's live - I'll re-fire IndexNow and verify
+   balmoreslab.com homepage JSON-LD now contains:
+      "sameAs": [ ..., "https://www.wikidata.org/wiki/Q139544451" ]
+
+Once the Q-number is mutually linked (Wikidata -> site via P856, and
+site -> Wikidata via sameAs), Google's entity reconciler treats it as a
+strong signal and the Knowledge Panel creation pipeline begins.
+
+
+================================================================================
+  PRIORITY LIST after this file is done
+================================================================================
+
+  [TODAY]   Google Search Console verification + submit sitemap + request
+            indexing on /, /about, /cv, /research
+  [TODAY]   Add NEXT_PUBLIC_WIKIDATA_ID to Render
+  [+1 day]  Fill LinkedIn "About" with the 400-char bio in
+              seo/louie-balmores-bios.md
+  [+1 day]  Fill X bio (160 chars) - same file
+  [+2 days] Create ORCID (5 min) -> add NEXT_PUBLIC_ORCID_ID to Render
+  [+3 days] Commit seo/github-profile-README.md as your GitHub profile README
+  [+7 days] Recheck Google: site:balmoreslab.com (should show 4+ pages)
+
+================================================================================
