@@ -1,0 +1,57 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "identifier": "balmores-strux-ai",
+  "name": "Balmores Strux AI",
+  "description": "Natural-language-to-PyNite 3D FEM pipeline for irregular frames. PyTorch surrogate on parametric ETABS datasets for member-demand prediction and preliminary sizing. Part of the Balmores Laboratory research programme on AI-driven structural engineering.",
+  "codeRepository": "https://github.com/balmores-strux-ai/balmores-structural",
+  "url": "https://www.balmoreslab.com",
+  "license": "https://spdx.org/licenses/MIT",
+  "version": "0.2.0",
+  "dateCreated": "2024-01-01",
+  "datePublished": "2026-04-22",
+  "programmingLanguage": ["Python", "TypeScript", "JavaScript"],
+  "operatingSystem": ["Windows", "Linux", "macOS"],
+  "runtimePlatform": ["Next.js", "FastAPI", "PyTorch"],
+  "applicationCategory": "Structural engineering / Scientific computing",
+  "keywords": [
+    "structural engineering",
+    "artificial intelligence",
+    "finite element analysis",
+    "PyNite",
+    "ETABS",
+    "structural optimization",
+    "computational design"
+  ],
+  "author": [
+    {
+      "@type": "Person",
+      "@id": "https://www.balmoreslab.com/#person",
+      "givenName": "Louie Doniego",
+      "familyName": "Balmores",
+      "name": "Louie Doniego Balmores",
+      "jobTitle": "Structural Engineer & AI Researcher",
+      "url": "https://www.balmoreslab.com",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Balmores Laboratory",
+        "url": "https://www.balmoreslab.com"
+      },
+      "sameAs": [
+        "https://www.linkedin.com/in/louiebalmores/",
+        "https://x.com/louiedbalmores",
+        "https://about.me/louiebalmoresdesign/",
+        "https://prc.gov.ph"
+      ]
+    }
+  ],
+  "publisher": {
+    "@type": "Organization",
+    "name": "Balmores Laboratory",
+    "url": "https://www.balmoreslab.com"
+  },
+  "funder": {
+    "@type": "Organization",
+    "name": "Balmores Laboratory"
+  }
+}
