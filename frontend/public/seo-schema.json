@@ -1,0 +1,103 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "@id": "https://www.balmoreslab.com/#person",
+  "name": "Louie Doniego Balmores",
+  "alternateName": ["Louie Balmores", "Engr. Louie Balmores", "Louie D. Balmores"],
+  "honorificSuffix": "P.Eng (Candidate), PE (Candidate)",
+  "givenName": "Louie",
+  "additionalName": "Doniego",
+  "familyName": "Balmores",
+  "jobTitle": "Structural Engineer & AI Researcher",
+  "url": "https://www.balmoreslab.com",
+  "mainEntityOfPage": "https://www.balmoreslab.com/about",
+  "image": "https://www.balmoreslab.com/louie-balmores.jpg",
+  "description": "Licensed Civil Engineer (Professional Regulation Commission, Philippines) with over 10 years of experience in high-performance structural design, currently pioneering research in Artificial Intelligence for structural engineering — AI-driven structural optimization, computational design, and material efficiency.",
+  "gender": "Male",
+  "nationality": { "@type": "Country", "name": "Philippines" },
+  "worksFor": {
+    "@type": "Organization",
+    "@id": "https://www.balmoreslab.com/#organization",
+    "name": "Balmores Laboratory",
+    "url": "https://www.balmoreslab.com"
+  },
+  "knowsLanguage": ["English", "Filipino"],
+  "knowsAbout": [
+    "Structural Engineering",
+    "Artificial Intelligence",
+    "Machine Learning for Engineering",
+    "Building Design",
+    "High-Performance Buildings",
+    "Computational Design",
+    "Structural Optimization",
+    "Finite Element Analysis",
+    "PyNite",
+    "Reinforced Concrete Design",
+    "Steel Design",
+    "Seismic Design",
+    "Generative Design",
+    "Parametric Structural Modeling"
+  ],
+  "hasOccupation": [
+    {
+      "@type": "Occupation",
+      "name": "Structural Engineer",
+      "occupationLocation": { "@type": "Country", "name": "Philippines" },
+      "skills": "Reinforced concrete, steel, seismic, P-Delta, finite element modeling, ETABS, PyNite"
+    },
+    {
+      "@type": "Occupation",
+      "name": "AI Researcher",
+      "skills": "Deep learning for structural optimization, surrogate FEM models, generative structural design"
+    }
+  ],
+  "hasCredential": [
+    {
+      "@type": "EducationalOccupationalCredential",
+      "credentialCategory": "Professional License",
+      "name": "Registered Civil Engineer",
+      "identifier": "Nov 2013 Civil Engineer Licensure Examination — Sequence No. 350",
+      "recognizedBy": {
+        "@type": "GovernmentOrganization",
+        "name": "Professional Regulation Commission (PRC)",
+        "url": "https://prc.gov.ph",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "PH",
+          "addressRegion": "Metro Manila"
+        }
+      },
+      "datePublished": "2013-11-27"
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      "credentialCategory": "Professional License (Candidate)",
+      "name": "P.Eng License Candidate",
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "Professional Engineers Ontario (PEO)",
+        "url": "https://www.peo.on.ca"
+      },
+      "validFrom": "2027-01-01"
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      "credentialCategory": "Professional License (Candidate)",
+      "name": "PE License Candidate",
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "NCEES — National Council of Examiners for Engineering and Surveying",
+        "url": "https://ncees.org"
+      },
+      "validFrom": "2028-01-01"
+    }
+  ],
+  "sameAs": [
+    "https://www.linkedin.com/in/louiebalmores/",
+    "https://x.com/louiedbalmores",
+    "https://twitter.com/louiedbalmores",
+    "https://about.me/louiebalmoresdesign/",
+    "https://worldchess.com/profile/422673",
+    "https://prc.gov.ph"
+  ]
+}
