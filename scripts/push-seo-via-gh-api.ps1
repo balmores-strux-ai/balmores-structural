@@ -105,7 +105,8 @@ function Push-File($rel) {
   if ($sha) { $body.sha = $sha }
 
   $tmp = New-TemporaryFile
-  ($body | ConvertTo-Json -Depth 6) | Set-Content -Path $tmp -Encoding UTF8
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  [System.IO.File]::WriteAllText($tmp, ($body | ConvertTo-Json -Depth 6 -Compress), $utf8NoBom)
 
   $enc = [System.Uri]::EscapeUriString($rel)
   Write-Host ("PUT {0}  ({1})" -f $rel, ($(if ($sha) { "update" } else { "create" })))
