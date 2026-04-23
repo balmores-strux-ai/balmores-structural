@@ -1,6 +1,5 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 
 const SITE_URL = "https://www.balmoreslab.com";
 const SITE_NAME = "Balmores Laboratory";
@@ -351,10 +350,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="//x.com" />
         <link rel="dns-prefetch" href="//prc.gov.ph" />
 
-        <Script
-          id="ld-json-person-graph"
+        {/* Plain <script> tag so the JSON-LD lands inside the initial static
+            HTML that every crawler sees (including Bing's first pass, AI
+            entity-extractors, and non-JS-executing indexers). Using next/script
+            with strategy="beforeInteractive" would defer injection via the RSC
+            streaming payload, which breaks static entity discovery. */}
+        <script
           type="application/ld+json"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
