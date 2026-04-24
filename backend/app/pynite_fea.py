@@ -480,6 +480,12 @@ def run_irregular_frame_analysis(
     sh = [float(h) for h in story_heights_m if float(h) > 0]
     if not sh:
         raise ValueError("story_heights_m must have at least one positive height.")
+    if len(sh) > 60:
+        raise ValueError(
+            f"Storey count {len(sh)} exceeds the practical limit of 60 storeys for the "
+            "shared-instance solver (≈45 s on dev hardware, longer on free hosting). "
+            "Re-run with ≤60 storeys, or run locally for a taller model."
+        )
 
     XS = _cum_axis(sx)
     YS = _cum_axis(sy)
@@ -919,7 +925,9 @@ def _beam_section_rect(b_m: float, h_m: float) -> Tuple[float, float, float, flo
 
 def run_beam_analysis(
     *,
-    span_m: float,
+    span_m: float = 0.0,
+    spans_m: Optional[List[float]] = None,
+    support_kinds: Optional[List[str]] = None,
     support_left: str = "pin",
     support_right: str = "roller",
     cantilever_left_m: float = 0.0,
@@ -936,17 +944,38 @@ def run_beam_analysis(
     """
     2D prismatic beam FEA via PyNite (bends in X–Y plane).
 
-    * ``support_left``/``support_right``: ``pin`` | ``roller`` | ``fixed`` | ``free``.
-    * ``cantilever_left_m`` / ``cantilever_right_m``: optional overhangs beyond the supports.
-    * Loads default to kN and kN/m. If ``udl_kN_per_m`` is given it is treated as total DL+LL
-      (useful when the prompt only provides a single magnitude); otherwise DL/LL are summed.
-    * Output: envelopes, diagrams (shear/moment/deflection arrays), reactions, ULS combo = 1.2DL+1.6LL.
+    Two modes:
+
+    * **Single span** — pass ``span_m`` (and optionally ``cantilever_left_m`` /
+      ``cantilever_right_m``). ``support_left`` / ``support_right`` choose pin /
+      roller / fixed / free at each end.
+    * **Continuous beam** — pass ``spans_m=[L1, L2, ...]`` for an N-span beam
+      with N+1 supports. ``support_kinds`` (length N+1) optionally chooses each
+      support type; defaults to a pin at the leftmost support and rollers
+      everywhere else (the textbook continuous-beam idealisation).
+
+    Loads default to kN and kN/m. If ``udl_kN_per_m`` is given alone it is
+    treated as a dead load. Otherwise DL/LL are summed. ULS combo = 1.2·DL + 1.6·LL.
     """
     if not pynite_available():
         raise RuntimeError("PyNite package not found on disk.")
     from Pynite import FEModel3D  # noqa: WPS433
 
-    L = float(span_m)
+    if spans_m and len(spans_m) >= 2:
+        return _run_continuous_beam(
+            spans_m=[float(s) for s in spans_m if float(s) > 0],
+            support_kinds=support_kinds,
+            udl_kN_per_m=float(udl_kN_per_m),
+            dl_kN_per_m=float(dl_kN_per_m),
+            ll_kN_per_m=float(ll_kN_per_m),
+            point_loads=point_loads,
+            material=material,
+            beam_width_m=float(beam_width_m),
+            beam_depth_m=float(beam_depth_m),
+            n_samples=int(n_samples),
+        )
+
+    L = float(span_m if span_m > 0 else (spans_m[0] if spans_m else 0.0))
     if L <= 0:
         raise ValueError("span_m must be positive")
     cL = max(0.0, float(cantilever_left_m))
@@ -1508,6 +1537,258 @@ def run_frame_2d_analysis(
         "diagrams": {
             "moment_per_level_kNm": moment_diag,
             "shear_per_level_kN": shear_diag,
+            "x_label_m": "x along beam (m)",
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Continuous beams (N spans, N+1 supports)
+# ---------------------------------------------------------------------------
+
+
+def _run_continuous_beam(
+    *,
+    spans_m: List[float],
+    support_kinds: Optional[List[str]],
+    udl_kN_per_m: float,
+    dl_kN_per_m: float,
+    ll_kN_per_m: float,
+    point_loads: Optional[List[Dict[str, float]]],
+    material: str,
+    beam_width_m: float,
+    beam_depth_m: float,
+    n_samples: int,
+) -> Dict[str, Any]:
+    """N-span continuous beam in PyNite (one member per span, N+1 nodes)."""
+    if not pynite_available():
+        raise RuntimeError("PyNite package not found on disk.")
+    from Pynite import FEModel3D  # noqa: WPS433
+
+    if len(spans_m) < 2:
+        raise ValueError("Continuous beam requires at least 2 spans (3 supports).")
+
+    n_supports = len(spans_m) + 1
+    if support_kinds is None or len(support_kinds) != n_supports:
+        # Default: pin at first support, rollers everywhere else
+        support_kinds = ["pin"] + ["roller"] * (n_supports - 1)
+
+    # Cumulative x positions of every support
+    xs = [0.0]
+    for s in spans_m:
+        xs.append(xs[-1] + float(s))
+    L_total = xs[-1]
+
+    if material.lower().startswith("steel"):
+        e_mpa, nu, rho, mat_name = 200_000.0, 0.3, 77.0, "Steel"
+    else:
+        e_mpa, nu, rho, mat_name = 30_000.0, 0.2, 25.0, "Concrete"
+    E_knm2 = e_mpa * 1000.0
+    G_knm2 = E_knm2 / (2.0 * (1.0 + nu))
+    A, Iy, Iz, J = _beam_section_rect(beam_width_m, beam_depth_m)
+
+    m = FEModel3D()
+    m.add_material(mat_name, E_knm2, G_knm2, nu, rho)
+    m.add_section("Beam", A, Iy, Iz, J)
+
+    node_names: List[str] = []
+    for i, x in enumerate(xs):
+        nm = f"S{i + 1}"
+        m.add_node(nm, float(x), 0.0, 0.0)
+        node_names.append(nm)
+
+    # 2D-beam constraints at every node: out-of-plane DOFs locked
+    for nm in node_names:
+        m.def_support(nm, False, False, True, True, True, False)
+
+    # Apply each support kind
+    for nm, kind in zip(node_names, support_kinds):
+        k = (kind or "roller").lower()
+        if k == "pin":
+            m.def_support(nm, True, True, True, True, True, False)
+        elif k == "roller":
+            m.def_support(nm, False, True, True, True, True, False)
+        elif k == "fixed":
+            m.def_support(nm, True, True, True, True, True, True)
+        elif k == "free":
+            pass
+        else:
+            raise ValueError(f"Unknown support kind '{kind}'")
+
+    # Make sure at least one node restrains DX
+    if not any((k or "").lower() in ("pin", "fixed") for k in support_kinds):
+        m.def_support(node_names[0], True, True, True, True, True, False)
+
+    # One member per span
+    members: List[Tuple[str, str, str, float, float]] = []
+    for i in range(len(spans_m)):
+        nm = f"M{i + 1}"
+        m.add_member(nm, node_names[i], node_names[i + 1], mat_name, "Beam")
+        members.append((nm, node_names[i], node_names[i + 1], xs[i], xs[i + 1]))
+
+    case_dl, case_ll = "DL", "LL"
+    if udl_kN_per_m and dl_kN_per_m == 0.0 and ll_kN_per_m == 0.0:
+        dl_w = float(udl_kN_per_m)
+        ll_w = 0.0
+    else:
+        dl_w = float(dl_kN_per_m)
+        ll_w = float(ll_kN_per_m)
+
+    for nm, _a, _b, _xa, _xb in members:
+        if dl_w:
+            m.add_member_dist_load(nm, "Fy", -dl_w, -dl_w, case=case_dl)
+        if ll_w:
+            m.add_member_dist_load(nm, "Fy", -ll_w, -ll_w, case=case_ll)
+
+    for pl in point_loads or []:
+        mag = float(pl.get("P_kN", 0.0))
+        loc = float(pl.get("x_m", L_total / 2.0))
+        case = str(pl.get("case", "LL")).upper() or "LL"
+        for nm, _a, _b, xa, xb in members:
+            if xa - 1e-9 <= loc <= xb + 1e-9:
+                m.add_member_pt_load(nm, "Fy", -abs(mag), max(0.0, loc - xa), case=case)
+                break
+
+    m.add_load_combo("SLS", {case_dl: 1.0, case_ll: 1.0})
+    m.add_load_combo("ULS", {case_dl: 1.2, case_ll: 1.6})
+    combo = "ULS"
+    m.analyze(check_statics=False)
+
+    shear_xy: List[List[float]] = [[], []]
+    moment_xy: List[List[float]] = [[], []]
+    defl_xy: List[List[float]] = [[], []]
+    for nm, _a, _b, xa, xb in members:
+        mem = m.members[nm]
+        Lm = xb - xa
+        per_mem = max(8, int(n_samples * Lm / max(1e-6, L_total)))
+        for i in range(per_mem + 1):
+            lx = Lm * i / per_mem
+            gx = xa + lx
+            try:
+                s = float(mem.shear("Fy", lx, combo))
+            except Exception:
+                s = 0.0
+            try:
+                mm = float(mem.moment("Mz", lx, combo))
+            except Exception:
+                mm = 0.0
+            try:
+                d = float(mem.deflection("dy", lx, combo)) * 1000.0
+            except Exception:
+                d = 0.0
+            shear_xy[0].append(round(gx, 4))
+            shear_xy[1].append(round(s, 4))
+            moment_xy[0].append(round(gx, 4))
+            moment_xy[1].append(round(mm, 4))
+            defl_xy[0].append(round(gx, 4))
+            defl_xy[1].append(round(d, 4))
+
+    V_pos = max(shear_xy[1]) if shear_xy[1] else 0.0
+    V_neg = min(shear_xy[1]) if shear_xy[1] else 0.0
+    M_pos = max(moment_xy[1]) if moment_xy[1] else 0.0
+    M_neg = min(moment_xy[1]) if moment_xy[1] else 0.0
+    d_peak_mm = max((abs(v) for v in defl_xy[1]), default=0.0)
+    Vmax = max(abs(V_pos), abs(V_neg))
+    Mmax = max(abs(M_pos), abs(M_neg))
+
+    reactions: List[Dict[str, Any]] = []
+    for nm in node_names:
+        n = m.nodes[nm]
+        try:
+            rx = float(n.RxnFX.get(combo, 0.0))
+            ry = float(n.RxnFY.get(combo, 0.0))
+            mz = float(n.RxnMZ.get(combo, 0.0))
+        except Exception:
+            rx = ry = mz = 0.0
+        reactions.append(
+            {
+                "node": nm,
+                "x_m": float(m.nodes[nm].X),
+                "Rx_kN": round(rx, 3),
+                "Ry_kN": round(ry, 3),
+                "Mz_kNm": round(mz, 3),
+            }
+        )
+
+    geometry_nodes = [
+        {"id": nm, "x": float(m.nodes[nm].X), "y": 0.0, "z": 0.0} for nm in node_names
+    ]
+    geometry_members = [
+        {"id": nm, "start": a, "end": b, "kind": "beam"} for nm, a, b, _xa, _xb in members
+    ]
+
+    defl_limit_mm = (max(spans_m) * 1000.0) / 360.0
+    tone_defl = "warning" if d_peak_mm > defl_limit_mm else "good"
+
+    span_label = ", ".join(f"{s:g}" for s in spans_m)
+    sup_label = " – ".join(k.title() for k in support_kinds)
+
+    result_cards = [
+        {"label": "Spans", "value": f"{len(spans_m)}", "unit": f"({span_label} m)", "tone": "neutral"},
+        {"label": "Supports", "value": f"{n_supports}", "unit": "", "tone": "neutral"},
+        {"label": "Max |M|", "value": f"{Mmax:.2f}", "unit": "kN·m", "tone": "neutral"},
+        {"label": "Max |V|", "value": f"{Vmax:.2f}", "unit": "kN", "tone": "neutral"},
+        {"label": "Max deflection", "value": f"{d_peak_mm:.2f}", "unit": "mm", "tone": tone_defl},
+        {"label": "L/360 (max span)", "value": f"{defl_limit_mm:.2f}", "unit": "mm", "tone": "neutral"},
+    ]
+
+    assumptions = [
+        f"Continuous beam: {len(spans_m)} spans ({span_label} m), {n_supports} supports.",
+        f"Support sequence (left → right): {sup_label}.",
+        f"Section: rectangular {beam_width_m} m × {beam_depth_m} m ({mat_name}, E ≈ {e_mpa/1000:.0f} GPa).",
+        f"Loads: DL = {dl_w} kN/m, LL = {ll_w} kN/m on every span (+ {len(point_loads or [])} point loads).",
+        "Load combinations built: SLS = 1.0DL + 1.0LL, ULS = 1.2DL + 1.6LL (analysis uses ULS).",
+        "Internal-support continuity is automatic — the member runs through every node, so PyNite enforces compatibility of slope and deflection at interior supports.",
+    ]
+
+    rxn_str = ", ".join(f"{r['node']}={r['Ry_kN']:.2f} kN" for r in reactions)
+    narrative = (
+        f"**PyNite continuous beam** ({len(spans_m)} spans, {n_supports} supports) — ULS = 1.2DL + 1.6LL.\n\n"
+        f"- **Span lengths:** {span_label} m (L_total = {L_total:.2f} m).\n"
+        f"- **Envelopes:** |M| = **{Mmax:.2f} kN·m** (M⁺ {M_pos:.2f}, M⁻ {M_neg:.2f}); "
+        f"|V| = **{Vmax:.2f} kN** (V⁺ {V_pos:.2f}, V⁻ {V_neg:.2f}).\n"
+        f"- **Max deflection:** **{d_peak_mm:.2f} mm** vs L/360 (max span) = {defl_limit_mm:.2f} mm.\n"
+        f"- **Reactions:** {rxn_str}\n"
+    )
+
+    return {
+        "analysis_type": "beam_2d",
+        "engine": "PyNite",
+        "pynite_path": pynite_root_label(),
+        "load_combination": combo,
+        "geometry": {
+            "nodes": geometry_nodes,
+            "members": geometry_members,
+            "meta": {"source": "fea_continuous_beam"},
+        },
+        "result_cards": result_cards,
+        "assumptions": assumptions,
+        "summary_markdown": narrative,
+        "beams": [
+            {
+                "id": nm,
+                "floor_z_m": 0.0,
+                "M_max_kNm": round(Mmax, 3),
+                "V_max_kN": round(Vmax, 3),
+                "deflection_mm": round(d_peak_mm, 3),
+            }
+            for nm, *_ in members
+        ],
+        "columns": [],
+        "base_reactions": reactions,
+        "storey_drifts": [],
+        "p_delta_note": "Linear first-order analysis (P-Δ not applicable for isolated beams).",
+        "totals": {
+            "max_beam_moment_kNm": round(Mmax, 4),
+            "max_beam_shear_kN": round(Vmax, 4),
+            "max_beam_deflection_mm": round(d_peak_mm, 4),
+            "deflection_limit_L_over_360_mm": round(defl_limit_mm, 4),
+            "sum_base_Rz_kN": round(sum(r["Ry_kN"] for r in reactions), 4),
+        },
+        "diagrams": {
+            "shear_kN": shear_xy,
+            "moment_kNm": moment_xy,
+            "deflection_mm": defl_xy,
             "x_label_m": "x along beam (m)",
         },
     }

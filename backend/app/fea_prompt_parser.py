@@ -7,11 +7,22 @@ and returns a parameter dict ready for the matching ``run_*_analysis`` function 
 
 The parser is heuristic (regex-based), not an LLM; it is tuned for engineer-style prompts
 with explicit numbers, e.g. ``span 6 m, UDL 15 kN/m, simply supported``.
+
+When the prompt mentions a recognised location (e.g. ``in Manila``,
+``location: Cebu``), the parser also resolves wind / seismic / soil parameters
+through :mod:`app.design_criteria` and embeds them into the returned dict so the
+analysis kernel and UI can show the user the exact code basis used.
 """
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+from .design_criteria import (
+    DesignCriteriaResult,
+    detect_location_in_text,
+    resolve_design_criteria,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -57,8 +68,61 @@ def _story_count(text: str) -> int | None:
         m = re.search(pat, t)
         if m:
             n = int(m.group(1))
-            if 1 <= n <= 80:
+            if 1 <= n <= 200:
                 return n
+    return None
+
+
+def _parse_continuous_beam_spans(text: str) -> List[float] | None:
+    """Detect explicit multi-span continuous-beam descriptions.
+
+    Recognised forms:
+      * 'spans (4, 5, 6 m)' or 'spans of 4, 5, 6 m' or 'spans=4,5,6m'
+      * 'continuous beam with 3 supports'  → 2 equal spans
+      * 'continuous beam, 3 spans of 6 m'  → 3 equal spans of 6 m
+      * '4-span beam, span 6 m'            → 4 equal spans of 6 m
+    """
+    t = text.lower()
+
+    m = re.search(r"\bspans?\s*(?:=|:|of|are)?\s*\(([^)]+)\)", t)
+    if m:
+        vals = _floats_in_text(m.group(1))
+        if len(vals) >= 2:
+            return vals
+
+    m = re.search(r"\bspans?\s*(?:of|=|:|are)?\s*([\d.,;\s×x]+?)\s*m\b", t)
+    if m and ("," in m.group(1) or ";" in m.group(1) or "x" in m.group(1) or "×" in m.group(1)):
+        vals = _floats_in_text(m.group(1))
+        if len(vals) >= 2:
+            return vals
+
+    m = re.search(
+        r"(\d+)\s*[-]?\s*(?:spans?|bays?)\s*(?:of|with)?\s*(\d+(?:\.\d+)?)\s*m",
+        t,
+    )
+    if m:
+        n = int(m.group(1))
+        L = float(m.group(2))
+        if 2 <= n <= 12 and L > 0:
+            return [L] * n
+
+    m = re.search(
+        r"continuous\s+beam[^\n.]*?(\d+)\s*supports?",
+        t,
+    )
+    if m:
+        s = int(m.group(1))
+        if 3 <= s <= 12:
+            single = _parse_span_single(text) or 6.0
+            return [single] * (s - 1)
+
+    m = re.search(r"continuous\s+beam[^\n.]*?(\d+)\s*spans?", t)
+    if m:
+        s = int(m.group(1))
+        if 2 <= s <= 12:
+            single = _parse_span_single(text) or 6.0
+            return [single] * s
+
     return None
 
 
@@ -284,8 +348,9 @@ def parse_structural_prompt(text: str) -> Tuple[Dict[str, Any], List[str]]:
     """Return ``(params, notes)``.
 
     ``params`` always contains ``analysis_type`` ∈ ``{"beam_2d","frame_2d","building_3d"}``.
-    The remaining keys match the corresponding ``run_*_analysis`` signature in
-    :mod:`app.pynite_fea`.
+    A separate key ``design_criteria_payload`` carries the wind / seismic / soil
+    table resolved from the user's location (or a clearly-tagged moderate
+    fallback when no location was given).
     """
     notes: List[str] = []
     raw = text.strip()
@@ -295,10 +360,56 @@ def parse_structural_prompt(text: str) -> Tuple[Dict[str, Any], List[str]]:
     analysis_type = _detect_analysis_type(raw)
 
     if analysis_type == "beam_2d":
-        return _parse_beam(raw, notes), notes
-    if analysis_type == "frame_2d":
-        return _parse_frame_2d(raw, notes), notes
-    return _parse_building_3d(raw, notes), notes
+        params = _parse_beam(raw, notes)
+    elif analysis_type == "frame_2d":
+        params = _parse_frame_2d(raw, notes)
+    else:
+        params = _parse_building_3d(raw, notes)
+
+    # Design-criteria resolution (location → wind / seismic / soil)
+    location = detect_location_in_text(raw)
+    user_wind = _wind_kpa(raw)
+    user_zone = None
+    mz = re.search(r"(?:seismic\s+)?zone\s+(\d)\b", raw.lower())
+    if mz:
+        user_zone = int(mz.group(1))
+    user_sbc = _sbc_kpa(raw)
+
+    user_dl_kpa, user_ll_kpa = _parse_dl_ll_kpa(raw)
+
+    dc = resolve_design_criteria(
+        location=location,
+        user_dl_kpa=user_dl_kpa,
+        user_ll_kpa=user_ll_kpa,
+        user_wind_kpa=user_wind,
+        user_seismic_zone=user_zone,
+        user_sbc_kpa=user_sbc,
+    )
+    notes.extend(dc.notes)
+    params["design_criteria_payload"] = dc.to_dict()
+
+    # If the building branch did not get explicit wind/seismic/sbc but the
+    # location resolver supplied them, back-fill the analysis inputs so the
+    # solve actually uses them (transparent to the user — assumptions are
+    # listed in the design-criteria notes).
+    if analysis_type == "building_3d":
+        if not params.get("wind_pressure_kpa"):
+            params["wind_pressure_kpa"] = float(dc.wind.pressure_kpa)
+            notes.append(
+                f"Wind pressure auto-applied from design criteria: q = "
+                f"{dc.wind.pressure_kpa} kPa (V = {dc.wind.design_wind_speed_mps} m/s)."
+            )
+        if params.get("sbc_kpa") is None:
+            params["sbc_kpa"] = float(dc.soil.sbc_kpa)
+        # Seismic equivalent base shear → roof-node lateral push approximation
+        if not params.get("lateral_roof_fraction_of_gravity"):
+            params["lateral_roof_fraction_of_gravity"] = float(dc.seismic.base_shear_coeff)
+            notes.append(
+                f"Seismic lateral push set to {dc.seismic.base_shear_coeff:.1%} of gravity "
+                f"(zone {dc.seismic.zone}, PGA ≈ {dc.seismic.pga_g} g)."
+            )
+
+    return params, notes
 
 
 # ---------------------------------------------------------------------------
@@ -307,6 +418,11 @@ def parse_structural_prompt(text: str) -> Tuple[Dict[str, Any], List[str]]:
 
 
 def _parse_beam(text: str, notes: List[str]) -> Dict[str, Any]:
+    cont_spans = _parse_continuous_beam_spans(text)
+
+    if cont_spans and len(cont_spans) >= 2:
+        return _parse_continuous(text, cont_spans, notes)
+
     span = _parse_span_single(text)
     if not span:
         raise ValueError("Could not find beam span. Try 'simply supported beam, span 6 m, UDL 15 kN/m'.")
@@ -314,7 +430,6 @@ def _parse_beam(text: str, notes: List[str]) -> Dict[str, Any]:
     sup_l, sup_r = _parse_supports(text)
     cL, cR = _parse_overhangs(text)
 
-    dl_mm = ll_mm = None
     dl, ll = _parse_dl_ll_kNm(text)
     udl = _parse_udl_total(text)
     if udl and dl is None and ll is None:
@@ -351,6 +466,58 @@ def _parse_beam(text: str, notes: List[str]) -> Dict[str, Any]:
     if pts:
         notes.append(f"Detected {len(pts)} point load(s) on the beam: " + "; ".join(f"{int(p['P_kN'])} kN @ {p['x_m']} m" for p in pts))
     notes.append(f"Beam supports: {sup_l} (left) – {sup_r} (right)" + (f" · overhangs L={cL}m, R={cR}m" if (cL or cR) else ""))
+    return params
+
+
+def _parse_continuous(text: str, spans: List[float], notes: List[str]) -> Dict[str, Any]:
+    """Build params for the multi-span continuous-beam solver."""
+    n_supports = len(spans) + 1
+
+    dl, ll = _parse_dl_ll_kNm(text)
+    udl = _parse_udl_total(text)
+    if udl and dl is None and ll is None:
+        dl = udl
+        notes.append(f"Interpreted UDL {udl} kN/m as dead load on every span.")
+    if dl is None and ll is None:
+        dl = 10.0
+        ll = 5.0
+        notes.append("No explicit loads on continuous beam; defaulting to DL = 10 kN/m, LL = 5 kN/m.")
+    dl = float(dl or 0.0)
+    ll = float(ll or 0.0)
+
+    rc, steel, material_detected = _material(text)
+    if not material_detected:
+        steel = True
+        notes.append("Material not specified; assuming structural steel (E ≈ 200 GPa).")
+
+    # Support kinds: pin at first, rollers elsewhere unless user calls out fixed ends
+    sup_kinds = ["pin"] + ["roller"] * (n_supports - 1)
+    t = text.lower()
+    if "fixed end" in t or "fixed-fixed" in t or "fully fixed" in t:
+        sup_kinds[0] = "fixed"
+        sup_kinds[-1] = "fixed"
+    elif "left fixed" in t:
+        sup_kinds[0] = "fixed"
+    elif "right fixed" in t:
+        sup_kinds[-1] = "fixed"
+
+    pts = _parse_point_loads(text, sum(spans))
+
+    params: Dict[str, Any] = {
+        "analysis_type": "beam_2d",
+        "spans_m": spans,
+        "support_kinds": sup_kinds,
+        "dl_kN_per_m": dl,
+        "ll_kN_per_m": ll,
+        "point_loads": pts,
+        "material": "steel" if steel else "concrete",
+        "beam_width_m": 0.25 if steel else 0.30,
+        "beam_depth_m": 0.45 if steel else 0.60,
+    }
+    notes.append(
+        f"Continuous beam: {len(spans)} spans ({', '.join(str(round(s, 2)) for s in spans)} m), "
+        f"{n_supports} supports → {' – '.join(s.title() for s in sup_kinds)}."
+    )
     return params
 
 

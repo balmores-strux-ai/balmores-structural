@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import hmac
 import json
 import os
+import time
 import uuid
-from typing import Iterator
+from typing import AsyncIterator, Iterator
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -90,6 +92,33 @@ app.add_middleware(MaxBodyMiddleware)
 app.add_middleware(ProcessTimeMiddleware)
 app.add_middleware(AccessLogMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=800)
+
+
+@app.on_event("startup")
+def _prewarm() -> None:
+    """Warm imports + a tiny PyNite solve so the first user request is FAST.
+
+    PyNite eagerly imports matplotlib & prettytable at module load (≈1.5–3 s
+    on cold workers), and scipy.sparse pulls a large compiled extension. Doing
+    a 1×1×1 trivial solve here means every real request — including the very
+    first — pays only the analysis time, never the import cost.
+    """
+    try:
+        from .pynite_fea import run_parametric_frame_analysis  # eager import
+
+        run_parametric_frame_analysis(
+            bays_x=1,
+            bays_y=1,
+            stories=1,
+            span_x_m=4.0,
+            span_y_m=4.0,
+            bottom_story_height_m=3.0,
+            story_height_m=3.0,
+            floor_load_kpa=2.0,
+        )
+    except Exception:
+        # Pre-warm is best-effort — never block startup if it fails on Render.
+        pass
 
 
 @app.exception_handler(HTTPException)
@@ -236,13 +265,7 @@ def fea_analyze(req: FeaBuildingRequest) -> FeaBuildingResponse:
     )
 
 
-@app.post(
-    "/fea/analyze-prompt",
-    response_model=FeaPromptResponse,
-    dependencies=[Depends(require_api_key_if_configured)],
-)
-def fea_analyze_prompt(req: FeaPromptRequest) -> FeaPromptResponse:
-    """Parse a natural-language structural brief (2D beam, 2D frame, or 3D building) and solve in PyNite."""
+def _run_prompt_pipeline(req: FeaPromptRequest) -> FeaPromptResponse:
     from .fea_prompt_parser import parse_structural_prompt
     from .pynite_fea import (
         run_beam_analysis,
@@ -257,7 +280,9 @@ def fea_analyze_prompt(req: FeaPromptRequest) -> FeaPromptResponse:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
     atype = params.pop("analysis_type", "building_3d")
+    design_criteria = params.pop("design_criteria_payload", {})
 
+    t0 = time.perf_counter()
     try:
         if atype == "beam_2d":
             input_summary = _summary_beam(params)
@@ -272,6 +297,7 @@ def fea_analyze_prompt(req: FeaPromptRequest) -> FeaPromptResponse:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PyNite analysis failed: {e}") from e
+    elapsed_ms = int((time.perf_counter() - t0) * 1000)
 
     parsed_model = {k: v for k, v in params.items() if _is_jsonable(v)}
     parsed_model["analysis_type"] = atype
@@ -294,7 +320,149 @@ def fea_analyze_prompt(req: FeaPromptRequest) -> FeaPromptResponse:
         p_delta_note=raw.get("p_delta_note", ""),
         totals=raw.get("totals", {}),
         diagrams=raw.get("diagrams", {}),
+        design_criteria=design_criteria,
+        elapsed_ms=elapsed_ms,
         pynite_path=raw.get("pynite_path", ""),
+    )
+
+
+@app.post(
+    "/fea/analyze-prompt",
+    response_model=FeaPromptResponse,
+    dependencies=[Depends(require_api_key_if_configured)],
+)
+def fea_analyze_prompt(req: FeaPromptRequest) -> FeaPromptResponse:
+    """Parse a natural-language structural brief (2D beam, 2D frame, or 3D building) and solve in PyNite."""
+    return _run_prompt_pipeline(req)
+
+
+# ---------------------------------------------------------------------------
+# Streaming endpoint: STAAD-style live progress while solving
+# ---------------------------------------------------------------------------
+
+
+def _estimate_solve_seconds(message: str) -> float:
+    """Heuristic: estimate kernel runtime so the progress bar feels honest."""
+    from .fea_prompt_parser import _detect_analysis_type, _story_count
+    atype = _detect_analysis_type(message)
+    if atype == "beam_2d":
+        return 1.0
+    if atype == "frame_2d":
+        return 2.5
+    n = _story_count(message) or 6
+    # Empirical fit to local benchmark: ~0.45 s/storey for 5x5 bay grid.
+    return max(2.0, min(180.0, 1.5 + 0.45 * n))
+
+
+async def _ndjson_progress(req: FeaPromptRequest) -> AsyncIterator[str]:
+    """NDJSON stream: progress events while the solve runs in a worker thread."""
+    estimated = _estimate_solve_seconds(req.message)
+    started_at = time.perf_counter()
+
+    yield json.dumps(
+        {
+            "type": "stage",
+            "stage": "parse",
+            "label": "Parsing your description",
+            "estimated_total_seconds": round(estimated, 1),
+        }
+    ) + "\n"
+    await asyncio.sleep(0.05)
+
+    yield json.dumps(
+        {
+            "type": "stage",
+            "stage": "build_model",
+            "label": "Building nodes, members, sections, supports",
+        }
+    ) + "\n"
+
+    loop = asyncio.get_running_loop()
+    solver_task = loop.run_in_executor(None, _run_prompt_pipeline, req)
+
+    stages = [
+        (0.10, "build_model", "Assembling stiffness blocks"),
+        (0.25, "loads", "Applying gravity, wind and seismic load cases"),
+        (0.40, "factor", "Sparse Cholesky factorisation of K"),
+        (0.55, "solve", "Solving K·u = F (load combinations)"),
+        (0.75, "pdelta", "P-Δ second-order iteration"),
+        (0.88, "post", "Extracting member envelopes and storey drift"),
+        (0.96, "package", "Formatting tables and design criteria"),
+    ]
+    next_stage_idx = 0
+    poll_period = 0.4
+
+    while not solver_task.done():
+        await asyncio.sleep(poll_period)
+        elapsed = time.perf_counter() - started_at
+        progress = min(0.95, elapsed / max(estimated, 0.1))
+
+        while next_stage_idx < len(stages) and progress >= stages[next_stage_idx][0]:
+            _, sname, slabel = stages[next_stage_idx]
+            yield json.dumps(
+                {
+                    "type": "stage",
+                    "stage": sname,
+                    "label": slabel,
+                    "progress": round(progress, 3),
+                    "elapsed_seconds": round(elapsed, 1),
+                }
+            ) + "\n"
+            next_stage_idx += 1
+
+        yield json.dumps(
+            {
+                "type": "tick",
+                "progress": round(progress, 3),
+                "elapsed_seconds": round(elapsed, 1),
+                "estimated_total_seconds": round(estimated, 1),
+            }
+        ) + "\n"
+
+    try:
+        result = await solver_task
+    except HTTPException as he:
+        yield json.dumps(
+            {
+                "type": "error",
+                "status": he.status_code,
+                "message": he.detail if isinstance(he.detail, str) else str(he.detail),
+            }
+        ) + "\n"
+        return
+    except Exception as e:  # noqa: BLE001
+        yield json.dumps({"type": "error", "status": 500, "message": str(e)}) + "\n"
+        return
+
+    yield json.dumps(
+        {
+            "type": "stage",
+            "stage": "done",
+            "label": "Solve complete",
+            "progress": 1.0,
+            "elapsed_seconds": round(time.perf_counter() - started_at, 1),
+        }
+    ) + "\n"
+    yield json.dumps({"type": "complete", "data": result.model_dump(mode="json")}) + "\n"
+
+
+@app.post(
+    "/fea/analyze-prompt/stream",
+    dependencies=[Depends(require_api_key_if_configured)],
+)
+async def fea_analyze_prompt_stream(req: FeaPromptRequest) -> StreamingResponse:
+    """Same analysis as ``/fea/analyze-prompt`` but yields NDJSON progress events.
+
+    Each line is one of:
+      * ``{"type":"stage", ...}``     — solver stage transitions
+      * ``{"type":"tick",  ...}``     — periodic progress percent + elapsed time
+      * ``{"type":"complete","data":{...}}`` — final FeaPromptResponse payload
+      * ``{"type":"error", ...}``     — fatal error
+    """
+    return StreamingResponse(
+        _ndjson_progress(req),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 

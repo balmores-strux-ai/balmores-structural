@@ -289,6 +289,32 @@ export type FeaDiagrams = {
   x_label_m?: string;
 };
 
+/** Location-aware design criteria resolved by the backend. */
+export type FeaDesignCriteria = {
+  location_input?: string;
+  matched_location?: string | null;
+  country?: string;
+  is_assumed?: boolean;
+  loads?: { dl_kpa: number; ll_kpa: number; snow_kpa: number; notes?: string };
+  wind?: {
+    design_wind_speed_mps: number;
+    pressure_kpa: number;
+    exposure_category: string;
+    importance_factor: number;
+    code_basis: string;
+  };
+  seismic?: {
+    zone: number;
+    pga_g: number;
+    base_shear_coeff: number;
+    site_class: string;
+    code_basis: string;
+  };
+  soil?: { sbc_kpa: number; description: string; code_basis: string };
+  combos?: { uls: string[]; sls: string[]; governing: string };
+  notes?: string[];
+};
+
 export type FeaPromptResponse = {
   analysis_type: "beam_2d" | "frame_2d" | "building_3d";
   input_summary: string;
@@ -329,6 +355,8 @@ export type FeaPromptResponse = {
   p_delta_note: string;
   totals: Record<string, number | null | undefined>;
   diagrams?: FeaDiagrams;
+  design_criteria?: FeaDesignCriteria;
+  elapsed_ms?: number;
   pynite_path?: string;
 };
 
@@ -350,6 +378,95 @@ export async function analyzeFeaPrompt(
   );
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as FeaPromptResponse;
+}
+
+/** Live-progress event emitted by the streaming endpoint. */
+export type FeaProgressEvent =
+  | {
+      type: "stage";
+      stage: string;
+      label: string;
+      progress?: number;
+      elapsed_seconds?: number;
+      estimated_total_seconds?: number;
+    }
+  | {
+      type: "tick";
+      progress: number;
+      elapsed_seconds: number;
+      estimated_total_seconds?: number;
+    }
+  | { type: "complete"; data: FeaPromptResponse }
+  | { type: "error"; status?: number; message: string };
+
+/**
+ * Stream the analysis with STAAD-style progress events. Falls back to the
+ * non-streaming endpoint if the server doesn't support streaming.
+ */
+export async function analyzeFeaPromptStream(
+  message: string,
+  opts: {
+    run_p_delta?: boolean;
+    signal?: AbortSignal;
+    onProgress?: (ev: FeaProgressEvent) => void;
+  },
+): Promise<FeaPromptResponse> {
+  const body = JSON.stringify({
+    message,
+    run_p_delta: opts.run_p_delta !== false,
+  });
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/fea/analyze-prompt/stream`, {
+      method: "POST",
+      headers: jsonHeaders(),
+      body,
+      signal: opts.signal,
+    });
+  } catch (e) {
+    return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
+  }
+
+  if (!res.ok || !res.body) {
+    if (res.status === 404 || res.status === 405) {
+      return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
+    }
+    throw new Error(await parseError(res));
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let complete: FeaPromptResponse | null = null;
+  let lastError: string | null = null;
+
+  const consume = (line: string) => {
+    const t = line.trim();
+    if (!t) return;
+    let ev: FeaProgressEvent;
+    try {
+      ev = JSON.parse(t) as FeaProgressEvent;
+    } catch {
+      return;
+    }
+    opts.onProgress?.(ev);
+    if (ev.type === "complete") complete = ev.data;
+    if (ev.type === "error") lastError = ev.message;
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n");
+    buffer = parts.pop() ?? "";
+    for (const line of parts) consume(line);
+  }
+  if (buffer.trim()) consume(buffer);
+  if (lastError) throw new Error(lastError);
+  if (!complete) throw new Error("Stream ended without complete payload");
+  return complete;
 }
 
 export async function downloadEtabsExport(projectId: string, format: "txt" | "json"): Promise<void> {

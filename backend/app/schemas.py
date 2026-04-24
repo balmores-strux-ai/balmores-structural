@@ -191,4 +191,12 @@ class FeaPromptResponse(BaseModel):
         default_factory=dict,
         description="Optional diagram arrays (shear, moment, deflection) for 2D beam / frame models.",
     )
+    design_criteria: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Design criteria resolved from the prompt: location-aware wind, seismic, soil bearing, load combinations, and source codes (NSCP, ASCE, EC, etc.).",
+    )
+    elapsed_ms: int = Field(
+        default=0,
+        description="Wall-clock time spent inside the PyNite kernel (post-parsing).",
+    )
     pynite_path: str = ""
