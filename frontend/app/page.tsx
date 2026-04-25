@@ -7,7 +7,11 @@ import BeamDiagrams, { type DiagramVisibility } from "@/components/BeamDiagrams"
 import BuildingSupportLoadPanel from "@/components/BuildingSupportLoadPanel";
 import DesignCriteriaCard from "@/components/DesignCriteriaCard";
 import ProfileBadges from "@/components/ProfileBadges";
+import PromptInputPreview from "@/components/PromptInputPreview";
+import SteelSectionAdvisor from "@/components/SteelSectionAdvisor";
 import StructureModel2D from "@/components/StructureModel2D";
+import StructureModel3D from "@/components/StructureModel3D";
+import { downloadFeaEtabsExports } from "@/lib/exportFeaEtabs";
 import { downloadAndTryOpenDocx, feaResultToDocxBlob } from "@/lib/exportFeaDocx";
 import {
   analyzeFeaPromptStream,
@@ -17,21 +21,28 @@ import {
 
 const PLACEHOLDER = `Examples you can paste:
 
-• Simply supported steel beam, span 8 m, UDL 15 kN/m DL, 10 kN/m LL, 40 kN point load at midspan.
-• Continuous concrete beam, 4 spans of 6 m, DL 12 kN/m, LL 8 kN/m.
-• 2D RC moment frame, 3 bays of 6 m, 4 storeys at 3.5 m, DL 20 kN/m, LL 8 kN/m, 25 kN lateral per floor.
-• 30-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.
+- Simply supported steel beam, span 8 m, UDL 15 kN/m DL, 10 kN/m LL, 40 kN point load at midspan.
+- Continuous concrete beam, 4 spans of 6 m, DL 12 kN/m, LL 8 kN/m.
+- 2D RC moment frame, 3 bays of 6 m, 4 storeys at 3.5 m, DL 20 kN/m, LL 8 kN/m, 25 kN lateral per floor.
+- 30-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.
    (Wind, seismic zone and SBC are auto-resolved from the location.)`;
 
-const WELCOME_ASSISTANT = `**Balmores Structural — PyNite assistant**
+const TYPING_PREVIEWS = [
+  "30-storey RC tower in Cebu, X-spans (6, 8, 12, 8, 6m), Y-spans (5, 9, 9, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.",
+  "2D steel moment frame, 5 bays of 7 m, 6 storeys at 3.6 m, DL 18 kN/m, LL 10 kN/m on every beam, 35 kN wind per floor.",
+  "Continuous concrete beam, spans (6, 8, 10, 8, 6 m), 6 supports. DL 22 kN/m, LL 18 kN/m. Left and right ends fixed.",
+  "25-storey structural steel tower in Makati, X-spans (8, 10, 8m), Y-spans (6, 6m), 3.8m storey heights, 3 kPa DL, 4 kPa LL.",
+];
+
+const WELCOME_ASSISTANT = `**Balmores Structural - PyNite assistant**
 
 I am powered by the **open-source PyNite** finite-element library, integrated directly into this app. Tell me about a structure in plain English and I will build, analyse, and report it. I support:
 
-1. **2D beams** — simply supported, fixed-fixed, cantilevers, **continuous beams with 2 / 3 / 4 / 5 supports**.
-2. **2D moment frames** — bay spans, storey heights, gravity + lateral.
-3. **3D buildings** — irregular X / Y spans, up to **60 storeys**, P-Δ, drift, base reactions.
+1. **2D beams** - simply supported, fixed-fixed, cantilevers, **continuous beams with 2 / 3 / 4 / 5 supports**.
+2. **2D moment frames** - bay spans, storey heights, gravity + lateral.
+3. **3D buildings** - irregular X / Y spans, up to **60 storeys**, P-Delta, drift, base reactions.
 
-**Type a city in the Philippines** (e.g. *"in Manila"*, *"in Cebu"*, *"in Quezon City"*, *"in Davao"*) and I will look up the local **wind speed**, **seismic zone**, **PGA**, **SBC** and **NSCP 2015** context — every assumption is shown in the design-criteria table on the right.
+**Type a city in the Philippines** (e.g. *"in Manila"*, *"in Cebu"*, *"in Quezon City"*, *"in Davao"*) and I will look up the local **wind speed**, **seismic zone**, **PGA**, **SBC** and **NSCP 2015** context - every assumption is shown in the design-criteria table on the right.
 
 Tip: include explicit numbers and units (e.g. \`UDL 15 kN/m\`, \`X-spans (6, 8, 6m)\`).`;
 
@@ -39,101 +50,107 @@ type QuickPrompt = {
   variant: "beam" | "frame" | "building";
   label: string;
   prompt: string;
+  sampleKey: string;
 };
 
 const QUICK_PROMPTS: QuickPrompt[] = [
-  // ── 2D beams ──────────────────────────────────────────────────────────────
   {
     variant: "beam",
-    label: "Beam · simply supported, point load",
+    label: "Beam - simply supported, point load",
+    sampleKey: "beam-simple-point",
     prompt:
       "Simply supported steel beam, span 8 m, UDL 12 kN/m DL and 8 kN/m LL, with a 40 kN point load at midspan. Section 250 mm wide by 450 mm deep.",
   },
   {
     variant: "beam",
-    label: "Beam · fixed cantilever (4 m)",
+    label: "Beam - fixed cantilever (4 m)",
+    sampleKey: "beam-fixed-cantilever",
     prompt:
       "Concrete cantilever beam, fixed at the left, span 4 m, 25 kN point load at 4 m from the left, DL 8 kN/m, LL 4 kN/m.",
   },
   {
     variant: "beam",
-    label: "Continuous · 2 spans of 6 m",
+    label: "Continuous - 2 spans of 6 m",
+    sampleKey: "cont-2x6",
     prompt:
-      "Continuous concrete beam, 2 spans of 6 m (3 supports), DL 15 kN/m, LL 10 kN/m. Beam 300 × 600 mm.",
+      "Continuous concrete beam, 2 spans of 6 m (3 supports), DL 15 kN/m, LL 10 kN/m. Beam 300 x 600 mm.",
   },
   {
     variant: "beam",
-    label: "Continuous · 3 spans (5, 6, 5 m)",
+    label: "Continuous - 3 spans (5, 6, 5 m)",
+    sampleKey: "cont-5-6-5",
     prompt:
       "Continuous steel beam with 3 spans of 5, 6, 5 m (4 supports). DL 18 kN/m, LL 12 kN/m, 50 kN point load at 8.5 m from the left.",
   },
   {
     variant: "beam",
-    label: "Continuous · 4 spans of 7 m",
+    label: "Continuous - 4 spans of 7 m",
+    sampleKey: "cont-4x7",
     prompt:
-      "Continuous reinforced-concrete beam, 4 spans of 7 m (5 supports), DL 20 kN/m, LL 15 kN/m. Beam 350 × 700 mm.",
+      "Continuous reinforced-concrete beam, 4 spans of 7 m (5 supports), DL 20 kN/m, LL 15 kN/m. Beam 350 x 700 mm.",
   },
   {
     variant: "beam",
-    label: "Continuous · 5 spans (6, 8, 10, 8, 6 m)",
+    label: "Continuous - 5 spans (6, 8, 10, 8, 6 m)",
+    sampleKey: "cont-6-8-10-8-6",
     prompt:
-      "Continuous concrete beam, spans (6, 8, 10, 8, 6 m), 6 supports. DL 22 kN/m, LL 18 kN/m. Beam 400 × 800 mm. Left and right ends fixed.",
+      "Continuous concrete beam, spans (6, 8, 10, 8, 6 m), 6 supports. DL 22 kN/m, LL 18 kN/m. Beam 400 x 800 mm. Left and right ends fixed.",
   },
 
-  // ── 2D moment frames ──────────────────────────────────────────────────────
   {
     variant: "frame",
-    label: "Frame · 3 bays × 4 storeys (RC)",
+    label: "Frame - 3 bays x 4 storeys (RC)",
+    sampleKey: "frame-3bay-4sty-rc",
     prompt:
       "2D RC moment frame, 3 bays of 6 m, 4 storeys at 3.5 m, DL 20 kN/m LL 8 kN/m on each beam, 25 kN lateral per floor.",
   },
   {
     variant: "frame",
-    label: "Frame · 5 bays × 6 storeys (steel)",
+    label: "Frame - 5 bays x 6 storeys (steel)",
+    sampleKey: "frame-5bay-6sty-steel",
     prompt:
       "2D structural steel moment frame, 5 bays of 7 m, 6 storeys at 3.6 m, DL 18 kN/m, LL 10 kN/m on every beam, 35 kN wind per floor.",
   },
   {
     variant: "frame",
-    label: "Frame · single-bay portal × 2 storeys",
+    label: "Frame - single-bay portal x 2 storeys",
+    sampleKey: "frame-portal-2sty",
     prompt:
       "2D RC portal frame, 1 bay of 8 m, 2 storeys at 4 m, DL 25 kN/m, LL 12 kN/m, 40 kN lateral per floor.",
   },
   {
     variant: "frame",
-    label: "Frame · industrial 4 bays × 1 storey",
+    label: "Frame - industrial 4 bays x 1 storey",
+    sampleKey: "frame-industrial-4bay",
     prompt:
       "2D steel moment frame, 4 bays of 9 m, single storey 6 m high, DL 8 kN/m, LL 6 kN/m, 60 kN wind per floor.",
   },
 
-  // ── 3D buildings ──────────────────────────────────────────────────────────
   {
     variant: "building",
-    label: "Building · 6-storey RC, Manila",
+    label: "Building - 6-storey RC, Manila",
+    sampleKey: "building-6-manila",
     prompt:
       "6-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.",
   },
   {
     variant: "building",
-    label: "Building · 30-storey RC, Cebu",
+    label: "Building - 30-storey RC, Cebu",
+    sampleKey: "building-30-cebu",
     prompt:
       "30-storey RC tower in Cebu, X-spans (6, 8, 12, 8, 6m), Y-spans (5, 9, 9, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.",
   },
   {
     variant: "building",
-    label: "Building · 60-storey RC, Quezon City (max)",
-    prompt:
-      "60-storey RC tower in Quezon City, X-spans (6, 8, 12, 8, 6m), Y-spans (5, 9, 9, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.",
-  },
-  {
-    variant: "building",
-    label: "Building · 25-storey steel, Makati",
+    label: "Building - 25-storey steel, Makati",
+    sampleKey: "building-25-makati",
     prompt:
       "25-storey structural steel tower in Makati, X-spans (8, 10, 8m), Y-spans (6, 6m), 3.8m storey heights, 3 kPa DL, 4 kPa LL.",
   },
   {
     variant: "building",
-    label: "Building · 12-storey RC, Iloilo",
+    label: "Building - 12-storey RC, Iloilo",
+    sampleKey: "building-12-iloilo",
     prompt:
       "12-storey RC building in Iloilo, X-spans (7, 7, 7m), Y-spans (6, 6m), 3.6m storey heights, 4 kPa DL, 3 kPa LL, 180 mm slab.",
   },
@@ -148,7 +165,7 @@ function analysisLabel(t?: string): string {
 const APP_VERSION =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_VERSION
     ? process.env.NEXT_PUBLIC_APP_VERSION
-    : "0.5.0";
+    : "0.6.0";
 
 type ChatMsg =
   | { id: string; role: "user"; content: string }
@@ -159,9 +176,9 @@ function uid() {
 }
 
 function fmtNum(value: unknown, decimals = 2): string {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "-";
   const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n)) return "—";
+  if (!Number.isFinite(n)) return "-";
   return n.toLocaleString(undefined, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
@@ -170,14 +187,20 @@ function fmtNum(value: unknown, decimals = 2): string {
 
 function fmtDriftRatio(r: unknown): string {
   const n = typeof r === "number" ? r : Number(r);
-  if (!Number.isFinite(n) || n <= 0) return "—";
+  if (!Number.isFinite(n) || n <= 0) return "-";
   return `1/${Math.round(1 / n).toLocaleString()}`;
 }
 
-async function loadDemo60Storey(): Promise<FeaPromptResponse | null> {
+type SampleBundle = {
+  version: number;
+  defaultKey: string;
+  samples: Record<string, FeaPromptResponse>;
+};
+
+async function loadSampleBundle(): Promise<SampleBundle | null> {
   try {
-    const r = await fetch("/demo-fea-60-qc.json", { cache: "force-cache" });
-    return r.ok ? ((await r.json()) as FeaPromptResponse) : null;
+    const r = await fetch("/sample-results.json", { cache: "force-cache" });
+    return r.ok ? ((await r.json()) as SampleBundle) : null;
   } catch {
     return null;
   }
@@ -193,8 +216,10 @@ export default function HomePage() {
     { id: "welcome", role: "assistant", content: WELCOME_ASSISTANT },
   ]);
   const [draft, setDraft] = useState("");
+  const [typedPlaceholder, setTypedPlaceholder] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FeaPromptResponse | null>(null);
+  const [sampleBundle, setSampleBundle] = useState<SampleBundle | null>(null);
   const [pDelta, setPDelta] = useState(false);
   const [progressEvent, setProgressEvent] = useState<FeaProgressEvent | null>(null);
   const [demoMode, setDemoMode] = useState(true);
@@ -213,10 +238,11 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    loadDemo60Storey()
-      .then((data) => {
-        if (!cancelled && data) {
-          setResult(data);
+    loadSampleBundle()
+      .then((bundle) => {
+        if (!cancelled && bundle) {
+          setSampleBundle(bundle);
+          setResult(bundle.samples[bundle.defaultKey] ?? null);
           setDemoMode(true);
         }
       })
@@ -230,6 +256,26 @@ export default function HomePage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading]);
 
+  useEffect(() => {
+    let idx = 0;
+    let pos = 0;
+    let pause = 0;
+    const timer = window.setInterval(() => {
+      const phrase = TYPING_PREVIEWS[idx % TYPING_PREVIEWS.length];
+      if (pos <= phrase.length) {
+        setTypedPlaceholder(phrase.slice(0, pos));
+        pos += 2;
+      } else if (pause < 10) {
+        pause += 1;
+      } else {
+        idx += 1;
+        pos = 0;
+        pause = 0;
+      }
+    }, 55);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const runAnalysis = useCallback(async () => {
     const text = draft.trim();
     if (!text || loading) return;
@@ -240,8 +286,10 @@ export default function HomePage() {
     setDraft("");
     try {
       if (shouldUseInstantDemo(text)) {
-        const demo = await loadDemo60Storey();
+        const bundle = sampleBundle ?? (await loadSampleBundle());
+        const demo = bundle?.samples[bundle.defaultKey];
         if (demo) {
+          if (bundle) setSampleBundle(bundle);
           setResult(demo);
           setDemoMode(true);
           setMessages((prev) => [
@@ -250,7 +298,7 @@ export default function HomePage() {
               id: uid(),
               role: "assistant",
               content:
-                "**Instant 60-storey showcase loaded**\n\nFor fast UX, the 60-storey maximum example opens from a precomputed PyNite result: **60-storey RC tower in Quezon City, Philippines**. This avoids Render stream timeouts while still showing the full output tables, drift, reactions, beams, columns, design criteria, and Word export report.\n\nPhilippines-only location mode is active for this release, so non-Philippines cities are deferred while the NSCP dataset is polished.",
+                "**Instant verified showcase loaded**\n\nThe 60-storey stress-test is intentionally not used as the default because its preliminary bare-frame drift is not appropriate for client presentation without a core/wall system. For a polished and faster first impression, I loaded the precomputed **30-storey RC tower in Cebu, Philippines** sample with full tables, drift, reactions, beams, columns, design criteria, handcalcs, ETABS export, and Word report.\n\nPhilippines-only location mode is active for this release while the NSCP dataset is polished.",
             },
           ]);
           return;
@@ -291,7 +339,7 @@ export default function HomePage() {
       setLoading(false);
       setProgressEvent(null);
     }
-  }, [draft, loading, pDelta]);
+  }, [draft, loading, pDelta, sampleBundle]);
 
   const has2DDiagrams =
     !!result?.diagrams &&
@@ -325,7 +373,7 @@ export default function HomePage() {
           <div>
             <div className="brand-title">BALMORES STRUCTURAL</div>
             <div className="small-muted">
-              Natural-language FEA · PyNite kernel · 2D beams · continuous beams · 2D frames · 3D buildings
+              Natural-language FEA - PyNite kernel - 2D beams - continuous beams - 2D frames - 3D buildings
             </div>
           </div>
         </div>
@@ -337,7 +385,7 @@ export default function HomePage() {
           ) : null}
           <label className="pdelta-toggle small-muted">
             <input type="checkbox" checked={pDelta} onChange={(e) => setPDelta(e.target.checked)} />
-            P-Δ analysis
+            P-Delta analysis
           </label>
         </div>
       </header>
@@ -346,7 +394,7 @@ export default function HomePage() {
         <section className="panel panel-chat panel-fea-chatonly panel-chat-gpt" aria-label="Design chat">
           <div className="panel-header">
             <strong>Chat</strong>
-            <span className="small-muted">Natural language → PyNite model</span>
+            <span className="small-muted">Natural language to PyNite model</span>
           </div>
           <div className="fea-chat-thread-wrap">
             <div className="chat-thread fea-chat-thread">
@@ -388,6 +436,11 @@ export default function HomePage() {
                   disabled={loading}
                   onClick={() => {
                     setDraft(q.prompt);
+                    const sample = sampleBundle?.samples[q.sampleKey];
+                    if (sample) {
+                      setResult(sample);
+                      setDemoMode(true);
+                    }
                     textareaRef.current?.focus();
                   }}
                 >
@@ -400,7 +453,7 @@ export default function HomePage() {
               className="fea-chat-textarea fea-composer-input"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={PLACEHOLDER}
+              placeholder={typedPlaceholder || PLACEHOLDER}
               rows={4}
               disabled={loading}
               onKeyDown={(e) => {
@@ -410,6 +463,7 @@ export default function HomePage() {
                 }
               }}
             />
+            <PromptInputPreview text={draft} />
             <div className="fea-chat-actions">
               <button
                 type="button"
@@ -417,11 +471,11 @@ export default function HomePage() {
                 disabled={loading || !draft.trim()}
                 onClick={() => void runAnalysis()}
               >
-                {loading ? "Running…" : "Send & analyze"}
+                {loading ? "Running..." : "Send & analyze"}
               </button>
             </div>
             <p className="hint-line small-muted">
-              Enter — new line · Ctrl+Enter — send · type a Philippine city for NSCP wind / seismic / SBC
+              Enter - new line - Ctrl+Enter - send - type a Philippine city for NSCP wind / seismic / SBC
             </p>
           </div>
         </section>
@@ -431,7 +485,7 @@ export default function HomePage() {
             <div>
               <strong>PyNite output</strong>
               <span className="small-muted">
-                {result ? ` · ${result.engine} · ${result.load_combination}` : "—"}
+                {result ? ` - ${result.engine} - ${result.load_combination}` : "-"}
               </span>
             </div>
             <div className="fea-report-header-actions">
@@ -444,7 +498,15 @@ export default function HomePage() {
                     onClick={() => void exportWord()}
                     title="Export full tables and narrative to Microsoft Word (.docx)"
                   >
-                    {exportingDoc ? "Preparing…" : "Export report (.docx)"}
+                    {exportingDoc ? "Preparing..." : "Export report (.docx)"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => downloadFeaEtabsExports(result)}
+                    title="Download ETABS-oriented text and JSON model files from this result"
+                  >
+                    ETABS model (.txt/.json)
                   </button>
                   {demoMode ? (
                     <button
@@ -476,8 +538,8 @@ export default function HomePage() {
                   <div className="demo-banner" role="status">
                     <span className="demo-banner-badge">Sample</span>
                     <span>
-                      Preloaded <strong>60-storey RC · Quezon City</strong> (PyNite) so you can
-                      explore the report layout. Run your own prompt to replace.
+                      Preloaded instant PyNite sample output so users see results immediately.
+                      Select any example chip to swap the prompt text and report instantly.
                     </span>
                   </div>
                 ) : null}
@@ -495,7 +557,7 @@ export default function HomePage() {
                       </h3>
                       {has2DModelView ? (
                         <span className="report-count small-muted">
-                          {result.geometry.nodes.length} nodes · {result.geometry.members.length} members
+                          {result.geometry.nodes.length} nodes - {result.geometry.members.length} members
                         </span>
                       ) : null}
                     </div>
@@ -568,7 +630,10 @@ export default function HomePage() {
                         showLoads={showLoadArrows}
                       />
                     ) : (
-                      <BuildingSupportLoadPanel result={result} />
+                      <>
+                        <StructureModel3D result={result} />
+                        <BuildingSupportLoadPanel result={result} />
+                      </>
                     )}
                   </div>
                 ) : null}
@@ -598,6 +663,10 @@ export default function HomePage() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                <div className="report-section">
+                  <SteelSectionAdvisor result={result} />
                 </div>
 
                 {has2DDiagrams && result.diagrams ? (
@@ -638,9 +707,9 @@ export default function HomePage() {
                             <th className="col-num">Rx (kN)</th>
                             <th className="col-num">Ry (kN)</th>
                             <th className="col-num">Rz (kN)</th>
-                            <th className="col-num">Mx (kN·m)</th>
-                            <th className="col-num">My (kN·m)</th>
-                            <th className="col-num">Mz (kN·m)</th>
+                            <th className="col-num">Mx (kN-m)</th>
+                            <th className="col-num">My (kN-m)</th>
+                            <th className="col-num">Mz (kN-m)</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -663,7 +732,7 @@ export default function HomePage() {
                         </tbody>
                       </table>
                     </div>
-                    <p className="small-muted">Forces kN, moments kN·m — PyNite sign convention.</p>
+                    <p className="small-muted">Forces kN, moments kN-m - PyNite sign convention.</p>
                   </div>
                 ) : null}
 
@@ -708,7 +777,7 @@ export default function HomePage() {
                 {result.beams.length ? (
                   <div className="report-section">
                     <div className="report-h-row">
-                      <h3 className="report-h">Beams — envelope (|M|, |V|, deflection)</h3>
+                      <h3 className="report-h">Beams - envelope (|M|, |V|, deflection)</h3>
                       <span className="report-count small-muted">
                         {result.beams.length} rows (sorted by |M|)
                       </span>
@@ -719,9 +788,9 @@ export default function HomePage() {
                           <tr>
                             <th>Member</th>
                             <th className="col-num">z (m)</th>
-                            <th className="col-num">|M| (kN·m)</th>
+                            <th className="col-num">|M| (kN-m)</th>
                             <th className="col-num">|V| (kN)</th>
-                            <th className="col-num">δ (mm)</th>
+                            <th className="col-num">delta (mm)</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -745,7 +814,7 @@ export default function HomePage() {
                 {result.columns.length ? (
                   <div className="report-section">
                     <div className="report-h-row">
-                      <h3 className="report-h">Columns — P, M, T envelope</h3>
+                      <h3 className="report-h">Columns - P, M, T envelope</h3>
                       <span className="report-count small-muted">
                         {result.columns.length} rows (sorted by |P|)
                       </span>
@@ -756,9 +825,9 @@ export default function HomePage() {
                           <tr>
                             <th>Member</th>
                             <th className="col-num">|P| (kN)</th>
-                            <th className="col-num">|My| (kN·m)</th>
-                            <th className="col-num">|Mz| (kN·m)</th>
-                            <th className="col-num">|T| (kN·m)</th>
+                            <th className="col-num">|My| (kN-m)</th>
+                            <th className="col-num">|Mz| (kN-m)</th>
+                            <th className="col-num">|T| (kN-m)</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -812,7 +881,7 @@ export default function HomePage() {
 
       <footer className="site-footer">
         <span>
-          © 2026 Balmores Laboratory — Developed by{" "}
+          (c) 2026 Balmores Lab - Developed by{" "}
           <a
             href="/about"
             rel="author"
@@ -822,7 +891,7 @@ export default function HomePage() {
           </a>
         </span>
         <span className="footer-sep" aria-hidden />
-        <span className="small-muted">Integrated PyNite open-source FEM · verify with your code</span>
+        <span className="small-muted">Integrated PyNite open-source FEM - verify with your code</span>
         <span className="footer-sep" aria-hidden />
         <a href="/about" style={{ color: "inherit" }}>
           About
@@ -841,3 +910,4 @@ export default function HomePage() {
     </div>
   );
 }
+

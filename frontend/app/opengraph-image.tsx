@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Louie Doniego Balmores — Structural Engineer & AI Researcher";
+export const alt = "Louie Doniego Balmores - Structural Engineer & AI Researcher";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -40,7 +40,7 @@ export default function OpengraphImage() {
               fontWeight: 700,
             }}
           >
-            BALMORES · LAB
+            BALMORES - LAB
           </span>
         </div>
 
@@ -55,7 +55,7 @@ export default function OpengraphImage() {
               fontWeight: 600,
             }}
           >
-            Structural Engineer · AI Researcher
+            Structural Engineer - AI Researcher
           </div>
           <div
             style={{
@@ -88,9 +88,9 @@ export default function OpengraphImage() {
               lineHeight: 1.35,
             }}
           >
-            Licensed Civil Engineer · PRC Philippines (2013) · 10+ years in
-            high-performance structural design · AI-driven structural
-            optimization research at Balmores Laboratory.
+            Licensed Civil Engineer - PRC Philippines (2013) - 10+ years in
+            high-performance structural design - AI-driven structural
+            optimization research at Balmores Lab.
           </div>
         </div>
 
@@ -104,7 +104,7 @@ export default function OpengraphImage() {
           }}
         >
           <span style={{ fontWeight: 600 }}>balmoreslab.com</span>
-          <span style={{ color: "#64748b" }}>PyNite · PyTorch · Next.js</span>
+          <span style={{ color: "#64748b" }}>PyNite - PyTorch - Next.js</span>
         </div>
       </div>
     ),

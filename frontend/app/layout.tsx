@@ -2,17 +2,17 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 const SITE_URL = "https://www.balmoreslab.com";
-const SITE_NAME = "Balmores Laboratory";
+const SITE_NAME = "Balmores Lab";
 const PERSON_NAME = "Louie Doniego Balmores";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Louie Doniego Balmores - Structural Engineer & AI Researcher | Balmores Laboratory",
-    template: "%s | Balmores Laboratory",
+    default: "Louie Doniego Balmores - Structural Engineer & AI Researcher | Balmores Lab",
+    template: "%s | Balmores Lab",
   },
   description:
-    "Louie Doniego Balmores is a licensed Civil Engineer (PRC Philippines, 2013) with over 10 years of structural engineering experience and an AI researcher pioneering AI-driven structural optimization at Balmores Laboratory (balmoreslab.com).",
+    "Louie Doniego Balmores is a licensed Civil Engineer (PRC Philippines, 2013) with over 10 years of structural engineering experience and an AI researcher pioneering AI-driven structural optimization at Balmores Lab (balmoreslab.com).",
   applicationName: SITE_NAME,
   authors: [{ name: PERSON_NAME, url: SITE_URL }],
   creator: PERSON_NAME,
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "Louie Balmores",
     "Louie Doniego Balmores",
     "Balmores Structural",
-    "Balmores Laboratory",
+    "Balmores Lab",
     "balmoreslab",
     "Structural Engineer",
     "AI Researcher",
@@ -47,13 +47,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: "Louie Doniego Balmores - Structural Engineer & AI Researcher",
     description:
-      "Licensed Civil Engineer (PRC Philippines) with 10+ years of structural design experience, researching AI-driven structural optimization at Balmores Laboratory.",
+      "Licensed Civil Engineer (PRC Philippines) with 10+ years of structural design experience, researching AI-driven structural optimization at Balmores Lab.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Louie Doniego Balmores — Structural Engineer & AI Researcher",
+        alt: "Louie Doniego Balmores - Structural Engineer & AI Researcher",
       },
     ],
   },
@@ -109,7 +109,7 @@ const siteId = `${SITE_URL}/#website`;
 const profilePageId = `${SITE_URL}/about#profilepage`;
 
 // Extra identity-graph refs injected only when the corresponding env var
-// is set on the host (Render). New account? Add its env var, redeploy —
+// is set on the host (Render). New account? Add its env var, redeploy -
 // no code change needed. Empty values are filtered out.
 const EXTRA_SAME_AS = (() => {
   const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
@@ -165,7 +165,7 @@ const structuredData = {
       honorificSuffix: "P.Eng (Candidate), PE (Candidate)",
       jobTitle: "Structural Engineer & AI Researcher",
       description:
-        "Licensed Civil Engineer (PRC Philippines, 2013) with over 10 years of experience in high-performance structural design, currently pioneering AI-driven structural optimization, computational design, and material efficiency research at Balmores Laboratory.",
+        "Licensed Civil Engineer (PRC Philippines, 2013) with over 10 years of experience in high-performance structural design, currently pioneering AI-driven structural optimization, computational design, and material efficiency research at Balmores Lab.",
       url: SITE_URL,
       mainEntityOfPage: { "@id": profilePageId },
       image: {
@@ -267,32 +267,28 @@ const structuredData = {
         {
           "@type": "EducationalOccupationalCredential",
           credentialCategory: "Professional License (Candidate)",
-          name: "P.Eng License Candidate",
+          name: "PEng Candidate",
           recognizedBy: {
             "@type": "Organization",
             name: "Professional Engineers Ontario (PEO)",
             url: "https://www.peo.on.ca",
-          },
-          validFrom: "2027-01-01",
-        },
+          },        },
         {
           "@type": "EducationalOccupationalCredential",
           credentialCategory: "Professional License (Candidate)",
-          name: "PE License Candidate",
+          name: "US PE Candidate",
           recognizedBy: {
             "@type": "Organization",
             name: "NCEES - National Council of Examiners for Engineering and Surveying",
             url: "https://ncees.org",
-          },
-          validFrom: "2028-01-01",
-        },
+          },        },
       ],
       sameAs: ALL_SAME_AS,
     },
     {
       "@type": "Organization",
       "@id": orgId,
-      name: "Balmores Laboratory",
+      name: "Balmores Lab",
       alternateName: ["Balmores Strux AI", "Balmores Structural"],
       url: SITE_URL,
       logo: `${SITE_URL}/logo.png`,
@@ -302,7 +298,7 @@ const structuredData = {
         "https://x.com/louiedbalmores",
       ],
       description:
-        "Balmores Laboratory researches AI-driven structural engineering - converting traditional structural analysis workflows into automated, intelligent systems.",
+        "Balmores Lab researches AI-driven structural engineering - converting traditional structural analysis workflows into automated, intelligent systems.",
       knowsAbout: [
         "Structural AI",
         "Computational Structural Design",
@@ -316,7 +312,7 @@ const structuredData = {
       url: SITE_URL,
       name: SITE_NAME,
       description:
-        "Official website of Louie Doniego Balmores and Balmores Laboratory - AI-driven structural engineering.",
+        "Official website of Louie Doniego Balmores and Balmores Lab - AI-driven structural engineering.",
       publisher: { "@id": personId },
       inLanguage: "en",
       potentialAction: {
@@ -357,28 +353,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="author" href={`${SITE_URL}/about`} />
         <link rel="publisher" href={SITE_URL} />
 
-        {/* Dublin Core metadata — indexed by some academic / semantic crawlers. */}
+        {/* Dublin Core metadata - indexed by some academic / semantic crawlers. */}
         <meta name="DC.creator" content={PERSON_NAME} />
         <meta name="DC.publisher" content={SITE_NAME} />
         <meta name="DC.subject" content="Structural Engineering, Artificial Intelligence, Computational Design" />
 
-        {/* Plain author meta — still read by Google for attribution heuristics. */}
+        {/* Plain author meta - still read by Google for attribution heuristics. */}
         <meta name="author" content={PERSON_NAME} />
-        <meta name="copyright" content={`© ${new Date().getFullYear()} ${PERSON_NAME}`} />
+        <meta name="copyright" content={`(c) ${new Date().getFullYear()} ${PERSON_NAME}`} />
 
         {/* Hint Google Knowledge Graph about the canonical identity URL. */}
         <meta property="profile:first_name" content="Louie" />
         <meta property="profile:last_name" content="Balmores" />
         <meta property="profile:username" content="louiedbalmores" />
 
-        {/* IndexNow — instant crawl protocol (Bing, Yandex, Seznam, and now piloted by Google).
+        {/* IndexNow - instant crawl protocol (Bing, Yandex, Seznam, and now piloted by Google).
             The keyed file at /ykjm52si9r4gfvwhul8ob7cd3nqxpe01.txt proves ownership. */}
         <meta name="indexnow" content="ykjm52si9r4gfvwhul8ob7cd3nqxpe01" />
 
-        {/* Expose the raw JSON-LD as a discoverable alternate — helps AI crawlers and
+        {/* Expose the raw JSON-LD as a discoverable alternate - helps AI crawlers and
             linked-data indexers ingest the entity graph directly. */}
         <link rel="alternate" type="application/ld+json" href="/seo-schema.json" />
-        <link rel="alternate" type="application/atom+xml" title="Balmores Laboratory feed" href="/feed.xml" />
+        <link rel="alternate" type="application/atom+xml" title="Balmores Lab feed" href="/feed.xml" />
         <link rel="alternate" type="application/rdf+xml" title="FOAF profile" href="/foaf.rdf" />
 
         {/* Pre-warm connections to the profile platforms referenced in sameAs,
@@ -393,3 +389,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

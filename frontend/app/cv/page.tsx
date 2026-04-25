@@ -5,16 +5,16 @@ import ProfileBadges from "@/components/ProfileBadges";
 const SITE_URL = "https://www.balmoreslab.com";
 
 export const metadata: Metadata = {
-  title: "Curriculum Vitae — Louie Doniego Balmores",
+  title: "Curriculum Vitae - Louie Doniego Balmores",
   description:
-    "Public CV of Louie Doniego Balmores, Registered Civil Engineer (PRC Philippines, 2013, Seq. 350). 10+ years structural design · AI-driven structural optimization research.",
+    "Public CV of Louie Doniego Balmores, Registered Civil Engineer (PRC Philippines, 2013, Seq. 350). 10+ years structural design - AI-driven structural optimization research.",
   alternates: { canonical: "/cv" },
   openGraph: {
     type: "profile",
     url: `${SITE_URL}/cv`,
-    title: "CV — Louie Doniego Balmores",
+    title: "CV - Louie Doniego Balmores",
     description:
-      "Structural Engineer (PRC PH) and AI researcher. CV / resume · Balmores Laboratory.",
+      "Structural Engineer (PRC PH) and AI researcher. CV / resume - Balmores Lab.",
   },
 };
 
@@ -55,13 +55,13 @@ const resumeLd = {
   nationality: { "@type": "Country", name: "Philippines" },
   worksFor: {
     "@type": "Organization",
-    name: "Balmores Laboratory",
+    name: "Balmores Lab",
     url: SITE_URL,
   },
   alumniOf: [
     {
       "@type": "EducationalOrganization",
-      name: "Civil Engineering — Philippines",
+      name: "Civil Engineering - Philippines",
     },
   ],
   hasCredential: [
@@ -75,7 +75,7 @@ const resumeLd = {
         url: "https://prc.gov.ph",
       },
       datePublished: "2013-11-27",
-      identifier: "Nov 2013 CE Licensure Examination — Sequence No. 350",
+      identifier: "Nov 2013 CE Licensure Examination - Sequence No. 350",
     },
   ],
   knowsAbout: [
@@ -182,53 +182,53 @@ export default function CVPage() {
           </p>
           <p className="p-locality" style={{ color: "#94a3b8", fontSize: 14, margin: "6px 0 0" }}>
             Based in <span itemProp="homeLocation">Toronto, Ontario, Canada</span>
-            {" · "}Born June 26, 1991 in Tuguegarao City, Philippines
+            {" - "}Born June 26, 1991 in Tuguegarao City, Philippines
           </p>
           <p style={S.lede} className="p-note" itemProp="description">
             Registered Civil Engineer (PRC Philippines, 2013, Seq. 350). 10+
             years of high-performance structural design. Founder of{" "}
             <a className="u-url" style={S.link} href={SITE_URL} itemProp="url">
-              Balmores Laboratory
+              Balmores Lab
             </a>{" "}
-            — research initiative on AI-driven structural optimization.
+            - research initiative on AI-driven structural optimization.
           </p>
         </header>
 
         <h2 style={S.h2}>Credentials</h2>
         <div style={S.card}>
-          <p style={S.role}>Registered Civil Engineer — PRC Philippines</p>
-          <p style={S.period}>November 2013 · Sequence No. 350 ·{" "}
+          <p style={S.role}>Registered Civil Engineer - PRC Philippines</p>
+          <p style={S.period}>November 2013 - Sequence No. 350 -{" "}
             <a style={S.link} href="https://prc.gov.ph" rel="noopener external" target="_blank">
               prc.gov.ph
             </a>
           </p>
         </div>
         <div style={S.card}>
-          <p style={S.role}>P.Eng License Candidate</p>
-          <p style={S.period}>Professional Engineers Ontario · target 2027</p>
+          <p style={S.role}>PEng Candidate</p>
+          <p style={S.period}>Professional Engineers Ontario</p>
         </div>
         <div style={S.card}>
-          <p style={S.role}>PE License Candidate</p>
-          <p style={S.period}>NCEES (USA) · target 2028</p>
+          <p style={S.role}>US PE Candidate</p>
+          <p style={S.period}>NCEES (USA)</p>
         </div>
 
         <h2 style={S.h2}>Experience</h2>
         <div style={S.card}>
-          <p style={S.role}>Founder · Balmores Laboratory</p>
-          <p style={S.period}>2023 – present · balmoreslab.com</p>
+          <p style={S.role}>Founder - Balmores Lab</p>
+          <p style={S.period}>2023 - present - balmoreslab.com</p>
           <p style={S.p}>
             Research on AI-driven structural optimization. Building
-            Balmores Strux AI — natural-language-to-PyNite 3D FEM
+            Balmores Strux AI - natural-language-to-PyNite 3D FEM
             pipeline with PyTorch surrogate models trained on parametric
             ETABS datasets.
           </p>
         </div>
         <div style={S.card}>
           <p style={S.role}>Structural Engineer (consulting, various)</p>
-          <p style={S.period}>2013 – present · Philippines</p>
+          <p style={S.period}>2013 - present - Philippines</p>
           <p style={S.p}>
             10+ years of practice in reinforced-concrete and steel design
-            for mid- and high-rise buildings. Seismic analysis, P-Δ
+            for mid- and high-rise buildings. Seismic analysis, P-Delta
             effects, drift control, foundation design.
           </p>
         </div>
@@ -258,13 +258,13 @@ export default function CVPage() {
 
         <h2 style={S.h2}>Selected Projects</h2>
         <div style={S.card}>
-          <p style={S.role}>Balmores Strux AI (2024–present)</p>
+          <p style={S.role}>Balmores Strux AI (2024-present)</p>
           <p style={S.p}>
             Open-source structural-AI playground. Chat with a PyNite FEM
             backend in plain English to produce 3D frame models with
-            reactions, storey drift, member envelopes, and P-Δ. PyTorch
+            reactions, storey drift, member envelopes, and P-Delta. PyTorch
             surrogate trained on ~5000 parametric ETABS models.{" "}
-            <Link href="/" style={S.link}>View demo →</Link>
+            <Link href="/" style={S.link}>View demo</Link>
           </p>
         </div>
 
@@ -274,7 +274,7 @@ export default function CVPage() {
           <a className="u-url" style={S.link} href={SITE_URL}>
             balmoreslab.com
           </a>{" "}
-          · Profile:{" "}
+          - Profile:{" "}
           <Link style={S.link} href="/about">/about</Link>
         </p>
         <div style={{ marginTop: 16 }}>
@@ -284,3 +284,4 @@ export default function CVPage() {
     </main>
   );
 }
+

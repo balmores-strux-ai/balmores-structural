@@ -12,7 +12,7 @@
   "url": "https://www.balmoreslab.com",
   "mainEntityOfPage": "https://www.balmoreslab.com/about",
   "image": "https://www.balmoreslab.com/louie-balmores.jpg",
-  "description": "Licensed Civil Engineer (Professional Regulation Commission, Philippines) with over 10 years of experience in high-performance structural design, currently pioneering research in Artificial Intelligence for structural engineering — AI-driven structural optimization, computational design, and material efficiency.",
+  "description": "Licensed Civil Engineer (Professional Regulation Commission, Philippines) with over 10 years of experience in high-performance structural design, currently pioneering research in Artificial Intelligence for structural engineering â€” AI-driven structural optimization, computational design, and material efficiency.",
   "gender": "Male",
   "birthDate": "1991-06-26",
   "birthPlace": {
@@ -54,7 +54,7 @@
   "worksFor": {
     "@type": "Organization",
     "@id": "https://www.balmoreslab.com/#organization",
-    "name": "Balmores Laboratory",
+    "name": "Balmores Lab",
     "url": "https://www.balmoreslab.com"
   },
   "knowsLanguage": ["English", "Filipino"],
@@ -92,7 +92,7 @@
       "@type": "EducationalOccupationalCredential",
       "credentialCategory": "Professional License",
       "name": "Registered Civil Engineer",
-      "identifier": "Nov 2013 Civil Engineer Licensure Examination — Sequence No. 350",
+      "identifier": "Nov 2013 Civil Engineer Licensure Examination â€” Sequence No. 350",
       "recognizedBy": {
         "@type": "GovernmentOrganization",
         "name": "Professional Regulation Commission (PRC)",
@@ -108,25 +108,21 @@
     {
       "@type": "EducationalOccupationalCredential",
       "credentialCategory": "Professional License (Candidate)",
-      "name": "P.Eng License Candidate",
+      "name": "PEng Candidate",
       "recognizedBy": {
         "@type": "Organization",
         "name": "Professional Engineers Ontario (PEO)",
         "url": "https://www.peo.on.ca"
-      },
-      "validFrom": "2027-01-01"
-    },
+      },    },
     {
       "@type": "EducationalOccupationalCredential",
       "credentialCategory": "Professional License (Candidate)",
-      "name": "PE License Candidate",
+      "name": "US PE Candidate",
       "recognizedBy": {
         "@type": "Organization",
-        "name": "NCEES — National Council of Examiners for Engineering and Surveying",
+        "name": "NCEES â€” National Council of Examiners for Engineering and Surveying",
         "url": "https://ncees.org"
-      },
-      "validFrom": "2028-01-01"
-    }
+      },    }
   ],
   "sameAs": [
     "https://www.linkedin.com/in/louiebalmores/",

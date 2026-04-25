@@ -1,4 +1,4 @@
-# BALMORES STRUCTURAL
+﻿# BALMORES STRUCTURAL
 
 Prototype full-stack website that turns a **natural-language structural brief** into a **finite-element analysis** and produces structured output for engineers.
 
@@ -8,18 +8,18 @@ The analysis kernel is the open-source **PyNite** FEM library (MIT-licensed), ve
 
 The assistant recognises three classes of problem from a plain-English prompt and runs the matching PyNite model:
 
-- **2D beam** — simply supported / fixed / cantilever, **plus continuous beams with 2, 3, 4, or 5 supports** (multi-span). Returns shear, moment and deflection diagrams plus reactions and envelopes.
-- **2D moment frame** — multi-bay, multi-storey planar frame with gravity and per-floor lateral loads. Returns beam / column envelopes, storey drift and reactions.
-- **3D building frame** — irregular bay grid in X and Y, up to **60 storeys** (the practical limit for the shared-instance solver), DL/LL (kPa), wind (kPa), seismic zone, SBC. Returns drift, reactions and member envelopes with optional P-Δ analysis.
+- **2D beam** â€” simply supported / fixed / cantilever, **plus continuous beams with 2, 3, 4, or 5 supports** (multi-span). Returns shear, moment and deflection diagrams plus reactions and envelopes.
+- **2D moment frame** â€” multi-bay, multi-storey planar frame with gravity and per-floor lateral loads. Returns beam / column envelopes, storey drift and reactions.
+- **3D building frame** â€” irregular bay grid in X and Y, up to **60 storeys** (the practical limit for the shared-instance solver), DL/LL (kPa), wind (kPa), seismic zone, SBC. Returns drift, reactions and member envelopes with optional P-Î” analysis.
 
 ## Location-aware design criteria
 
-Mention a city in your prompt — *"30-storey RC tower in Cebu"*, *"office in Tokyo"*, *"warehouse in Singapore"* — and the backend automatically resolves:
+Mention a city in your prompt â€” *"30-storey RC tower in Cebu"*, *"office in Tokyo"*, *"warehouse in Singapore"* â€” and the backend automatically resolves:
 
 | Parameter | Source |
 |---|---|
 | Design wind speed V (m/s, 3-s gust 50-yr) | NSCP 2015 (PH) / ASCE 7-22 (US) / Eurocode (EU) / AS-NZS 1170 / KBC / GB-50009 etc. |
-| Velocity pressure q = 0.613·V² | Derived |
+| Velocity pressure q = 0.613Â·VÂ² | Derived |
 | Seismic zone, PGA, base-shear coeff. V/W | Same code per region |
 | Allowable soil bearing (SBC) | Curated city table |
 | Load combinations (ULS / SLS) | Generic limit-state envelope |
@@ -30,7 +30,7 @@ Built-in cities include: Manila, Quezon City, Makati, Taguig, Cebu, Davao, Iloil
 
 ## Live progress overlay
 
-Long 3D solves (40 + storeys with P-Δ can run for 30–60 s on free hosting) used to feel frozen. The solver now streams **STAAD-style progress events** over an NDJSON endpoint (`POST /fea/analyze-prompt/stream`), and the frontend shows a live percent counter, gradient progress bar, and named stage transitions:
+Long 3D solves (40 + storeys with P-Î” can run for 30â€“60 s on free hosting) used to feel frozen. The solver now streams **STAAD-style progress events** over an NDJSON endpoint (`POST /fea/analyze-prompt/stream`), and the frontend shows a live percent counter, gradient progress bar, and named stage transitions:
 
 ```
 Connecting to PyNite kernel
@@ -38,8 +38,8 @@ Building nodes, members, sections, supports
 Assembling stiffness blocks
 Applying gravity, wind and seismic load cases
 Sparse Cholesky factorisation of K
-Solving K·u = F (load combinations)
-P-Δ second-order iteration
+Solving KÂ·u = F (load combinations)
+P-Î” second-order iteration
 Extracting member envelopes and storey drift
 Formatting tables and design criteria
 Solve complete
@@ -47,16 +47,16 @@ Solve complete
 
 ## Performance notes
 
-- PyNite is configured with `sparse=True` everywhere — assembly + `scipy.sparse.linalg.spsolve` keeps the linear-algebra path fast even at 21 000 + DOF.
+- PyNite is configured with `sparse=True` everywhere â€” assembly + `scipy.sparse.linalg.spsolve` keeps the linear-algebra path fast even at 21 000 + DOF.
 - The FastAPI app pre-warms PyNite + matplotlib on startup so the **first** request after a deploy doesn't pay the cold-import cost.
-- A **storey cap of 60** raises a friendly `ValueError` instead of letting a large 100-storey job time out the worker. (Local benchmark on the Render-equivalent dev profile: 60 storeys with full P-Δ ≈ 43 s; 100 storeys linear ≈ 45 s.)
-- Sample prompts in the UI cover the full range — single-bay portal up to a 60-storey stress test in Taipei.
+- A **storey cap of 60** raises a friendly `ValueError` instead of letting a large 100-storey job time out the worker. (Local benchmark on the Render-equivalent dev profile: 60 storeys with full P-Î” â‰ˆ 43 s; 100 storeys linear â‰ˆ 45 s.)
+- Sample prompts in the UI cover the full range â€” single-bay portal up to a 60-storey stress test in Taipei.
 
 ## Stack
 
 - **Frontend:** Next.js 14 (App Router) + React + a small live-progress component.
 - **Backend:** FastAPI with NDJSON streaming.
-- **FEM kernel:** [PyNite](./Pynite-main/Pynite-main) — vendored, MIT-licensed, open-source.
+- **FEM kernel:** [PyNite](./Pynite-main/Pynite-main) â€” vendored, MIT-licensed, open-source.
 
 ## Quick start
 
@@ -111,3 +111,4 @@ Continuous concrete beam, spans (6, 8, 10, 8, 6 m), 6 supports. DL 22 kN/m, LL 1
 
 PyNite is MIT-licensed (see [Pynite-main/Pynite-main/LICENSE](./Pynite-main/Pynite-main/LICENSE)).
 All results produced by this prototype must be verified with a licensed engineer before they are used for real design.
+

@@ -5,14 +5,14 @@ import ProfileBadges from "@/components/ProfileBadges";
 const SITE_URL = "https://www.balmoreslab.com";
 
 export const metadata: Metadata = {
-  title: "Research — AI-Driven Structural Engineering",
+  title: "Research - AI-Driven Structural Engineering",
   description:
-    "Research programme at Balmores Laboratory: AI for structural integrity, computational design, and material efficiency. Led by Louie Doniego Balmores.",
+    "Research programme at Balmores Lab: AI for structural integrity, computational design, and material efficiency. Led by Louie Doniego Balmores.",
   alternates: { canonical: "/research" },
   openGraph: {
     type: "website",
     url: `${SITE_URL}/research`,
-    title: "Research — Balmores Laboratory",
+    title: "Research - Balmores Lab",
     description:
       "AI-driven structural optimization, computational design, and material efficiency.",
   },
@@ -39,7 +39,7 @@ const articles = [
     headline:
       "Natural-Language-to-FEM: A Prompt-Driven PyNite Pipeline for 3D Irregular Frames",
     abstract:
-      "A parser + LLM-assisted pipeline that converts plain-English building briefs into validated PyNite 3D models. Handles irregular grids, asymmetric bays, storey heights, DL/LL loadings, wind, and simplified seismic. Produces reactions, storey drift, P-Δ, and member envelopes.",
+      "A parser + LLM-assisted pipeline that converts plain-English building briefs into validated PyNite 3D models. Handles irregular grids, asymmetric bays, storey heights, DL/LL loadings, wind, and simplified seismic. Produces reactions, storey drift, P-Delta, and member envelopes.",
     keywords: [
       "natural language processing",
       "PyNite",
@@ -71,7 +71,7 @@ const researchLd = {
       "@type": "CollectionPage",
       "@id": `${SITE_URL}/research#page`,
       url: `${SITE_URL}/research`,
-      name: "Research — Balmores Laboratory",
+      name: "Research - Balmores Lab",
       mainEntity: { "@id": `${SITE_URL}/#person` },
       isPartOf: { "@id": `${SITE_URL}/#website` },
     },
@@ -143,7 +143,7 @@ export default function ResearchPage() {
 
       <article style={S.container}>
         <h1 style={S.h1}>Research</h1>
-        <p style={S.sub}>AI-driven structural engineering · Balmores Laboratory</p>
+        <p style={S.sub}>AI-driven structural engineering - Balmores Lab</p>
         <p style={S.lede}>
           Directed by{" "}
           <Link href="/about" style={{ color: "#93c5fd" }}>
@@ -171,7 +171,7 @@ export default function ResearchPage() {
               <span itemProp="author" itemScope itemType="https://schema.org/Person">
                 <span itemProp="name">Louie Doniego Balmores</span>
               </span>
-              {" · "}
+              {" - "}
               <time itemProp="datePublished" dateTime={a.datePublished}>
                 {new Date(a.datePublished).toLocaleDateString("en-US", {
                   year: "numeric",
@@ -179,7 +179,7 @@ export default function ResearchPage() {
                   day: "numeric",
                 })}
               </time>
-              {" · Balmores Laboratory"}
+              {" - Balmores Lab"}
             </div>
             <p style={S.abstract} itemProp="abstract">
               {a.abstract}
@@ -192,14 +192,14 @@ export default function ResearchPage() {
               ))}
             </div>
             <meta itemProp="inLanguage" content="en" />
-            <meta itemProp="publisher" content="Balmores Laboratory" />
+            <meta itemProp="publisher" content="Balmores Lab" />
           </section>
         ))}
 
         <h2 style={S.h2}>Cite this work</h2>
         <div style={{ ...S.article, fontFamily: "ui-monospace, monospace", fontSize: 13, color: "#cbd5e1" }}>
-          Balmores, L. D. (2026). <em>Balmores Laboratory research programme in
-          AI-driven structural engineering.</em> Balmores Laboratory.
+          Balmores, L. D. (2026). <em>Balmores Lab research programme in
+          AI-driven structural engineering.</em> Balmores Lab.
           Available at: https://www.balmoreslab.com/research
         </div>
 

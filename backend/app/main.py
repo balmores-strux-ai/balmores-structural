@@ -482,6 +482,18 @@ def _summary_beam(p: dict) -> str:
     pt_str = (
         "; ".join(f"**{pl['P_kN']} kN** @ {pl['x_m']} m" for pl in pts) if pts else "none"
     )
+    if p.get("spans_m"):
+        spans = [float(s) for s in p["spans_m"]]
+        support_kinds = p.get("support_kinds") or []
+        support_label = " – ".join(str(k).title() for k in support_kinds) or "continuous supports"
+        return (
+            "**2D continuous beam model read from your text**\n\n"
+            f"- **Spans:** {', '.join(f'{s:g}' for s in spans)} m → {len(spans)} span(s), total **{sum(spans):.2f} m**.\n"
+            f"- **Supports:** {support_label}\n"
+            f"- **Distributed loads:** {line_loads}\n"
+            f"- **Point loads:** {pt_str}\n"
+            f"- **Material:** {str(p.get('material','concrete')).title()} · section {p.get('beam_width_m',0.3)} × {p.get('beam_depth_m',0.6)} m\n"
+        )
     return (
         "**2D beam model read from your text**\n\n"
         f"- **Span:** {p['span_m']:.2f} m · **supports:** {p.get('support_left','pin').title()} – {p.get('support_right','roller').title()}\n"

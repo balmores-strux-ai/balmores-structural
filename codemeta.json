@@ -3,7 +3,7 @@
   "@type": "SoftwareSourceCode",
   "identifier": "balmores-strux-ai",
   "name": "Balmores Strux AI",
-  "description": "Natural-language-to-PyNite 3D FEM pipeline for irregular frames. PyTorch surrogate on parametric ETABS datasets for member-demand prediction and preliminary sizing. Part of the Balmores Laboratory research programme on AI-driven structural engineering.",
+  "description": "Natural-language-to-PyNite 3D FEM pipeline for irregular frames. PyTorch surrogate on parametric ETABS datasets for member-demand prediction and preliminary sizing. Part of the Balmores Lab research programme on AI-driven structural engineering.",
   "codeRepository": "https://github.com/balmores-strux-ai/balmores-structural",
   "url": "https://www.balmoreslab.com",
   "license": "https://spdx.org/licenses/MIT",
@@ -34,7 +34,7 @@
       "url": "https://www.balmoreslab.com",
       "affiliation": {
         "@type": "Organization",
-        "name": "Balmores Laboratory",
+        "name": "Balmores Lab",
         "url": "https://www.balmoreslab.com"
       },
       "sameAs": [
@@ -47,11 +47,11 @@
   ],
   "publisher": {
     "@type": "Organization",
-    "name": "Balmores Laboratory",
+    "name": "Balmores Lab",
     "url": "https://www.balmoreslab.com"
   },
   "funder": {
     "@type": "Organization",
-    "name": "Balmores Laboratory"
+    "name": "Balmores Lab"
   }
 }

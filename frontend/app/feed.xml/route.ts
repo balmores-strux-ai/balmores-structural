@@ -6,15 +6,15 @@ const SITE_URL = "https://www.balmoreslab.com";
 const items = [
   {
     id: `${SITE_URL}/about`,
-    title: "About Louie Doniego Balmores — Structural Engineer & AI Researcher",
+    title: "About Louie Doniego Balmores - Structural Engineer & AI Researcher",
     link: `${SITE_URL}/about`,
     summary:
-      "Official profile. Registered Civil Engineer (PRC Philippines, Nov 2013, Seq. 350). 10+ years high-performance structural design. Founder, Balmores Laboratory.",
+      "Official profile. Registered Civil Engineer (PRC Philippines, Nov 2013, Seq. 350). 10+ years high-performance structural design. Founder, Balmores Lab.",
     published: "2026-04-22T00:00:00Z",
   },
   {
     id: `${SITE_URL}/research`,
-    title: "Research programme — AI-Driven Structural Engineering",
+    title: "Research programme - AI-Driven Structural Engineering",
     link: `${SITE_URL}/research`,
     summary:
       "AI for structural integrity, computational design, and material efficiency. Working papers on neural surrogates over parametric ETABS, natural-language-to-FEM, and generative material efficiency.",
@@ -22,7 +22,7 @@ const items = [
   },
   {
     id: `${SITE_URL}/cv`,
-    title: "Curriculum Vitae — Louie Doniego Balmores",
+    title: "Curriculum Vitae - Louie Doniego Balmores",
     link: `${SITE_URL}/cv`,
     summary:
       "Public CV. Credentials, experience, skills, selected projects.",
@@ -30,10 +30,10 @@ const items = [
   },
   {
     id: `${SITE_URL}/`,
-    title: "Balmores Laboratory — Official site launch",
+    title: "Balmores Lab - Official site launch",
     link: `${SITE_URL}/`,
     summary:
-      "Balmores Laboratory is the research initiative of Louie Doniego Balmores — AI-driven structural optimization and the Balmores Strux AI playground (PyNite + PyTorch).",
+      "Balmores Lab is the research initiative of Louie Doniego Balmores - AI-driven structural optimization and the Balmores Strux AI playground (PyNite + PyTorch).",
     published: "2026-04-22T00:00:00Z",
   },
 ];
@@ -69,8 +69,8 @@ export function GET() {
 
   const body = `<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>Balmores Laboratory</title>
-  <subtitle>Louie Doniego Balmores — Structural Engineer &amp; AI Researcher</subtitle>
+  <title>Balmores Lab</title>
+  <subtitle>Louie Doniego Balmores - Structural Engineer &amp; AI Researcher</subtitle>
   <link href="${SITE_URL}/feed.xml" rel="self"/>
   <link href="${SITE_URL}/" rel="alternate" type="text/html"/>
   <id>${SITE_URL}/</id>
@@ -79,7 +79,7 @@ export function GET() {
     <name>Louie Doniego Balmores</name>
     <uri>${SITE_URL}/about</uri>
   </author>
-  <rights>© ${new Date().getFullYear()} Louie Doniego Balmores</rights>
+  <rights>(c) ${new Date().getFullYear()} Louie Doniego Balmores</rights>
   ${entries}
 </feed>`;
 
@@ -90,3 +90,4 @@ export function GET() {
     },
   });
 }
+

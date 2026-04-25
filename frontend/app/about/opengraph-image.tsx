@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "About Louie Doniego Balmores — Official Profile";
+export const alt = "About Louie Doniego Balmores - Official Profile";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -36,7 +36,7 @@ export default function OpengraphImage() {
               fontWeight: 700,
             }}
           >
-            BALMORES · LAB  /  ABOUT
+            BALMORES - LAB  /  ABOUT
           </span>
           <span style={{ color: "#94a3b8", fontSize: 20 }}>
             balmoreslab.com/about
@@ -95,11 +95,11 @@ export default function OpengraphImage() {
           }}
         >
           {[
-            "Registered Civil Engineer · PRC PH",
-            "Nov 2013 · Seq. No. 350",
-            "P.Eng Candidate (PEO, 2027)",
-            "PE Candidate (USA, 2028)",
-            "Founder, Balmores Laboratory",
+            "Registered Civil Engineer - PRC PH",
+            "Nov 2013 - Seq. No. 350",
+            "PEng Candidate",
+            "US PE Candidate",
+            "Founder, Balmores Lab",
           ].map((t) => (
             <span
               key={t}

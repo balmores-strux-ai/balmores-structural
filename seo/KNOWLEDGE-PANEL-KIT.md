@@ -1,4 +1,4 @@
-# Louie Doniego Balmores — Knowledge Panel Kit
+# Louie Doniego Balmores â€” Knowledge Panel Kit
 
 A prioritized, minimal-clicks playbook for making Google recognize
 `Louie Balmores` as a distinct, notable entity and mount a Knowledge
@@ -6,7 +6,7 @@ Panel on the SERP.
 
 > Why a kit and not "just do it for you"? Every platform below requires
 > human ToS acceptance, an email you own, and a CAPTCHA. The signal must
-> come from **you**, not an automation — Google explicitly downranks
+> come from **you**, not an automation â€” Google explicitly downranks
 > entities whose cross-platform graph looks bot-generated. This kit gives
 > you the exact text to paste so each account still takes <2 minutes.
 
@@ -15,61 +15,61 @@ Panel on the SERP.
 ## The three signals Google actually uses
 
 1. **A canonical URL that declares the entity.**
-   ✅ Done: `https://www.balmoreslab.com/` with JSON-LD Person + Organization
+   âœ… Done: `https://www.balmoreslab.com/` with JSON-LD Person + Organization
    graph and microdata.
 
 2. **Independent cross-references to that URL (`sameAs`).**
-   ✅ 6 live (LinkedIn, X, about.me, WorldChess, PRC, Twitter legacy).
-   🎯 Target: ≥12 authoritative refs. The ones below each add a measurable
+   âœ… 6 live (LinkedIn, X, about.me, WorldChess, PRC, Twitter legacy).
+   ðŸŽ¯ Target: â‰¥12 authoritative refs. The ones below each add a measurable
    lift.
 
 3. **Consistency of name + role + bio + birthplace across refs.**
    Use the bios in `louie-balmores-bios.md` *verbatim* everywhere. Do not
-   paraphrase between platforms — exact-string matches are what entity
+   paraphrase between platforms â€” exact-string matches are what entity
    reconciliation keys on.
 
 ---
 
-## Tier 1 — Highest KP leverage (do these first)
+## Tier 1 â€” Highest KP leverage (do these first)
 
-### 1.1 Wikidata  ★★★★★
+### 1.1 Wikidata  â˜…â˜…â˜…â˜…â˜…
 The single biggest KP lever that exists. Google's Knowledge Graph
 literally ingests Wikidata nightly.
 
 - Sign up: <https://www.wikidata.org/wiki/Special:CreateAccount>
 - After login, go to QuickStatements:
   <https://quickstatements.toolforge.org/#/batch>
-- Click **New batch** → **Version 1 commands**.
+- Click **New batch** â†’ **Version 1 commands**.
 - Open `seo/wikidata-louie-balmores.quickstatements.tsv` in this repo,
   copy the whole file, paste into the QuickStatements text area, click
-  **Import TSV commands** → **Run**.
+  **Import TSV commands** â†’ **Run**.
 - It will create a new Q-item with: occupation, nationality, license,
-  official website, LinkedIn ID, Twitter ID, and description — all the
+  official website, LinkedIn ID, Twitter ID, and description â€” all the
   identity facets Google looks for.
 - Caveat: Wikidata has notability standards. Your ETABS AI research + PRC
   license + publicly indexable projects give you a case. If the item gets
   flagged, add citations (a news article, a published paper, a conference
   talk). Even one indexable reference usually suffices.
 
-### 1.2 ORCID  ★★★★★
+### 1.2 ORCID  â˜…â˜…â˜…â˜…â˜…
 Authoritative persistent researcher ID. Google Scholar cross-references
 it, and adding it to `sameAs` is a KP gold signal.
 
 - Register: <https://orcid.org/register>
 - Use the bio text: copy "Medium bio" from `louie-balmores-bios.md`.
-- Fill: Employment → "Balmores Laboratory, 2015–present, Structural
-  Engineer & AI Researcher". Education → your CE degree. Works → any
+- Fill: Employment â†’ "Balmores Lab, 2015â€“present, Structural
+  Engineer & AI Researcher". Education â†’ your CE degree. Works â†’ any
   papers/presentations (optional).
 - Copy your ORCID iD (format `0000-0000-0000-0000`) into
   `.env.production` on Render as `NEXT_PUBLIC_ORCID_ID`. The site will
   auto-include it in `sameAs`.
 
-### 1.3 GitHub profile (special repo)  ★★★★☆
+### 1.3 GitHub profile (special repo)  â˜…â˜…â˜…â˜…â˜†
 A GitHub user profile named after your username renders a README on
 `github.com/<username>`. Google indexes it and follows `sameAs`.
 
 - If you don't yet have a personal GitHub account (only
-  `balmores-strux-ai` org exists), create one — `louiebalmores` or
+  `balmores-strux-ai` org exists), create one â€” `louiebalmores` or
   `louiedbalmores` to match the X handle.
 - Create a repo with the **exact same name as your username** (e.g.
   `louiedbalmores/louiedbalmores`).
@@ -78,10 +78,10 @@ A GitHub user profile named after your username renders a README on
   back to balmoreslab.com.
 - Add your GitHub URL to `NEXT_PUBLIC_GITHUB_URL` in Render env.
 
-### 1.4 Keybase  ★★★★☆
+### 1.4 Keybase  â˜…â˜…â˜…â˜…â˜†
 Keybase provides *cryptographic proofs* linking Twitter, GitHub, DNS,
 and a website to one identity. Google doesn't directly ingest Keybase,
-but the proofs propagate — and the public profile is a clean `sameAs`.
+but the proofs propagate â€” and the public profile is a clean `sameAs`.
 
 - Sign up: <https://keybase.io/signup>
 - Run identity proofs for: Twitter (`louiedbalmores`), GitHub, DNS
@@ -90,9 +90,9 @@ but the proofs propagate — and the public profile is a clean `sameAs`.
 - Add `https://keybase.io/louiedbalmores` to env as
   `NEXT_PUBLIC_KEYBASE_URL`.
 
-### 1.5 Google Search Console (required)  ★★★★★
+### 1.5 Google Search Console (required)  â˜…â˜…â˜…â˜…â˜…
 Not a `sameAs`, but without this Google won't honor sitemap submission or
-"Request Indexing" — both fired by `scripts/ping-crawlers.ps1`.
+"Request Indexing" â€” both fired by `scripts/ping-crawlers.ps1`.
 
 - <https://search.google.com/search-console>
 - Add **Domain property**: `balmoreslab.com` (not URL-prefix).
@@ -102,67 +102,67 @@ Not a `sameAs`, but without this Google won't honor sitemap submission or
 
 ---
 
-## Tier 2 — Supporting identity graph (do within a week)
+## Tier 2 â€” Supporting identity graph (do within a week)
 
-### 2.1 Mastodon with `rel=me` back-link  ★★★☆☆
+### 2.1 Mastodon with `rel=me` back-link  â˜…â˜…â˜…â˜†â˜†
 - Any instance works; `mastodon.social` or `fosstodon.org` (tech-focused)
   are good.
-- In profile, add `https://www.balmoreslab.com` as a link — Mastodon
+- In profile, add `https://www.balmoreslab.com` as a link â€” Mastodon
   emits it with `rel="me"`. Our site *already* emits `rel="me"` to your
-  Mastodon in layout.tsx — create the account, then add its URL to
+  Mastodon in layout.tsx â€” create the account, then add its URL to
   `NEXT_PUBLIC_MASTODON_URL`.
 
-### 2.2 Gravatar  ★★★☆☆
+### 2.2 Gravatar  â˜…â˜…â˜…â˜†â˜†
 Gravatar is crawled heavily and shows up in Google People Cards.
-- <https://gravatar.com> → add photo, bio (short bio from bios.md), link
+- <https://gravatar.com> â†’ add photo, bio (short bio from bios.md), link
   to balmoreslab.com.
 
-### 2.3 GitHub organization page  ★★★☆☆
+### 2.3 GitHub organization page  â˜…â˜…â˜…â˜†â˜†
 - On the `balmores-strux-ai` org, fill description, website, location,
   email, verified domain. Even orgs count as entity-graph nodes.
 
-### 2.4 Stack Overflow / Stack Exchange  ★★☆☆☆
-- <https://stackoverflow.com> profile → About me (medium bio), website
+### 2.4 Stack Overflow / Stack Exchange  â˜…â˜…â˜†â˜†â˜†
+- <https://stackoverflow.com> profile â†’ About me (medium bio), website
   link, Twitter, GitHub. Even a single answered question starts indexing.
 
-### 2.5 DEV Community (dev.to)  ★★☆☆☆
-- <https://dev.to> → profile with website + social links. Each post
+### 2.5 DEV Community (dev.to)  â˜…â˜…â˜†â˜†â˜†
+- <https://dev.to> â†’ profile with website + social links. Each post
   ranks, and the profile page itself is a `sameAs`-worthy page.
 
-### 2.6 ResearchGate (for AI-structural papers)  ★★★☆☆
-- <https://www.researchgate.net> → Author profile. If you upload a
+### 2.6 ResearchGate (for AI-structural papers)  â˜…â˜…â˜…â˜†â˜†
+- <https://www.researchgate.net> â†’ Author profile. If you upload a
   preprint of your ETABS AI work, it gets a ResearchGate URL which is
   another strong node.
 
-### 2.7 Academia.edu  ★★☆☆☆
+### 2.7 Academia.edu  â˜…â˜…â˜†â˜†â˜†
 - Similar to ResearchGate. Low effort, additional node.
 
 ---
 
-## Tier 3 — Engineering-community specific
+## Tier 3 â€” Engineering-community specific
 
-### 3.1 PhilippineCE / Filipino Engineer directories  ★★★☆☆
+### 3.1 PhilippineCE / Filipino Engineer directories  â˜…â˜…â˜…â˜†â˜†
 Any community directory of Philippine civil engineers that allows a
 profile with external link. Even one such ref adds geographic-entity
 specificity.
 
-### 3.2 LinkedIn Articles  ★★★★☆
-Publish 2–3 long-form LinkedIn articles from your existing profile,
+### 3.2 LinkedIn Articles  â˜…â˜…â˜…â˜…â˜†
+Publish 2â€“3 long-form LinkedIn articles from your existing profile,
 titled unambiguously:
 - "AI-Driven Structural Optimization: Early Results from Balmores
   Laboratory"
 - "PyNite + PyTorch: A Practical FEM-to-AI Pipeline for Mid-Rise RC
   Frames"
-Each article is indexed under `linkedin.com/pulse/...` — new `sameAs`
+Each article is indexed under `linkedin.com/pulse/...` â€” new `sameAs`
 candidates and independent content citing *Louie Doniego Balmores*.
 
-### 3.3 YouTube channel  ★★★★☆
-A channel named `Louie Balmores` (or `Balmores Lab`) with even 3–5
+### 3.3 YouTube channel  â˜…â˜…â˜…â˜…â˜†
+A channel named `Louie Balmores` (or `Balmores Lab`) with even 3â€“5
 short videos (screen-capture demos of the PyNite app) becomes a huge
 KP signal because Google owns YouTube and the entity-link is trivial.
 
-### 3.4 Product Hunt launch for Balmores Strux AI  ★★☆☆☆
-One-time launch → permanent product page with external references.
+### 3.4 Product Hunt launch for Balmores Strux AI  â˜…â˜…â˜†â˜†â˜†
+One-time launch â†’ permanent product page with external references.
 
 ---
 
@@ -172,7 +172,7 @@ One-time launch → permanent product page with external references.
    `https://www.balmoreslab.com` (with `www.`, with `https://`, no
    trailing slash). Exact-string matching matters.
 2. In the bio, paste one of the 3 bios from `louie-balmores-bios.md`
-   **verbatim**. Resist the urge to edit — consistency is the signal.
+   **verbatim**. Resist the urge to edit â€” consistency is the signal.
 3. Add a profile photo. Use the **same photo** on every platform. Google
    runs image-similarity hashing for entity reconciliation.
 4. After 3+ new accounts exist, add them to Render env vars and re-ship
@@ -183,10 +183,10 @@ One-time launch → permanent product page with external references.
 | Stage | Time |
 |---|---|
 | Sitemap discovered by Google | hours after ping |
-| `/` and `/about` indexed | 1–24 h after *Request Indexing* |
-| Wikidata item crawled by Google | 12–72 h after creation |
-| Entity candidate formed in Google's Knowledge Graph | ~1–3 weeks after 10+ consistent refs exist |
-| Knowledge Panel appears on SERP for "Louie Balmores" | typically **2–8 weeks** after entity formation |
+| `/` and `/about` indexed | 1â€“24 h after *Request Indexing* |
+| Wikidata item crawled by Google | 12â€“72 h after creation |
+| Entity candidate formed in Google's Knowledge Graph | ~1â€“3 weeks after 10+ consistent refs exist |
+| Knowledge Panel appears on SERP for "Louie Balmores" | typically **2â€“8 weeks** after entity formation |
 
 ## The single biggest accelerator
 

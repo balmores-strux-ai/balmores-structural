@@ -2324,3 +2324,81 @@ select:focus, .field:focus {
   margin: 0;
   text-align: center;
 }
+
+.structure-model-3d {
+  margin-bottom: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: radial-gradient(circle at 60% 0%, rgba(6, 182, 212, 0.12), transparent 34%), rgba(10, 14, 22, 0.74);
+}
+
+.prompt-input-preview {
+  margin-top: 10px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(15, 23, 42, 0.72));
+}
+
+.prompt-preview-title,
+.steel-advisor-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.prompt-preview-title span,
+.steel-advisor-head span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.prompt-preview-grid,
+.steel-advisor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.prompt-preview-grid > div,
+.steel-advisor-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.prompt-preview-grid b,
+.steel-advisor-card span {
+  display: block;
+  color: #bae6fd;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.prompt-preview-grid p,
+.steel-advisor-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.steel-advisor {
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: radial-gradient(circle at 10% 0%, rgba(34, 197, 94, 0.11), transparent 34%), rgba(10, 14, 22, 0.74);
+}
+
+.steel-advisor-card b {
+  display: block;
+  font-size: 20px;
+  color: #bbf7d0;
+  margin-bottom: 4px;
+}

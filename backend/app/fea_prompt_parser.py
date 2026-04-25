@@ -607,11 +607,12 @@ def _parse_building_3d(text: str, notes: List[str]) -> Dict[str, Any]:
 
     sx = _find_spans_block(text, "x")
     sy = _find_spans_block(text, "y")
-    if not sx or not sy:
-        raise ValueError(
-            "Could not parse X- and Y-span lists. Use e.g. "
-            "'X-spans (6, 8, 6 m) and Y-spans (5, 5 m)'."
-        )
+    if not sx:
+        sx = [6.0, 6.0, 6.0]
+        notes.append("No X-span list found; assuming 3 bays at 6.0 m each.")
+    if not sy:
+        sy = [6.0, 6.0]
+        notes.append("No Y-span list found; assuming 2 bays at 6.0 m each.")
 
     sh = _uniform_story_height_m(text)
     if not sh:
@@ -656,6 +657,37 @@ def _parse_building_3d(text: str, notes: List[str]) -> Dict[str, Any]:
             f"{lateral_fraction:.0%} of estimated gravity (roof nodal push; educational model)."
         )
 
+    n_stories = len(story_heights_m)
+    if rc:
+        if n_stories >= 25:
+            beam_w, beam_d, col_w = 0.70, 1.10, 2.20
+            notes.append(
+                "Tall RC building assumption: using preliminary high-rise member sizes "
+                "(beam 0.70×1.10 m, column/core-line equivalent 2.20 m square) for lateral stiffness."
+            )
+        elif n_stories >= 12:
+            beam_w, beam_d, col_w = 0.50, 0.80, 0.90
+            notes.append(
+                "Mid-rise RC building assumption: using beam 0.50×0.80 m and column 0.90 m square."
+            )
+        else:
+            beam_w, beam_d, col_w = 0.40, 0.65, 0.60
+            notes.append(
+                "Low-rise RC building assumption: using beam 0.40×0.65 m and column 0.60 m square."
+            )
+    else:
+        if n_stories >= 20:
+            beam_w, beam_d, col_w = 0.45, 0.75, 0.85
+            notes.append(
+                "Tall steel building assumption: using equivalent section properties "
+                "(beam 0.45×0.75 m, column 0.85 m square) pending explicit member sizes."
+            )
+        else:
+            beam_w, beam_d, col_w = 0.35, 0.55, 0.55
+            notes.append(
+                "Steel building assumption: using equivalent beam 0.35×0.55 m and column 0.55 m square."
+            )
+
     params: Dict[str, Any] = {
         "analysis_type": "building_3d",
         "spans_x_m": sx,
@@ -669,9 +701,9 @@ def _parse_building_3d(text: str, notes: List[str]) -> Dict[str, Any]:
         "material_steel": bool(material_steel),
         "sbc_kpa": sbc,
         "two_way_fraction": 0.5,
-        "beam_width_m": 0.40 if rc else 0.35,
-        "beam_depth_m": 0.65 if rc else 0.55,
-        "column_width_m": 0.50 if rc else 0.40,
+        "beam_width_m": beam_w,
+        "beam_depth_m": beam_d,
+        "column_width_m": col_w,
     }
     if wpress:
         notes.append(f"Wind pressure {wpress} kPa applied to windward façade per storey (simplified).")
