@@ -1,7 +1,7 @@
 """
 Location-aware design criteria resolver.
 
-Given a free-text location (e.g. "Manila", "Cebu", "Davao", "Tokyo", "Singapore"),
+Given a free-text Philippines location (e.g. "Manila", "Cebu", "Davao", "Quezon City"),
 return a complete dictionary of design parameters used by the PyNite analysis kernel:
 
     * Dead/Live/Snow loads (default kPa)
@@ -176,7 +176,7 @@ class DesignCriteriaResult:
 #     coastline, etc.
 #   - Most of the country sits in NSCP seismic zone 4 (PGA ~0.40 g).
 #   - Palawan sits in seismic zone 2 (PGA ~0.20 g).
-# International cities use ASCE 7 / Eurocode / AS NZS 1170 typical values.
+# (International cities deferred — Philippines-only database for this release.)
 # All values are intentionally conservative-but-realistic for a fast first pass.
 
 
@@ -186,10 +186,6 @@ def _q_kpa_from_V(V_mps: float) -> float:
 
 
 _PHL_NSCP = "NSCP 2015 (Philippines National Structural Code)"
-_ASCE = "ASCE 7-22 / IBC 2021 (USA)"
-_EC = "Eurocode 1 (EN 1991) / EN 1998 (EU)"
-_AS = "AS/NZS 1170 (Australia / New Zealand)"
-_JP = "Japanese Building Standard Law / Notification 1454"
 
 # Each entry: canonical_name, country, V (m/s), exposure, seismic_zone,
 # pga_g, V/W coeff, sbc_kpa, soil description.
@@ -214,40 +210,8 @@ _CITY_DB: Dict[str, Dict[str, Any]] = {
     "bacolod":       {"country": "Philippines","V": 70, "exp": "C", "zone": 4, "pga": 0.40, "csb": 0.110, "sbc": 175, "soil": "Alluvial silty sand", "code_w": _PHL_NSCP, "code_s": _PHL_NSCP},
     "batangas":      {"country": "Philippines","V": 70, "exp": "C", "zone": 4, "pga": 0.40, "csb": 0.110, "sbc": 250, "soil": "Volcanic tuff", "code_w": _PHL_NSCP, "code_s": _PHL_NSCP},
     "laoag":         {"country": "Philippines","V": 75, "exp": "C", "zone": 4, "pga": 0.40, "csb": 0.110, "sbc": 200, "soil": "Coastal alluvium", "code_w": _PHL_NSCP, "code_s": _PHL_NSCP},
-
-    # Asia
-    "tokyo":         {"country": "Japan",    "V": 38, "exp": "B", "zone": 4, "pga": 0.40, "csb": 0.20, "sbc": 200, "soil": "Tokyo bay alluvium", "code_w": _JP, "code_s": _JP},
-    "osaka":         {"country": "Japan",    "V": 36, "exp": "B", "zone": 4, "pga": 0.40, "csb": 0.20, "sbc": 200, "soil": "Yodogawa alluvium", "code_w": _JP, "code_s": _JP},
-    "singapore":     {"country": "Singapore","V": 32, "exp": "B", "zone": 1, "pga": 0.05, "csb": 0.030, "sbc": 200, "soil": "Bukit Timah granite / Kallang", "code_w": _EC, "code_s": _EC},
-    "hong kong":     {"country": "Hong Kong","V": 50, "exp": "C", "zone": 2, "pga": 0.10, "csb": 0.040, "sbc": 350, "soil": "Granite / completely decomposed granite", "code_w": "Hong Kong Code of Practice", "code_s": "Hong Kong Code of Practice"},
-    "bangkok":       {"country": "Thailand", "V": 32, "exp": "B", "zone": 1, "pga": 0.05, "csb": 0.030, "sbc": 80,  "soil": "Soft Bangkok clay", "code_w": "TIS / EIT", "code_s": "TIS / EIT"},
-    "jakarta":       {"country": "Indonesia","V": 36, "exp": "B", "zone": 3, "pga": 0.30, "csb": 0.090, "sbc": 100, "soil": "Alluvial / soft clay", "code_w": "SNI 1727 / SNI 1726", "code_s": "SNI 1727 / SNI 1726"},
-    "kuala lumpur":  {"country": "Malaysia", "V": 32, "exp": "B", "zone": 1, "pga": 0.07, "csb": 0.030, "sbc": 200, "soil": "Residual granite", "code_w": "MS 1553 / EC8", "code_s": "MS 1553 / EC8"},
-    "ho chi minh":   {"country": "Vietnam",  "V": 36, "exp": "B", "zone": 1, "pga": 0.05, "csb": 0.030, "sbc": 100, "soil": "Mekong alluvium", "code_w": "TCVN", "code_s": "TCVN"},
-    "hanoi":         {"country": "Vietnam",  "V": 36, "exp": "B", "zone": 1, "pga": 0.07, "csb": 0.030, "sbc": 120, "soil": "Red River alluvium", "code_w": "TCVN", "code_s": "TCVN"},
-    "seoul":         {"country": "South Korea","V": 30, "exp": "B", "zone": 2, "pga": 0.15, "csb": 0.060, "sbc": 200, "soil": "Granite weathered profile", "code_w": "KBC 2016", "code_s": "KBC 2016"},
-    "taipei":        {"country": "Taiwan",   "V": 50, "exp": "C", "zone": 4, "pga": 0.40, "csb": 0.18, "sbc": 175, "soil": "Taipei basin (lacustrine)", "code_w": "Taiwan Building Code", "code_s": "Taiwan Building Code"},
-    "shanghai":      {"country": "China",    "V": 36, "exp": "C", "zone": 2, "pga": 0.10, "csb": 0.050, "sbc": 100, "soil": "Yangtze delta soft clay", "code_w": "GB 50009 / GB 50011", "code_s": "GB 50009 / GB 50011"},
-    "beijing":       {"country": "China",    "V": 30, "exp": "B", "zone": 3, "pga": 0.20, "csb": 0.080, "sbc": 250, "soil": "Loess / silty clay", "code_w": "GB 50009 / GB 50011", "code_s": "GB 50009 / GB 50011"},
-
-    # Americas
-    "new york":      {"country": "USA", "V": 50, "exp": "B", "zone": 2, "pga": 0.15, "csb": 0.060, "sbc": 250, "soil": "Manhattan schist", "code_w": _ASCE, "code_s": _ASCE},
-    "san francisco": {"country": "USA", "V": 38, "exp": "B", "zone": 4, "pga": 0.50, "csb": 0.20,  "sbc": 200, "soil": "Bay mud / Franciscan", "code_w": _ASCE, "code_s": _ASCE},
-    "los angeles":   {"country": "USA", "V": 38, "exp": "B", "zone": 4, "pga": 0.50, "csb": 0.20,  "sbc": 200, "soil": "Alluvium / sandstone", "code_w": _ASCE, "code_s": _ASCE},
-    "chicago":       {"country": "USA", "V": 50, "exp": "C", "zone": 1, "pga": 0.05, "csb": 0.030, "sbc": 250, "soil": "Hard pan / silty clay", "code_w": _ASCE, "code_s": _ASCE},
-    "miami":         {"country": "USA", "V": 75, "exp": "D", "zone": 1, "pga": 0.05, "csb": 0.030, "sbc": 150, "soil": "Limestone / sand", "code_w": _ASCE, "code_s": _ASCE},
-    "houston":       {"country": "USA", "V": 60, "exp": "C", "zone": 1, "pga": 0.05, "csb": 0.030, "sbc": 150, "soil": "Coastal clay", "code_w": _ASCE, "code_s": _ASCE},
-
-    # EU & Oceania
-    "london":        {"country": "UK",        "V": 30, "exp": "B", "zone": 1, "pga": 0.04, "csb": 0.020, "sbc": 200, "soil": "London clay", "code_w": "BS EN 1991-1-4", "code_s": "BS EN 1998"},
-    "paris":         {"country": "France",    "V": 28, "exp": "B", "zone": 1, "pga": 0.04, "csb": 0.020, "sbc": 200, "soil": "Limestone / marl", "code_w": _EC, "code_s": _EC},
-    "berlin":        {"country": "Germany",   "V": 26, "exp": "B", "zone": 1, "pga": 0.04, "csb": 0.020, "sbc": 200, "soil": "Sand / glacial till", "code_w": _EC, "code_s": _EC},
-    "rome":          {"country": "Italy",     "V": 28, "exp": "B", "zone": 3, "pga": 0.20, "csb": 0.080, "sbc": 200, "soil": "Tuff / clay", "code_w": _EC, "code_s": _EC},
-    "madrid":        {"country": "Spain",     "V": 28, "exp": "B", "zone": 1, "pga": 0.05, "csb": 0.020, "sbc": 250, "soil": "Clayey sand", "code_w": _EC, "code_s": _EC},
-    "sydney":        {"country": "Australia", "V": 41, "exp": "B", "zone": 1, "pga": 0.08, "csb": 0.030, "sbc": 250, "soil": "Hawkesbury sandstone", "code_w": _AS, "code_s": _AS},
-    "melbourne":     {"country": "Australia", "V": 41, "exp": "B", "zone": 1, "pga": 0.08, "csb": 0.030, "sbc": 250, "soil": "Basalt / silty clay", "code_w": _AS, "code_s": _AS},
-    "auckland":      {"country": "New Zealand","V": 50, "exp": "B", "zone": 3, "pga": 0.25, "csb": 0.090, "sbc": 200, "soil": "Volcanic tuff", "code_w": _AS, "code_s": _AS},
-    "wellington":    {"country": "New Zealand","V": 55, "exp": "C", "zone": 4, "pga": 0.40, "csb": 0.18, "sbc": 200, "soil": "Greywacke", "code_w": _AS, "code_s": _AS},
+    # All entries above are Philippines — see module docstring. International cities will be
+    # added in a later release after NSCP/ASEP calibrations are complete.
 }
 
 # Aliases (lowercased) → canonical key
@@ -262,14 +226,6 @@ _ALIASES = {
     "tagum": "davao",
     "cdo": "cagayan de oro",
     "iligan": "cagayan de oro",
-    "sg": "singapore",
-    "kl": "kuala lumpur",
-    "hk": "hong kong",
-    "saigon": "ho chi minh",
-    "hcmc": "ho chi minh",
-    "nyc": "new york",
-    "sf": "san francisco",
-    "la": "los angeles",
 }
 
 

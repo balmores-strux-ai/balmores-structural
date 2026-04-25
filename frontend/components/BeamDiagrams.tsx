@@ -89,8 +89,31 @@ function Chart({
   );
 }
 
-export default function BeamDiagrams({ diagrams }: { diagrams?: FeaDiagrams | null }) {
+export type DiagramVisibility = {
+  beamShear: boolean;
+  beamMoment: boolean;
+  beamDeflection: boolean;
+  frameMoment: boolean;
+  frameShear: boolean;
+};
+
+const DEFAULT_VIS: DiagramVisibility = {
+  beamShear: true,
+  beamMoment: true,
+  beamDeflection: true,
+  frameMoment: true,
+  frameShear: true,
+};
+
+export default function BeamDiagrams({
+  diagrams,
+  visibility = DEFAULT_VIS,
+}: {
+  diagrams?: FeaDiagrams | null;
+  visibility?: Partial<DiagramVisibility>;
+}) {
   if (!diagrams) return null;
+  const v = { ...DEFAULT_VIS, ...visibility };
   const hasBeam =
     diagrams.shear_kN && diagrams.moment_kNm && diagrams.deflection_mm;
   const hasFrame =
@@ -105,42 +128,50 @@ export default function BeamDiagrams({ diagrams }: { diagrams?: FeaDiagrams | nu
       </div>
       {hasBeam ? (
         <div className="beam-diag-grid">
-          <Chart
-            title="Shear V (kN)"
-            unit="kN"
-            data={diagrams.shear_kN}
-            fill="rgba(52, 211, 153, 0.45)"
-            stroke="rgba(52, 211, 153, 0.95)"
-          />
-          <Chart
-            title="Moment M (kN·m)"
-            unit="kN·m"
-            data={diagrams.moment_kNm}
-            fill="rgba(251, 191, 36, 0.35)"
-            stroke="rgba(251, 191, 36, 0.95)"
-          />
-          <Chart
-            title="Deflection δ (mm)"
-            unit="mm"
-            data={diagrams.deflection_mm}
-            fill="rgba(96, 165, 250, 0.35)"
-            stroke="rgba(96, 165, 250, 0.95)"
-          />
+          {v.beamShear ? (
+            <Chart
+              title="Shear V (kN)"
+              unit="kN"
+              data={diagrams.shear_kN}
+              fill="rgba(52, 211, 153, 0.45)"
+              stroke="rgba(52, 211, 153, 0.95)"
+            />
+          ) : null}
+          {v.beamMoment ? (
+            <Chart
+              title="Moment M (kN·m)"
+              unit="kN·m"
+              data={diagrams.moment_kNm}
+              fill="rgba(251, 191, 36, 0.35)"
+              stroke="rgba(251, 191, 36, 0.95)"
+            />
+          ) : null}
+          {v.beamDeflection ? (
+            <Chart
+              title="Deflection δ (mm)"
+              unit="mm"
+              data={diagrams.deflection_mm}
+              fill="rgba(96, 165, 250, 0.35)"
+              stroke="rgba(96, 165, 250, 0.95)"
+            />
+          ) : null}
         </div>
       ) : null}
       {hasFrame && diagrams.moment_per_level_kNm ? (
         <div className="beam-diag-grid">
-          {Object.entries(diagrams.moment_per_level_kNm).map(([k, pair]) => (
-            <Chart
-              key={`M${k}`}
-              title={`Moment · storey ${k.replace("level_", "")}`}
-              unit="kN·m"
-              data={pair as Pair}
-              fill="rgba(251, 191, 36, 0.35)"
-              stroke="rgba(251, 191, 36, 0.95)"
-            />
-          ))}
-          {diagrams.shear_per_level_kN
+          {v.frameMoment
+            ? Object.entries(diagrams.moment_per_level_kNm).map(([k, pair]) => (
+                <Chart
+                  key={`M${k}`}
+                  title={`Moment · storey ${k.replace("level_", "")}`}
+                  unit="kN·m"
+                  data={pair as Pair}
+                  fill="rgba(251, 191, 36, 0.35)"
+                  stroke="rgba(251, 191, 36, 0.95)"
+                />
+              ))
+            : null}
+          {v.frameShear && diagrams.shear_per_level_kN
             ? Object.entries(diagrams.shear_per_level_kN).map(([k, pair]) => (
                 <Chart
                   key={`V${k}`}

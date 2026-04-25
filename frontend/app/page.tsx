@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import AnalysisProgress from "@/components/AnalysisProgress";
 import AssistantMarkdown from "@/components/AssistantMarkdown";
-import BeamDiagrams from "@/components/BeamDiagrams";
+import BeamDiagrams, { type DiagramVisibility } from "@/components/BeamDiagrams";
+import BuildingSupportLoadPanel from "@/components/BuildingSupportLoadPanel";
 import DesignCriteriaCard from "@/components/DesignCriteriaCard";
 import ProfileBadges from "@/components/ProfileBadges";
+import StructureModel2D from "@/components/StructureModel2D";
+import { downloadAndTryOpenDocx, feaResultToDocxBlob } from "@/lib/exportFeaDocx";
 import {
   analyzeFeaPromptStream,
   type FeaProgressEvent,
@@ -28,7 +31,7 @@ I am powered by the **open-source PyNite** finite-element library, integrated di
 2. **2D moment frames** — bay spans, storey heights, gravity + lateral.
 3. **3D buildings** — irregular X / Y spans, up to **60 storeys**, P-Δ, drift, base reactions.
 
-**Type a city** (e.g. *"in Manila"*, *"in Cebu"*, *"in Tokyo"*, *"in Singapore"*) and I will look up the local **wind speed**, **seismic zone**, **PGA**, **SBC** and applicable code automatically — every assumption is shown in the design-criteria table on the right.
+**Type a city in the Philippines** (e.g. *"in Manila"*, *"in Cebu"*, *"in Quezon City"*, *"in Davao"*) and I will look up the local **wind speed**, **seismic zone**, **PGA**, **SBC** and **NSCP 2015** context — every assumption is shown in the design-criteria table on the right.
 
 Tip: include explicit numbers and units (e.g. \`UDL 15 kN/m\`, \`X-spans (6, 8, 6m)\`).`;
 
@@ -118,21 +121,21 @@ const QUICK_PROMPTS: QuickPrompt[] = [
   },
   {
     variant: "building",
-    label: "Building · 60-storey RC, Taipei (max)",
+    label: "Building · 60-storey RC, Quezon City (max)",
     prompt:
-      "60-storey RC tower in Taipei, X-spans (6, 8, 12, 8, 6m), Y-spans (5, 9, 9, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.",
+      "60-storey RC tower in Quezon City, X-spans (6, 8, 12, 8, 6m), Y-spans (5, 9, 9, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.",
   },
   {
     variant: "building",
-    label: "Building · 25-storey steel, Tokyo",
+    label: "Building · 25-storey steel, Makati",
     prompt:
-      "25-storey structural steel tower in Tokyo, X-spans (8, 10, 8m), Y-spans (6, 6m), 3.8m storey heights, 3 kPa DL, 4 kPa LL.",
+      "25-storey structural steel tower in Makati, X-spans (8, 10, 8m), Y-spans (6, 6m), 3.8m storey heights, 3 kPa DL, 4 kPa LL.",
   },
   {
     variant: "building",
-    label: "Building · 12-storey RC, Singapore",
+    label: "Building · 12-storey RC, Iloilo",
     prompt:
-      "12-storey RC building in Singapore, X-spans (7, 7, 7m), Y-spans (6, 6m), 3.6m storey heights, 4 kPa DL, 3 kPa LL, 180 mm slab.",
+      "12-storey RC building in Iloilo, X-spans (7, 7, 7m), Y-spans (6, 6m), 3.6m storey heights, 4 kPa DL, 3 kPa LL, 180 mm slab.",
   },
 ];
 
@@ -145,7 +148,7 @@ function analysisLabel(t?: string): string {
 const APP_VERSION =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_VERSION
     ? process.env.NEXT_PUBLIC_APP_VERSION
-    : "0.4.0";
+    : "0.5.0";
 
 type ChatMsg =
   | { id: string; role: "user"; content: string }
@@ -171,6 +174,20 @@ function fmtDriftRatio(r: unknown): string {
   return `1/${Math.round(1 / n).toLocaleString()}`;
 }
 
+async function loadDemo60Storey(): Promise<FeaPromptResponse | null> {
+  try {
+    const r = await fetch("/demo-fea-60-qc.json", { cache: "force-cache" });
+    return r.ok ? ((await r.json()) as FeaPromptResponse) : null;
+  } catch {
+    return null;
+  }
+}
+
+function shouldUseInstantDemo(text: string): boolean {
+  const t = text.toLowerCase();
+  return /\b60[\s-]*(storey|story|floor)\b/.test(t) || /\btaipei\b/.test(t);
+}
+
 export default function HomePage() {
   const [messages, setMessages] = useState<ChatMsg[]>([
     { id: "welcome", role: "assistant", content: WELCOME_ASSISTANT },
@@ -180,8 +197,34 @@ export default function HomePage() {
   const [result, setResult] = useState<FeaPromptResponse | null>(null);
   const [pDelta, setPDelta] = useState(false);
   const [progressEvent, setProgressEvent] = useState<FeaProgressEvent | null>(null);
+  const [demoMode, setDemoMode] = useState(true);
+  const [exportingDoc, setExportingDoc] = useState(false);
+  const [showReactArrows, setShowReactArrows] = useState(true);
+  const [showLoadArrows, setShowLoadArrows] = useState(true);
+  const [diagVis, setDiagVis] = useState<DiagramVisibility>({
+    beamShear: true,
+    beamMoment: true,
+    beamDeflection: true,
+    frameMoment: true,
+    frameShear: true,
+  });
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadDemo60Storey()
+      .then((data) => {
+        if (!cancelled && data) {
+          setResult(data);
+          setDemoMode(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -196,11 +239,29 @@ export default function HomePage() {
     setMessages((prev) => [...prev, userMsg]);
     setDraft("");
     try {
+      if (shouldUseInstantDemo(text)) {
+        const demo = await loadDemo60Storey();
+        if (demo) {
+          setResult(demo);
+          setDemoMode(true);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              role: "assistant",
+              content:
+                "**Instant 60-storey showcase loaded**\n\nFor fast UX, the 60-storey maximum example opens from a precomputed PyNite result: **60-storey RC tower in Quezon City, Philippines**. This avoids Render stream timeouts while still showing the full output tables, drift, reactions, beams, columns, design criteria, and Word export report.\n\nPhilippines-only location mode is active for this release, so non-Philippines cities are deferred while the NSCP dataset is polished.",
+            },
+          ]);
+          return;
+        }
+      }
       const res = await analyzeFeaPromptStream(text, {
         run_p_delta: pDelta,
         onProgress: (ev) => setProgressEvent(ev),
       });
       setResult(res);
+      setDemoMode(false);
       const elapsedSeconds =
         typeof res.elapsed_ms === "number" ? (res.elapsed_ms / 1000).toFixed(1) : null;
       const assistantBody = `${res.input_summary}\n\n${res.summary_markdown}${
@@ -235,6 +296,26 @@ export default function HomePage() {
   const has2DDiagrams =
     !!result?.diagrams &&
     (result.analysis_type === "beam_2d" || result.analysis_type === "frame_2d");
+
+  const has2DModelView =
+    result && (result.analysis_type === "beam_2d" || result.analysis_type === "frame_2d");
+
+  const exportWord = useCallback(async () => {
+    if (!result) return;
+    setExportingDoc(true);
+    try {
+      const blob = await feaResultToDocxBlob(
+        result,
+        `Balmores_Structural_${result.analysis_type}_${result.load_combination}`,
+      );
+      downloadAndTryOpenDocx(
+        blob,
+        `Balmores_Structural_${result.load_combination.replace(/\s+/g, "_")}.docx`,
+      );
+    } finally {
+      setExportingDoc(false);
+    }
+  }, [result]);
 
   return (
     <div className="page page-fea-chat">
@@ -340,31 +421,155 @@ export default function HomePage() {
               </button>
             </div>
             <p className="hint-line small-muted">
-              Enter — new line · Ctrl+Enter — send · type a city to auto-resolve wind / seismic / SBC
+              Enter — new line · Ctrl+Enter — send · type a Philippine city for NSCP wind / seismic / SBC
             </p>
           </div>
         </section>
 
         <section className="panel panel-results panel-fea-report" aria-label="Analysis results">
-          <div className="panel-header">
-            <strong>PyNite output</strong>
-            <span className="small-muted">
-              {result ? `${result.engine} · ${result.load_combination}` : "—"}
-            </span>
+          <div className="panel-header fea-report-header">
+            <div>
+              <strong>PyNite output</strong>
+              <span className="small-muted">
+                {result ? ` · ${result.engine} · ${result.load_combination}` : "—"}
+              </span>
+            </div>
+            <div className="fea-report-header-actions">
+              {result ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-export"
+                    disabled={exportingDoc}
+                    onClick={() => void exportWord()}
+                    title="Export full tables and narrative to Microsoft Word (.docx)"
+                  >
+                    {exportingDoc ? "Preparing…" : "Export report (.docx)"}
+                  </button>
+                  {demoMode ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => {
+                        setResult(null);
+                        setDemoMode(false);
+                      }}
+                    >
+                      Clear sample
+                    </button>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
           </div>
           <div className="panel-body results-scroll fea-report-body">
             {!result && !loading ? (
               <p className="small-muted empty-hint">
                 Send a building description to see parsed inputs, design criteria, reactions,
-                members, and drift.
+                members, and drift. A 60-storey sample may load on open.
               </p>
             ) : null}
 
             {result ? (
               <>
+                {demoMode ? (
+                  <div className="demo-banner" role="status">
+                    <span className="demo-banner-badge">Sample</span>
+                    <span>
+                      Preloaded <strong>60-storey RC · Quezon City</strong> (PyNite) so you can
+                      explore the report layout. Run your own prompt to replace.
+                    </span>
+                  </div>
+                ) : null}
                 {result.design_criteria ? (
                   <div className="report-section">
                     <DesignCriteriaCard criteria={result.design_criteria} />
+                  </div>
+                ) : null}
+
+                {(has2DModelView || result.analysis_type === "building_3d") ? (
+                  <div className="report-section">
+                    <div className="report-h-row">
+                      <h3 className="report-h">
+                        {has2DModelView ? "2D model perspective" : "3D model support/load view"}
+                      </h3>
+                      {has2DModelView ? (
+                        <span className="report-count small-muted">
+                          {result.geometry.nodes.length} nodes · {result.geometry.members.length} members
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="model-view-controls">
+                      {has2DModelView ? (
+                        <>
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={showReactArrows}
+                              onChange={(e) => setShowReactArrows(e.target.checked)}
+                            />
+                            Reaction arrows
+                          </label>
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={showLoadArrows}
+                              onChange={(e) => setShowLoadArrows(e.target.checked)}
+                            />
+                            Applied-load arrows
+                          </label>
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={diagVis.beamShear || diagVis.frameShear}
+                              onChange={(e) =>
+                                setDiagVis((v) => ({
+                                  ...v,
+                                  beamShear: e.target.checked,
+                                  frameShear: e.target.checked,
+                                }))
+                              }
+                            />
+                            Shear diagram
+                          </label>
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={diagVis.beamMoment || diagVis.frameMoment}
+                              onChange={(e) =>
+                                setDiagVis((v) => ({
+                                  ...v,
+                                  beamMoment: e.target.checked,
+                                  frameMoment: e.target.checked,
+                                }))
+                              }
+                            />
+                            Moment diagram
+                          </label>
+                          {result.analysis_type === "beam_2d" ? (
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={diagVis.beamDeflection}
+                                onChange={(e) =>
+                                  setDiagVis((v) => ({ ...v, beamDeflection: e.target.checked }))
+                                }
+                              />
+                              Deflection diagram
+                            </label>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </div>
+                    {has2DModelView ? (
+                      <StructureModel2D
+                        result={result}
+                        showReactions={showReactArrows}
+                        showLoads={showLoadArrows}
+                      />
+                    ) : (
+                      <BuildingSupportLoadPanel result={result} />
+                    )}
                   </div>
                 ) : null}
 
@@ -398,7 +603,7 @@ export default function HomePage() {
                 {has2DDiagrams && result.diagrams ? (
                   <div className="report-section">
                     <h3 className="report-h">Shear / moment / deflection</h3>
-                    <BeamDiagrams diagrams={result.diagrams} />
+                    <BeamDiagrams diagrams={result.diagrams} visibility={diagVis} />
                   </div>
                 ) : null}
 

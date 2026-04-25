@@ -864,7 +864,27 @@ def run_irregular_frame_analysis(
         "engine": "PyNite",
         "pynite_path": pynite_root_label(),
         "load_combination": combo,
-        "geometry": {"nodes": geometry_nodes, "members": geometry_members, "meta": {"source": "fea_irregular_frame"}},
+        "geometry": {
+            "nodes": geometry_nodes,
+            "members": geometry_members,
+            "meta": {
+                "source": "fea_irregular_frame",
+                "grid": {
+                    "nx": nx,
+                    "ny": ny,
+                    "n_levels": nz,
+                    "bays_x": len(sx),
+                    "bays_y": len(sy),
+                    "storeys": len(sh),
+                },
+                "supports_caption": "All base grid nodes (k=0) fixed: Tx,Ty,Tz,Rx,Ry,Rz = restrained.",
+                "loads_caption": (
+                    f"Floor DL+LL: tributary kPa on beams; ULS. Wind: "
+                    f"{wp:.2f} kPa equivalent where applied. "
+                    f"Roof lateral (seismic proxy): {lat_frac*100:.1f}% of est. vertical where enabled."
+                ),
+            },
+        },
         "result_cards": result_cards,
         "assumptions": assumptions,
         "summary_markdown": narrative,
@@ -1147,6 +1167,16 @@ def run_beam_analysis(
     if cL or cR:
         support_summary += f" · overhangs L={cL}m, R={cR}m"
 
+    # One entry per `nodes_xy` in order, for 2D model view (A/B = cantilever free ends)
+    _kinds = []
+    for nm, _xv in nodes_xy:
+        if nm == "SL":
+            _kinds.append(support_left)
+        elif nm == "SR":
+            _kinds.append(support_right)
+        else:
+            _kinds.append("free")
+
     mat_label = mat_name
     defl_limit_mm = (L * 1000.0) / 360.0
     tone_defl = "warning" if d_peak_mm > defl_limit_mm else "good"
@@ -1196,7 +1226,14 @@ def run_beam_analysis(
         "geometry": {
             "nodes": geometry_nodes,
             "members": geometry_members,
-            "meta": {"source": "fea_beam_2d"},
+            "meta": {
+                "source": "fea_beam_2d",
+                "support_kinds": [str(k) for k in _kinds],
+                "support_node_ids": [nm for nm, _xv in nodes_xy],
+                "dl_kN_per_m": dl_w,
+                "ll_kN_per_m": ll_w,
+                "plane": "axis +X; gravity loads on −Y (down in PyNite); diagram view uses member axis vs V, M, δ.",
+            },
         },
         "result_cards": result_cards,
         "assumptions": assumptions,
@@ -1515,7 +1552,14 @@ def run_frame_2d_analysis(
         "geometry": {
             "nodes": geometry_nodes,
             "members": geometry_members,
-            "meta": {"source": "fea_frame_2d"},
+            "meta": {
+                "source": "fea_frame_2d",
+                "plane": "elevation X–Z (global Y = 0; vertical axis Z, horizontal X)",
+                "supports_base": "Fixed 6 DOF at every node with k=0 in id N_i_0; pin Z at upper nodes (in-plane).",
+                "dl_kN_per_m": float(dl_kN_per_m),
+                "ll_kN_per_m": float(ll_kN_per_m),
+                "lateral_fx_per_floor_kN": float(lateral_fx_per_floor_kN) if lateral_fx_per_floor_kN else 0.0,
+            },
         },
         "result_cards": result_cards,
         "assumptions": assumptions,
@@ -1759,7 +1803,13 @@ def _run_continuous_beam(
         "geometry": {
             "nodes": geometry_nodes,
             "members": geometry_members,
-            "meta": {"source": "fea_continuous_beam"},
+            "meta": {
+                "source": "fea_continuous_beam",
+                "support_kinds": [str(k or "roller") for k in support_kinds],
+                "dl_kN_per_m": dl_w,
+                "ll_kN_per_m": ll_w,
+                "plane": "member axis +X; load Fy downward (global).",
+            },
         },
         "result_cards": result_cards,
         "assumptions": assumptions,

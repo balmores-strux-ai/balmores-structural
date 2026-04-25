@@ -465,7 +465,11 @@ export async function analyzeFeaPromptStream(
   }
   if (buffer.trim()) consume(buffer);
   if (lastError) throw new Error(lastError);
-  if (!complete) throw new Error("Stream ended without complete payload");
+  if (!complete) {
+    // Some hosts terminate long-lived streams before the final NDJSON line.
+    // Fall back to the regular endpoint so users don't see a broken stream error.
+    return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
+  }
   return complete;
 }
 
