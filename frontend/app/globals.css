@@ -224,6 +224,17 @@ button, input, select, textarea {
   margin-bottom: 10px;
 }
 
+/* Variant used when the sample-prompt chips sit BELOW the hint line
+   instead of above the textarea. We flip the bottom margin into a top
+   margin so the chips feel like a secondary helper row rather than the
+   primary composer entry point, and add a faint top divider for clarity. */
+.fea-quick-prompts.fea-quick-prompts-below {
+  margin-top: 10px;
+  margin-bottom: 0;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.18);
+}
+
 .fea-chip {
   font-size: 11px;
   padding: 6px 10px;

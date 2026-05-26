@@ -678,28 +678,6 @@ export default function HomePage() {
             </div>
           </div>
           <div className="fea-chat-composer">
-            <div className="fea-quick-prompts">
-              {QUICK_PROMPTS.map((q, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className="fea-chip"
-                  data-variant={q.variant}
-                  disabled={loading}
-                  onClick={() => {
-                    setDraft(q.prompt);
-                    const sample = sampleBundle?.samples[q.sampleKey];
-                    if (sample) {
-                      setResult(sample);
-                      setDemoMode(true);
-                    }
-                    textareaRef.current?.focus();
-                  }}
-                >
-                  {q.label}
-                </button>
-              ))}
-            </div>
             <textarea
               ref={textareaRef}
               className="fea-chat-textarea fea-composer-input"
@@ -749,6 +727,37 @@ export default function HomePage() {
                 Clear history
               </button>
             </p>
+            {/* Sample-prompt chips were moved BELOW the hint line so the
+                input + send button stay the visual center of the composer.
+                Clicking a chip drops its canonical brief into the textarea
+                and pre-loads the matching precomputed sample in the right
+                panel for an instant demo. */}
+            <div
+              className="fea-quick-prompts fea-quick-prompts-below"
+              role="group"
+              aria-label="Sample prompts"
+            >
+              {QUICK_PROMPTS.map((q, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="fea-chip"
+                  data-variant={q.variant}
+                  disabled={loading}
+                  onClick={() => {
+                    setDraft(q.prompt);
+                    const sample = sampleBundle?.samples[q.sampleKey];
+                    if (sample) {
+                      setResult(sample);
+                      setDemoMode(true);
+                    }
+                    textareaRef.current?.focus();
+                  }}
+                >
+                  {q.label}
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
