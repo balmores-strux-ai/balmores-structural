@@ -3,9 +3,19 @@ import { type NextRequest } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BACKEND_PROXY_URL =
-  process.env.BACKEND_PROXY_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000";
-const BACKEND_API_KEY = process.env.BACKEND_API_KEY?.trim() || "";
+function parseBackendEnv(): { proxyUrl: string; apiKey: string } {
+  const rawProxy = process.env.BACKEND_PROXY_URL?.trim() || "";
+  // Be forgiving if both values were accidentally pasted into BACKEND_PROXY_URL.
+  const embeddedUrl = rawProxy.match(/https?:\/\/[^\s]+/)?.[0];
+  const embeddedKey = rawProxy.match(/BACKEND_API_KEY\s*=\s*([^\s]+)/)?.[1];
+
+  return {
+    proxyUrl: (embeddedUrl || rawProxy || "http://127.0.0.1:8000").replace(/\/$/, ""),
+    apiKey: process.env.BACKEND_API_KEY?.trim() || embeddedKey || "",
+  };
+}
+
+const { proxyUrl: BACKEND_PROXY_URL, apiKey: BACKEND_API_KEY } = parseBackendEnv();
 
 function upstreamUrl(path: string[], search: string): string {
   const safePath = path.map((part) => encodeURIComponent(part)).join("/");

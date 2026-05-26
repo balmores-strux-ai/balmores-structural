@@ -1,8 +1,23 @@
 /** @type {import('next').NextConfig} */
-const backend =
-  process.env.BACKEND_PROXY_URL?.replace(/\/$/, "") ||
-  "http://127.0.0.1:8000";
-const useSecureApiProxy = Boolean(process.env.BACKEND_API_KEY?.trim());
+function parseBackendEnv() {
+  const rawProxy = process.env.BACKEND_PROXY_URL?.trim() || "";
+  // Render users sometimes paste:
+  //   BACKEND_PROXY_URL=https://...
+  //   BACKEND_API_KEY=...
+  // into the BACKEND_PROXY_URL value. Extract the URL/key so the build does
+  // not fail with an invalid rewrite destination.
+  const embeddedUrl = rawProxy.match(/https?:\/\/[^\s]+/)?.[0];
+  const embeddedKey = rawProxy.match(/BACKEND_API_KEY\s*=\s*([^\s]+)/)?.[1];
+  const backend = (embeddedUrl || rawProxy || "http://127.0.0.1:8000").replace(/\/$/, "");
+  const apiKey = process.env.BACKEND_API_KEY?.trim() || embeddedKey || "";
+
+  return {
+    backend,
+    useSecureApiProxy: Boolean(apiKey),
+  };
+}
+
+const { backend, useSecureApiProxy } = parseBackendEnv();
 
 const nextConfig = {
   experimental: { serverActions: { allowedOrigins: ["*"] } },
