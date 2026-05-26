@@ -163,9 +163,15 @@ class FeaPromptRequest(BaseModel):
 
 
 class LlmAskRequest(BaseModel):
-    """Prompt routed through PyNite first, then summarized by the local LLM."""
+    """Prompt routed through PyNite first, then summarized by the local LLM.
 
-    message: str = Field(..., min_length=8, max_length=32000)
+    ``message`` accepts as little as 1 character because the LLM endpoint
+    must also handle pure-chat fallbacks (e.g. "hello", "?", "buckling").
+    Only the structural FEA branch enforces a richer brief; the chat branch
+    is permissive.
+    """
+
+    message: str = Field(..., min_length=1, max_length=32000)
     run_p_delta: bool = True
     use_llm_summary: bool = True
 

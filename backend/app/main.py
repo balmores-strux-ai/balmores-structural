@@ -35,7 +35,13 @@ from .store import get_store
 from .inference import build_geometry
 from .model_loader import MODEL_PATH, get_brain
 from .etabs_export import build_etabs_export_json, build_etabs_export_text
-from .local_llm import canonicalize_prompt, llm_health, stream_summary, warm_model
+from .local_llm import (
+    canonicalize_prompt,
+    llm_health,
+    stream_general_chat,
+    stream_summary,
+    warm_model,
+)
 
 try:
     import sentry_sdk
@@ -535,17 +541,88 @@ def llm_health_route() -> dict:
     return llm_health()
 
 
+async def _stream_chat_only(
+    user_message: str,
+    note: Optional[str] = None,
+) -> AsyncIterator[str]:
+    """Fallback NDJSON stream: pure DeepSeek-R1 chat, no PyNite involvement.
+
+    Used when the user's input is not a solvable structural brief — e.g.
+    'hello', 'what is buckling?', 'how do I install Ollama?'. The chat
+    bubble still receives `llm_token` events exactly like the FEA path, so
+    the frontend doesn't need a separate code branch.
+    """
+    yield json.dumps(
+        {
+            "type": "stage",
+            "stage": "chat",
+            "label": "DeepSeek-R1 is composing a reply on your local PC…",
+        }
+    ) + "\n"
+
+    loop = asyncio.get_running_loop()
+    started_at = time.perf_counter()
+    accumulated: list[str] = []
+    last_tick = started_at
+
+    def _iter() -> Iterator[str]:
+        return stream_general_chat(user_message)
+
+    tok_iter = _iter()
+    while True:
+        try:
+            chunk = await loop.run_in_executor(None, lambda: next(tok_iter, None))
+        except Exception as e:  # noqa: BLE001
+            yield json.dumps({"type": "error", "status": 500, "message": str(e)}) + "\n"
+            return
+        if chunk is None:
+            break
+        accumulated.append(chunk)
+        yield json.dumps({"type": "llm_token", "text": chunk}) + "\n"
+        now = time.perf_counter()
+        if now - last_tick > 1.5:
+            last_tick = now
+            yield json.dumps(
+                {
+                    "type": "tick",
+                    "phase": "llm_thinking",
+                    "llm_elapsed_seconds": round(now - started_at, 1),
+                }
+            ) + "\n"
+
+    yield json.dumps(
+        {
+            "type": "stage",
+            "stage": "done",
+            "label": "Reply complete",
+            "progress": 1.0,
+            "elapsed_seconds": round(time.perf_counter() - started_at, 1),
+        }
+    ) + "\n"
+    yield json.dumps(
+        {
+            "type": "complete",
+            "data": None,
+            "llm_summary": "".join(accumulated),
+            "rescue_note": note,
+            "chat_only": True,
+        }
+    ) + "\n"
+
+
 async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
     """NDJSON pipeline: PyNite progress -> result -> streamed LLM commentary.
 
     Frontend treats each line as one event. Token deltas are ``llm_token``;
     the final ``complete`` carries the full FeaPromptResponse + ``llm_summary``.
 
-    If the deterministic regex parser raises ValueError (loose / typo-ridden
-    prompts like "design 2m beam simply supptd 2kn.m"), DeepSeek-R1 is asked
-    to *canonicalise* the brief into the strict regex form, then the solver
-    is retried. The user sees a "rescue" stage event so they understand
-    DeepSeek-R1 interpreted their phrasing.
+    Three possible code paths:
+      1. The regex parser accepts the user message  -> run PyNite + LLM summary.
+      2. The parser fails BUT DeepSeek-R1 can canonicalise it (rescue path)
+         -> run PyNite + LLM summary on the canonical brief.
+      3. Neither succeeds -> fall through to a pure DeepSeek-R1 chat reply
+         so the user *always* gets an answer (greetings, off-topic questions,
+         tool questions, requests for missing inputs, etc.).
     """
     yield json.dumps(
         {
@@ -566,7 +643,7 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
         from .fea_prompt_parser import parse_structural_prompt as _parse
 
         _parse(req.message)
-    except ValueError as ve:
+    except ValueError:
         yield json.dumps(
             {
                 "type": "stage",
@@ -578,6 +655,7 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
             }
         ) + "\n"
         canonical = await loop.run_in_executor(None, canonicalize_prompt, req.message)
+        rescued = False
         if canonical:
             try:
                 from .fea_prompt_parser import parse_structural_prompt as _parse
@@ -587,6 +665,7 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
                 parse_rescue_note = (
                     f"DeepSeek-R1 normalised your prompt to: **{canonical}**"
                 )
+                rescued = True
                 yield json.dumps(
                     {
                         "type": "stage",
@@ -594,32 +673,12 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
                         "label": f"Rescued · {canonical}",
                     }
                 ) + "\n"
-            except ValueError as ve2:
-                yield json.dumps(
-                    {
-                        "type": "error",
-                        "status": 400,
-                        "message": (
-                            "DeepSeek-R1 tried to interpret your prompt as "
-                            f"'{canonical}' but the parser still couldn't extract "
-                            f"the structure ({ve2}). Try writing it like: "
-                            "'Simply supported concrete beam, span 6 m, "
-                            "DL 12 kN/m, LL 8 kN/m.'"
-                        ),
-                    }
-                ) + "\n"
-                return
-        else:
-            yield json.dumps(
-                {
-                    "type": "error",
-                    "status": 400,
-                    "message": (
-                        f"{ve} (DeepSeek-R1 could not rescue this prompt — "
-                        "is Ollama still running?)"
-                    ),
-                }
-            ) + "\n"
+            except ValueError:
+                rescued = False
+        if not rescued:
+            # Not a structural brief at all — degrade to a pure chat reply.
+            async for chunk in _stream_chat_only(req.message):
+                yield chunk
             return
 
     fea_req = FeaPromptRequest(message=effective_message, run_p_delta=req.run_p_delta)

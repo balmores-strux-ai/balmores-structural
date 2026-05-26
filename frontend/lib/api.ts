@@ -445,9 +445,10 @@ export type LlmStreamEvent =
   | { type: "llm_token"; text: string }
   | {
       type: "complete";
-      data: FeaPromptResponse;
+      data: FeaPromptResponse | null;
       llm_summary: string;
       rescue_note?: string | null;
+      chat_only?: boolean;
     }
   | { type: "error"; status?: number; message: string };
 
@@ -464,7 +465,12 @@ export async function askLlmStream(
     onProgress?: (ev: LlmStreamEvent) => void;
     onLlmToken?: (text: string, accumulated: string) => void;
   },
-): Promise<{ data: FeaPromptResponse; llm_summary: string; rescue_note?: string | null }> {
+): Promise<{
+  data: FeaPromptResponse | null;
+  llm_summary: string;
+  rescue_note?: string | null;
+  chat_only?: boolean;
+}> {
   const body = JSON.stringify({
     message,
     run_p_delta: opts.run_p_delta !== false,
@@ -491,6 +497,8 @@ export async function askLlmStream(
   let complete: FeaPromptResponse | null = null;
   let summary = "";
   let rescueNote: string | null | undefined = undefined;
+  let chatOnly = false;
+  let sawComplete = false;
   let lastError: string | null = null;
 
   const consume = (line: string) => {
@@ -507,9 +515,11 @@ export async function askLlmStream(
       accumulated += ev.text;
       opts.onLlmToken?.(ev.text, accumulated);
     } else if (ev.type === "complete") {
-      complete = ev.data;
+      sawComplete = true;
+      complete = ev.data; // may be null in chat-only mode
       summary = ev.llm_summary || accumulated;
       rescueNote = ev.rescue_note ?? null;
+      chatOnly = ev.chat_only ?? false;
     } else if (ev.type === "error") {
       lastError = ev.message;
     }
@@ -525,8 +535,13 @@ export async function askLlmStream(
   }
   if (buffer.trim()) consume(buffer);
   if (lastError) throw new Error(lastError);
-  if (!complete) throw new Error("LLM stream ended without complete payload");
-  return { data: complete, llm_summary: summary, rescue_note: rescueNote };
+  if (!sawComplete) throw new Error("LLM stream ended without complete payload");
+  return {
+    data: complete,
+    llm_summary: summary,
+    rescue_note: rescueNote,
+    chat_only: chatOnly,
+  };
 }
 
 /**

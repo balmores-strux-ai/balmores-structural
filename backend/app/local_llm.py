@@ -535,6 +535,141 @@ def stream_summary(
         _CACHE.put(cache_key, full)
 
 
+# ---------------------------------------------------------------------------
+# General-purpose chat (no PyNite involved)
+# ---------------------------------------------------------------------------
+#
+# When the user's message isn't a solvable structural brief (e.g. "hello",
+# "what is buckling?", "how do I install ollama?") we still need to answer
+# them so the chat never feels broken. This function streams a conversational
+# DeepSeek-R1 reply with a system prompt that keeps it on-topic for structural
+# engineering but allows general engineering / tool questions too.
+
+_CHAT_SYSTEM = (
+    "You are Balmores AI, a privacy-first structural-engineering assistant "
+    "that runs **entirely on the user's local PC**. The user is talking to "
+    "you through a chat box. Reply directly and concisely in Markdown.\n\n"
+    "Behaviour rules:\n"
+    "- If the user asks a structural-engineering question (beams, frames, "
+    "buildings, loads, drift, code checks), answer it with practical "
+    "engineering insight and, when appropriate, suggest the canonical brief "
+    "they can paste back to trigger a PyNite solve (e.g. 'Simply supported "
+    "concrete beam, span 6 m, DL 12 kN/m, LL 8 kN/m.').\n"
+    "- If the user greets you or asks who you are, introduce yourself in one "
+    "or two sentences and tell them what you can do (PyNite FEA + DeepSeek-R1 "
+    "commentary, fully local, supports beams / 2D frames / 3D buildings up to "
+    "60 storeys with P-Δ, drift and base reactions).\n"
+    "- If the user asks an off-topic question, answer briefly and gently "
+    "steer them back to structural engineering.\n"
+    "- Never reveal internal reasoning or <think> blocks. Be the final "
+    "answer only.\n"
+    "- Never claim to call PyNite — only the backend orchestrator runs the "
+    "solver. If the user wants numbers, ask them to give spans, supports, "
+    "and loads, then they can press Enter to run a real FEM solve.\n"
+)
+
+
+def stream_general_chat(
+    user_message: str,
+    history: Optional[list] = None,
+) -> Iterator[str]:
+    """Stream a DeepSeek-R1 reply to ``user_message`` without going through PyNite.
+
+    Used as the catch-all so that *any* user input gets a response. ``history``,
+    if provided, is a list of ``{"role": "user"|"assistant", "content": str}``
+    dicts representing prior turns (oldest first, capped to the last ~6 turns
+    by the caller).
+    """
+    enabled, reason = _guard_target()
+    msg = (user_message or "").strip()
+    if not msg:
+        yield "Type a question or a structural brief and press Enter."
+        return
+    if not enabled:
+        yield (
+            "_Local DeepSeek-R1 is not reachable on this machine "
+            f"({reason}). I can still solve structural prompts through the "
+            "deterministic PyNite parser — try: "
+            "'Simply supported concrete beam, span 6 m, DL 12 kN/m, LL 8 kN/m.'_"
+        )
+        return
+
+    cache_key = _digest(LLM_MODEL, "chat_v1", _CHAT_SYSTEM, msg)
+    cached = _CACHE.get(cache_key)
+    if cached:
+        yield cached
+        return
+
+    # Cap context: max 6 prior turns, strip to LLM_MAX_INPUT_CHARS per turn.
+    messages: list[Dict[str, str]] = [{"role": "system", "content": _CHAT_SYSTEM}]
+    if history:
+        for turn in list(history)[-6:]:
+            role = (turn.get("role") or "").lower()
+            if role not in ("user", "assistant"):
+                continue
+            content = (turn.get("content") or "").strip()
+            if not content:
+                continue
+            messages.append({"role": role, "content": content[:LLM_MAX_INPUT_CHARS]})
+    messages.append({"role": "user", "content": msg[:LLM_MAX_INPUT_CHARS]})
+
+    body = {
+        "model": LLM_MODEL,
+        "stream": True,
+        "keep_alive": LLM_KEEP_ALIVE,
+        # Disable visible chain-of-thought; chat answers should be the direct
+        # reply, not a reasoning trace. Drops first-token latency from minutes
+        # to a couple of seconds.
+        "think": False,
+        "options": {
+            "temperature": 0.4,
+            "top_p": 0.9,
+            "num_ctx": LLM_NUM_CTX,
+            "num_predict": min(LLM_MAX_OUTPUT_TOKENS, 1024),
+        },
+        "messages": messages,
+    }
+
+    stripper = _ThinkStripper()
+    pieces: list[str] = []
+    started_at = time.perf_counter()
+    try:
+        for event in _ollama_post_stream("/api/chat", body):
+            ev_msg = event.get("message") or {}
+            chunk = ev_msg.get("content") or ""
+            if not chunk:
+                if event.get("done"):
+                    break
+                continue
+            clean = stripper.feed(chunk)
+            if clean:
+                pieces.append(clean)
+                yield clean
+            if event.get("done"):
+                break
+            if time.perf_counter() - started_at > LLM_TIMEOUT_SECONDS:
+                yield "\n\n_(Local LLM took too long — please try again or rephrase.)_"
+                break
+    except URLError as e:
+        yield (
+            f"_Local DeepSeek-R1 unreachable: {e.reason}. "
+            "If you're on the public site, the local model can't be contacted from outside your PC by design._"
+        )
+        return
+    except Exception as e:  # noqa: BLE001
+        yield f"_Local LLM error: {e}_"
+        return
+
+    tail = stripper.flush()
+    if tail:
+        pieces.append(tail)
+        yield tail
+
+    full = _post_clean("".join(pieces))
+    if full:
+        _CACHE.put(cache_key, full)
+
+
 def _fallback_summary(fea_result: Dict[str, Any], note: str = "") -> str:
     """Deterministic, useful text when the LLM is unavailable."""
     if not isinstance(fea_result, dict):
