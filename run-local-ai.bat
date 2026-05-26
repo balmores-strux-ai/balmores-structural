@@ -39,16 +39,28 @@ set LLM_MAX_OUTPUT_TOKENS=2048
 set LLM_TIMEOUT_SECONDS=300
 set LLM_RATE_CAPACITY=30
 set LLM_RATE_REFILL_PER_SEC=0.5
+set LLM_LOCAL_ONLY=1
 
-REM ----- Verify Ollama is up before starting (best-effort) -----
+REM ----- Free port 8000 if a previous backend is still hogging it ---------
+powershell -NoProfile -Command "$c = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue; if ($c) { foreach ($x in $c) { try { Stop-Process -Id $x.OwningProcess -Force -ErrorAction SilentlyContinue } catch {} }; Start-Sleep -Seconds 1; Write-Host 'Freed port 8000.' -ForegroundColor Yellow }"
+
+REM ----- Verify Ollama is up before starting (best-effort) -----------------
 powershell -NoProfile -Command "try { Invoke-WebRequest -Uri http://127.0.0.1:11434/api/tags -UseBasicParsing -TimeoutSec 3 | Out-Null; Write-Host 'Ollama OK' -ForegroundColor Green } catch { Write-Host 'WARNING: Ollama not responding on 127.0.0.1:11434. Start it with `ollama serve` in another terminal, or install via winget install Ollama.Ollama.' -ForegroundColor Yellow }"
 
 echo.
 echo ==========================================================================
-echo  PRIVATE LOCAL AI MODE
-echo    API   : http://127.0.0.1:8000  (loopback only — not reachable from LAN)
-echo    LLM   : %LLM_MODEL% via %LLM_OLLAMA_URL%
-echo    Front : run-frontend.bat  in another terminal
+echo  PRIVATE LOCAL AI MODE  -  Balmores Structural
+echo  -------------------------------------------------------------------------
+echo  API     : http://127.0.0.1:8000   (loopback only - not reachable on LAN)
+echo  LLM     : %LLM_MODEL%
+echo  Ollama  : %LLM_OLLAMA_URL%
+echo  Routes  : /llm/health  /llm/ask/stream  (+ /ask/stream legacy)
+echo  Front   : run-frontend.bat  in another terminal, then open
+echo            http://127.0.0.1:3000
+echo  -------------------------------------------------------------------------
+echo  After the server boots, open the chat page. The header should show
+echo  "Private . deepseek-r1:latest" with a green dot. Then you can type
+echo  anything (incl. "hello") and DeepSeek-R1 will reply.
 echo ==========================================================================
 echo.
 

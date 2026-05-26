@@ -290,7 +290,9 @@ export default function HomePage() {
       .then((h) => {
         if (!cancelled) {
           setLlmHealth(h);
-          if (h && !h.ok) setUseLlm(false);
+          // Do NOT force useLlm=false here even if the probe fails.
+          // The user may start Ollama after the page loads — runAnalysis
+          // re-probes on every submit, so we stay opportunistic.
         }
       })
       .catch(() => {});
@@ -362,8 +364,29 @@ export default function HomePage() {
         }
       }
 
-      // Route through the local DeepSeek-R1 bridge if it's available + enabled.
-      const llmEligible = useLlm && (llmHealth?.ok ?? false);
+      // Route policy: ALWAYS prefer the local DeepSeek-R1 bridge so every
+      // user input gets an answer (greetings, off-topic Qs, FEA briefs,
+      // shorthand). The backend's /llm/ask/stream handles three branches
+      // internally: regex parse, LLM rescue, or chat-only reply.
+      //
+      // We re-probe /llm/health right before sending so that if Ollama was
+      // started AFTER the page loaded, the next message still goes through
+      // DeepSeek-R1 without forcing the user to refresh.
+      let llmEligible = useLlm && (llmHealth?.ok ?? false);
+      if (!llmEligible) {
+        try {
+          const fresh = await getLlmHealth();
+          if (fresh) {
+            setLlmHealth(fresh);
+            if (fresh.ok) {
+              llmEligible = true;
+              setUseLlm(true);
+            }
+          }
+        } catch {
+          /* swallow — fall back to legacy path below */
+        }
+      }
 
       if (llmEligible) {
         const liveId = uid();
@@ -445,6 +468,41 @@ export default function HomePage() {
         return;
       }
 
+      // Legacy / PyNite-only path. We reach here only when the LLM bridge is
+      // unreachable (e.g. running against the public Render backend, or the
+      // user hasn't started Ollama yet, or the backend was never restarted
+      // after the upgrade so the /llm/* routes don't exist).
+      //
+      // The legacy /ask/stream endpoint requires ≥ 8 chars and only solves
+      // structural briefs, so we pre-empt the 422 with a clear message and
+      // tell the user how to enable DeepSeek-R1.
+      if (text.length < 8) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: uid(),
+            role: "assistant",
+            content:
+              "**Local DeepSeek-R1 is offline.**\n\n" +
+              "Your message is too short for the structural FEA parser, and " +
+              "the local LLM bridge isn't reachable, so I can't reply " +
+              "conversationally either.\n\n" +
+              "**To get any answer from DeepSeek-R1 on your PC:**\n" +
+              "1. Open a terminal and run `ollama serve` (or just launch the " +
+              "Ollama app).\n" +
+              "2. Make sure the model is pulled: `ollama pull deepseek-r1`.\n" +
+              "3. Start the backend with `run-local-ai.bat` (so it picks up " +
+              "the new `/llm/ask/stream` route).\n" +
+              "4. Refresh this page once — the privacy badge in the header " +
+              "should flip to `Private · deepseek-r1:latest`.\n\n" +
+              "After that, you can type literally anything (including " +
+              "greetings like `hello`) and DeepSeek-R1 will reply.",
+            isError: true,
+          },
+        ]);
+        return;
+      }
+
       const res = await analyzeFeaPromptStream(text, {
         run_p_delta: pDelta,
         onProgress: (ev) => setProgressEvent(ev),
@@ -466,12 +524,27 @@ export default function HomePage() {
       ]);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Request failed";
+      // Recognise the legacy-parser failure for loose prompts and explain
+      // exactly how to enable the DeepSeek-R1 rescue path.
+      const lower = msg.toLowerCase();
+      const looksLikeLegacyParserFail =
+        lower.includes("could not find beam span") ||
+        lower.includes("could not find the number of storeys") ||
+        lower.includes("describe the structure with spans") ||
+        lower.includes("request failed (422)");
+      const hint = looksLikeLegacyParserFail
+        ? "\n\n_The deterministic regex parser rejected this. " +
+          "To let DeepSeek-R1 interpret loose or short prompts, start " +
+          "Ollama (`ollama serve` + `ollama pull deepseek-r1`) and restart " +
+          "the backend with `run-local-ai.bat`. Refresh the page once and the " +
+          "privacy badge should turn green._"
+        : "";
       setMessages((prev) => [
         ...prev,
         {
           id: uid(),
           role: "assistant",
-          content: `**Analysis failed**\n\n${msg}`,
+          content: `**Analysis failed**\n\n${msg}${hint}`,
           isError: true,
         },
       ]);
