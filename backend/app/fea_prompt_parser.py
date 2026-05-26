@@ -184,6 +184,17 @@ def _parse_udl_total(text: str) -> float | None:
     return None
 
 
+def _parse_bare_knm(text: str) -> float | None:
+    """Bare line load with no DL/LL label — e.g. '6m beam 2 kn/m simply supported'."""
+    t = text.lower()
+    if re.search(r"\b(?:dl|ll|dead|live|d\.l\.|l\.l\.)\b", t):
+        return None
+    m = re.search(r"(\d+(?:\.\d+)?)\s*(?:kn/m|kn\s*per\s*m)\b", t)
+    if m:
+        return float(m.group(1))
+    return None
+
+
 _POINT_LOAD_RE = re.compile(
     r"(\d+(?:\.\d+)?)\s*kn\s*(?:point\s*load)?\s*(?:at|@)\s*"
     r"(\d+(?:\.\d+)?)\s*m(?:\s*(?:from\s*(?:the\s*)?left|from\s*support))?",
@@ -435,6 +446,13 @@ def _parse_beam(text: str, notes: List[str]) -> Dict[str, Any]:
     if udl and dl is None and ll is None:
         dl = udl
         notes.append(f"Interpreted UDL {udl} kN/m as dead load on beam (pass 'LL=…' to split).")
+    if dl is None and ll is None:
+        bare = _parse_bare_knm(text)
+        if bare is not None:
+            dl = bare
+            notes.append(
+                f"Interpreted {bare} kN/m as dead load (no DL/LL label — add LL explicitly to split)."
+            )
     if dl is None and ll is None:
         dl = 10.0
         ll = 5.0

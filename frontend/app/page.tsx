@@ -165,6 +165,38 @@ function analysisLabel(t?: string): string {
   return "3D building";
 }
 
+/** Human-readable title for the report banner — mirrors quick-prompt chip labels when possible. */
+function deriveDesignTitle(prompt: string, result: FeaPromptResponse | null): string {
+  const trimmed = prompt.trim();
+  if (trimmed) {
+    const chip = QUICK_PROMPTS.find((q) => q.prompt.trim() === trimmed);
+    if (chip) return chip.label;
+  }
+  if (result?.design_criteria?.matched_location) {
+    const loc = result.design_criteria.matched_location;
+    const storeys = result.totals?.storeys;
+    if (storeys && storeys > 1) {
+      return `Building - ${storeys}-storey RC, ${loc}`;
+    }
+    return loc;
+  }
+  if (result?.analysis_type === "beam_2d") {
+    const spanMatch = result.input_summary.match(/\*\*Span:\*\*\s*([\d.]+)\s*m/i);
+    const loadMatch = result.input_summary.match(/DL \*\*([\d.]+)\*\* kN\/m/i);
+    const span = spanMatch?.[1];
+    const dl = loadMatch?.[1];
+    if (span && dl) {
+      return `Beam - simply supported, ${span} m span, ${dl} kN/m DL`;
+    }
+    return "Beam - simply supported";
+  }
+  if (trimmed) {
+    const oneLine = trimmed.replace(/\s+/g, " ");
+    return oneLine.length > 96 ? `${oneLine.slice(0, 93)}…` : oneLine;
+  }
+  return analysisLabel(result?.analysis_type);
+}
+
 const APP_VERSION =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_VERSION
     ? process.env.NEXT_PUBLIC_APP_VERSION
@@ -227,6 +259,7 @@ export default function HomePage() {
   const [pDelta, setPDelta] = useState(false);
   const [progressEvent, setProgressEvent] = useState<FeaProgressEvent | null>(null);
   const [demoMode, setDemoMode] = useState(true);
+  const [lastSubmittedPrompt, setLastSubmittedPrompt] = useState(DEFAULT_PROMPT_TEXT);
   const [exportingDoc, setExportingDoc] = useState(false);
   const [showReactArrows, setShowReactArrows] = useState(true);
   const [showLoadArrows, setShowLoadArrows] = useState(true);
@@ -283,6 +316,7 @@ export default function HomePage() {
             null;
           setResult(sample);
           setDemoMode(true);
+          setLastSubmittedPrompt(DEFAULT_PROMPT_TEXT);
         }
       })
       .catch(() => {});
@@ -340,6 +374,7 @@ export default function HomePage() {
     setLoading(true);
     setProgressEvent(null);
     setStreamingLlmText("");
+    setLastSubmittedPrompt(text);
     const userMsg: ChatMsg = { id: uid(), role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
     setDraft("");
@@ -408,6 +443,10 @@ export default function HomePage() {
               if (ev.type === "stage" || ev.type === "tick") {
                 setProgressEvent(ev as FeaProgressEvent);
               }
+            },
+            onFeaReady: (fea) => {
+              setResult(fea);
+              setDemoMode(false);
             },
             onLlmToken: (_chunk, accumulated) => {
               setStreamingLlmText(accumulated);
@@ -506,6 +545,34 @@ export default function HomePage() {
       ]);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Request failed";
+      const lower = msg.toLowerCase();
+      const streamCutOff = lower.includes("stream ended without complete payload");
+      if (streamCutOff || lower.includes("request failed")) {
+        try {
+          const res = await analyzeFeaPromptStream(text, {
+            run_p_delta: pDelta,
+            onProgress: (ev) => setProgressEvent(ev),
+          });
+          setResult(res);
+          setDemoMode(false);
+          const elapsedSeconds =
+            typeof res.elapsed_ms === "number" ? (res.elapsed_ms / 1000).toFixed(1) : null;
+          const assistantBody = `${res.input_summary}\n\n${res.summary_markdown}${
+            elapsedSeconds ? `\n\n_Solved in ${elapsedSeconds} s by the integrated PyNite kernel._` : ""
+          }`;
+          setMessages((prev) => [
+            ...prev.filter((m) => m.role !== "assistant" || !m.content.includes("reviewing your model")),
+            {
+              id: uid(),
+              role: "assistant",
+              content: assistantBody,
+            },
+          ]);
+          return;
+        } catch {
+          /* fall through to error message below */
+        }
+      }
       // Recognise the legacy-parser failure for loose prompts and explain
       // exactly how to enable the DeepSeek-R1 rescue path.
       const lower = msg.toLowerCase();
@@ -724,6 +791,7 @@ export default function HomePage() {
                   disabled={loading}
                   onClick={() => {
                     setDraft(q.prompt);
+                    setLastSubmittedPrompt(q.prompt);
                     const sample = sampleBundle?.samples[q.sampleKey];
                     if (sample) {
                       setResult(sample);
@@ -793,15 +861,10 @@ export default function HomePage() {
 
             {result ? (
               <>
-                {demoMode ? (
-                  <div className="demo-banner" role="status">
-                    <span className="demo-banner-badge">Sample</span>
-                    <span>
-                      Preloaded instant PyNite sample output so users see results immediately.
-                      Select any example chip to swap the prompt text and report instantly.
-                    </span>
-                  </div>
-                ) : null}
+                <div className="demo-banner design-input-banner" role="status">
+                  <span className="demo-banner-badge">Design input</span>
+                  <span>{deriveDesignTitle(lastSubmittedPrompt, result)}</span>
+                </div>
                 {result.design_criteria ? (
                   <div className="report-section">
                     <DesignCriteriaCard criteria={result.design_criteria} />

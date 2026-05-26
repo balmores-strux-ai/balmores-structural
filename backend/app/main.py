@@ -685,6 +685,15 @@ async def _stream_chat_only(
             chunk = await loop.run_in_executor(None, lambda: next(tok_iter, None))
         except Exception as e:  # noqa: BLE001
             yield json.dumps({"type": "error", "status": 500, "message": str(e)}) + "\n"
+            yield json.dumps(
+                {
+                    "type": "complete",
+                    "data": None,
+                    "llm_summary": "",
+                    "rescue_note": note,
+                    "chat_only": True,
+                }
+            ) + "\n"
             return
         if chunk is None:
             break
@@ -864,6 +873,11 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
 
     fea_payload = fea_result.model_dump(mode="json")
 
+    # Push PyNite numbers to the client immediately so the report panel
+    # populates even if the LLM commentary phase is slow or the stream
+    # is cut off by a proxy timeout.
+    yield json.dumps({"type": "fea_ready", "data": fea_payload}) + "\n"
+
     if not req.use_llm_summary:
         yield json.dumps(
             {
@@ -989,6 +1003,24 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
     ) + "\n"
 
 
+async def _llm_ndjson_safe(req: LlmAskRequest) -> AsyncIterator[str]:
+    """Wrap ``_llm_ndjson`` so the stream always ends with a ``complete`` event."""
+    try:
+        async for chunk in _llm_ndjson(req):
+            yield chunk
+    except Exception as e:  # noqa: BLE001
+        yield json.dumps({"type": "error", "status": 500, "message": str(e)}) + "\n"
+        yield json.dumps(
+            {
+                "type": "complete",
+                "data": None,
+                "llm_summary": "",
+                "rescue_note": None,
+                "chat_only": True,
+            }
+        ) + "\n"
+
+
 @app.post(
     "/llm/ask/stream",
     dependencies=[
@@ -1004,7 +1036,7 @@ async def llm_ask_stream(req: LlmAskRequest) -> StreamingResponse:
     ``LLM_OLLAMA_URL`` AND sets ``LLM_ALLOW_REMOTE=1``.
     """
     return StreamingResponse(
-        _llm_ndjson(req),
+        _llm_ndjson_safe(req),
         media_type="application/x-ndjson",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

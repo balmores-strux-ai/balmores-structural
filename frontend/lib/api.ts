@@ -443,6 +443,7 @@ export type LlmStreamEvent =
       llm_elapsed_seconds?: number;
     }
   | { type: "llm_token"; text: string }
+  | { type: "fea_ready"; data: FeaPromptResponse }
   | {
       type: "complete";
       data: FeaPromptResponse | null;
@@ -464,6 +465,7 @@ export async function askLlmStream(
     signal?: AbortSignal;
     onProgress?: (ev: LlmStreamEvent) => void;
     onLlmToken?: (text: string, accumulated: string) => void;
+    onFeaReady?: (data: FeaPromptResponse) => void;
   },
 ): Promise<{
   data: FeaPromptResponse | null;
@@ -495,6 +497,7 @@ export async function askLlmStream(
   let buffer = "";
   let accumulated = "";
   let complete: FeaPromptResponse | null = null;
+  let feaReady: FeaPromptResponse | null = null;
   let summary = "";
   let rescueNote: string | null | undefined = undefined;
   let chatOnly = false;
@@ -514,6 +517,9 @@ export async function askLlmStream(
     if (ev.type === "llm_token") {
       accumulated += ev.text;
       opts.onLlmToken?.(ev.text, accumulated);
+    } else if (ev.type === "fea_ready") {
+      feaReady = ev.data;
+      opts.onFeaReady?.(ev.data);
     } else if (ev.type === "complete") {
       sawComplete = true;
       complete = ev.data; // may be null in chat-only mode
@@ -534,8 +540,18 @@ export async function askLlmStream(
     for (const line of parts) consume(line);
   }
   if (buffer.trim()) consume(buffer);
-  if (lastError) throw new Error(lastError);
-  if (!sawComplete) throw new Error("LLM stream ended without complete payload");
+  if (lastError && !feaReady && !complete) throw new Error(lastError);
+  if (!sawComplete) {
+    if (feaReady) {
+      return {
+        data: feaReady,
+        llm_summary: accumulated.trim() || summary,
+        rescue_note: rescueNote,
+        chat_only: false,
+      };
+    }
+    throw new Error("LLM stream ended without complete payload");
+  }
   return {
     data: complete,
     llm_summary: summary,
