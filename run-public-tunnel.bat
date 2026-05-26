@@ -65,14 +65,23 @@ REM ----- Verify Ollama is up ----------------------------------------------
 powershell -NoProfile -Command "try { Invoke-WebRequest -Uri http://127.0.0.1:11434/api/tags -UseBasicParsing -TimeoutSec 3 | Out-Null; Write-Host 'Ollama OK' -ForegroundColor Green } catch { Write-Host 'WARNING: Ollama not responding on 127.0.0.1:11434. Start it before continuing.' -ForegroundColor Yellow }"
 
 REM ----- Verify cloudflared is installed ----------------------------------
+REM WinGet's MSI sometimes installs successfully before the current shell's
+REM PATH refreshes. Prefer PATH, then fall back to the standard MSI location.
+set CLOUDFLARED_EXE=cloudflared
 where cloudflared >NUL 2>&1
 if errorlevel 1 (
-  echo.
-  echo cloudflared is not installed.
-  echo Install with:  winget install Cloudflare.cloudflared
-  echo Or download:   https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
-  pause
-  exit /b 1
+  if exist "C:\Program Files (x86)\cloudflared\cloudflared.exe" (
+    set CLOUDFLARED_EXE=C:\Program Files (x86)\cloudflared\cloudflared.exe
+  ) else if exist "C:\Program Files\cloudflared\cloudflared.exe" (
+    set CLOUDFLARED_EXE=C:\Program Files\cloudflared\cloudflared.exe
+  ) else (
+    echo.
+    echo cloudflared is not installed.
+    echo Install with:  winget install Cloudflare.cloudflared
+    echo Or download:   https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+    pause
+    exit /b 1
+  )
 )
 
 echo.
@@ -98,7 +107,7 @@ echo ==========================================================================
 echo.
 
 REM Start the tunnel in a separate window so the backend logs stay readable.
-start "Balmores - Cloudflare Tunnel" cmd /k "cloudflared tunnel --url http://127.0.0.1:8000"
+start "Balmores - Cloudflare Tunnel" cmd /k ""%CLOUDFLARED_EXE%" tunnel --url http://127.0.0.1:8000"
 
 REM Boot the backend in the foreground.
 uvicorn app.main:app --host 127.0.0.1 --port 8000
