@@ -100,10 +100,12 @@ _LLM_BUCKETS_LOCK = asyncio.Lock()
 
 # Defense-in-depth: by default /llm/* refuses every request whose direct TCP
 # peer is not loopback AND every request that arrived through a forwarding
-# proxy. This means a public tunnel (ngrok / Cloudflare Tunnel / reverse
-# proxy) cannot reach the local DeepSeek-R1 even if the operator forgot to
-# bind uvicorn to 127.0.0.1. Set LLM_LOCAL_ONLY=0 to opt out (NOT recommended).
+# proxy. To expose the local AI to the public website (via a Cloudflare
+# Tunnel, ngrok, etc.) flip LLM_PUBLIC_TUNNEL=1 AND set API_KEY to a strong
+# secret — that swaps the loopback gate for an API-key gate so only the
+# public website (which carries the key) can reach the assistant.
 _LLM_LOCAL_ONLY = os.getenv("LLM_LOCAL_ONLY", "1").lower() in ("1", "true", "yes", "on")
+_LLM_PUBLIC_TUNNEL = os.getenv("LLM_PUBLIC_TUNNEL", "0").lower() in ("1", "true", "yes", "on")
 _LOOPBACK_IPS = {"127.0.0.1", "::1", "localhost"}
 # Optional explicit allow-list (comma-separated), e.g. "127.0.0.1,192.168.1.50".
 _LLM_IP_ALLOWLIST = {
@@ -123,9 +125,32 @@ def _is_loopback_ip(ip: str) -> bool:
 
 
 async def _llm_security_check(request: Request) -> None:
-    """Loopback / proxy / rate-limit gate for the LLM endpoints."""
-    # 1. Refuse any request that obviously arrived via a forwarding proxy.
-    if _LLM_LOCAL_ONLY:
+    """Gate for /llm/*. Two operating modes:
+
+    * **Local-only** (default ``LLM_LOCAL_ONLY=1``, ``LLM_PUBLIC_TUNNEL=0``):
+      refuse any forwarding header (``x-forwarded-for``, ``cf-connecting-ip``,
+      ``forwarded``, ``x-real-ip``) and any direct peer that isn't on the
+      allow-list. This keeps the local AI inaccessible from the LAN/Internet.
+
+    * **Public tunnel** (``LLM_PUBLIC_TUNNEL=1``): the operator has explicitly
+      wired a Cloudflare Tunnel / ngrok / reverse proxy to make this PC the
+      AI engine for the public website. We drop the loopback check, but we
+      *require* ``API_KEY`` to be set — without a key, public mode is
+      refused so the assistant can't be left exposed by accident. The
+      ``require_api_key_if_configured`` dependency then enforces the key.
+      We still apply per-IP rate limiting so a single client can't pin the
+      GPU.
+    """
+    if _LLM_PUBLIC_TUNNEL:
+        if not os.getenv("API_KEY", "").strip():
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "LLM_PUBLIC_TUNNEL is on but API_KEY is empty. "
+                    "Refusing to expose the assistant without an API key."
+                ),
+            )
+    elif _LLM_LOCAL_ONLY:
         for h in ("x-forwarded-for", "x-real-ip", "forwarded", "cf-connecting-ip"):
             if request.headers.get(h):
                 raise HTTPException(
@@ -138,7 +163,7 @@ async def _llm_security_check(request: Request) -> None:
                 status_code=403,
                 detail=f"Local LLM refuses requests from {peer or 'unknown'} (allow-list only).",
             )
-    # 2. Per-IP token-bucket rate limit.
+    # Per-IP token-bucket rate limit applies in both modes.
     ip = (request.client.host if request.client else "?") or "?"
     now = time.monotonic()
     async with _LLM_BUCKETS_LOCK:
@@ -556,7 +581,7 @@ async def _stream_chat_only(
         {
             "type": "stage",
             "stage": "chat",
-            "label": "DeepSeek-R1 is composing a reply on your local PC…",
+            "label": "Balmores AI is composing a reply…",
         }
     ) + "\n"
 
@@ -628,7 +653,7 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
         {
             "type": "stage",
             "stage": "llm_route",
-            "label": "Routing through local DeepSeek-R1 (loopback only)",
+            "label": "Routing through Balmores AI",
         }
     ) + "\n"
 
@@ -649,7 +674,7 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
                 "type": "stage",
                 "stage": "llm_rescue",
                 "label": (
-                    "DeepSeek-R1 is interpreting your shorthand into a "
+                    "Balmores AI is interpreting your shorthand into a "
                     "canonical structural brief…"
                 ),
             }
@@ -663,7 +688,7 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
                 _parse(canonical)
                 effective_message = canonical
                 parse_rescue_note = (
-                    f"DeepSeek-R1 normalised your prompt to: **{canonical}**"
+                    f"Interpreted your prompt as: **{canonical}**"
                 )
                 rescued = True
                 yield json.dumps(
@@ -757,7 +782,7 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
         {
             "type": "stage",
             "stage": "llm_summary",
-            "label": "DeepSeek-R1 reviewing the PyNite result on your local PC",
+            "label": "Balmores AI is reviewing the PyNite result",
             "progress": 0.97,
         }
     ) + "\n"

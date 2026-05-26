@@ -556,9 +556,10 @@ _CHAT_SYSTEM = (
     "they can paste back to trigger a PyNite solve (e.g. 'Simply supported "
     "concrete beam, span 6 m, DL 12 kN/m, LL 8 kN/m.').\n"
     "- If the user greets you or asks who you are, introduce yourself in one "
-    "or two sentences and tell them what you can do (PyNite FEA + DeepSeek-R1 "
-    "commentary, fully local, supports beams / 2D frames / 3D buildings up to "
-    "60 storeys with P-Δ, drift and base reactions).\n"
+    "or two sentences and tell them what you can do (PyNite FEA + AI "
+    "commentary, supports beams / 2D frames / 3D buildings up to "
+    "60 storeys with P-Δ, drift and base reactions). Never mention the "
+    "underlying model name — refer to yourself only as 'Balmores AI'.\n"
     "- If the user asks an off-topic question, answer briefly and gently "
     "steer them back to structural engineering.\n"
     "- Never reveal internal reasoning or <think> blocks. Be the final "
@@ -587,7 +588,7 @@ def stream_general_chat(
         return
     if not enabled:
         yield (
-            "_Local DeepSeek-R1 is not reachable on this machine "
+            "_Balmores AI is not reachable right now "
             f"({reason}). I can still solve structural prompts through the "
             "deterministic PyNite parser — try: "
             "'Simply supported concrete beam, span 6 m, DL 12 kN/m, LL 8 kN/m.'_"
@@ -651,13 +652,10 @@ def stream_general_chat(
                 yield "\n\n_(Local LLM took too long — please try again or rephrase.)_"
                 break
     except URLError as e:
-        yield (
-            f"_Local DeepSeek-R1 unreachable: {e.reason}. "
-            "If you're on the public site, the local model can't be contacted from outside your PC by design._"
-        )
+        yield f"_Balmores AI is temporarily unreachable ({e.reason})._"
         return
     except Exception as e:  # noqa: BLE001
-        yield f"_Local LLM error: {e}_"
+        yield f"_Balmores AI error: {e}_"
         return
 
     tail = stripper.flush()

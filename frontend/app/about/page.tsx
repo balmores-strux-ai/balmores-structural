@@ -29,7 +29,7 @@ const aboutPageLd = {
   url: `${SITE_URL}/about`,
   name: "About Louie Doniego Balmores",
   description:
-    "Profile of Louie Doniego Balmores - born June 26, 1991 in Tuguegarao City, Cagayan Valley, Philippines; Registered Civil Engineer (PRC Philippines, 2013) and AI researcher based in Ontario, Canada.",
+    "Profile of Louie Doniego Balmores - born June 26, 1991 in Tuguegarao City, Cagayan Valley, Philippines; Registered Civil Engineer (PRC Philippines, 2013), Master's in Computer Science (on-going), and AI researcher based in Ontario, Canada.",
   mainEntity: { "@id": `${SITE_URL}/#person` },
   about: {
     "@type": "Person",
@@ -345,13 +345,15 @@ export default function AboutPage() {
           </p>
           <p style={S.lede} itemProp="description">
             Over <strong>10 years</strong> of structural engineering experience in
-            high-performance building design. Currently conducting advanced research
-            in <strong>AI-driven structural optimization</strong> - transforming
+            high-performance building design, currently pursuing a{" "}
+            <strong>Master&apos;s degree in Computer Science</strong> with a focus on{" "}
+            <strong>AI-driven structural optimization</strong> — transforming
             traditional structural analysis into automated, intelligent workflows at{" "}
             <Link href="/" style={S.extLink}>Balmores Lab</Link>.
           </p>
           <div>
             <span style={S.badge}>Civil Engineer, PRC PH</span>
+            <span style={S.badge}>MS Computer Science (on-going)</span>
             <span style={S.badge}>AI - Structural Optimization</span>
             <span style={S.badge}>10+ Years Experience</span>
           </div>
