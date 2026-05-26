@@ -81,6 +81,31 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add conservative security headers on every response.
+
+    These make it harder for a malicious page to embed or scrape the API,
+    and stop browsers from leaking the backend URL via the Referer header
+    when the assistant is exposed over the public tunnel.
+    """
+
+    async def dispatch(self, request, call_next):  # type: ignore[override]
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault(
+            "Permissions-Policy",
+            "geolocation=(), camera=(), microphone=(), payment=()",
+        )
+        # The API never serves HTML — block scripts to defeat content sniffing
+        # attacks if a browser ever follows a backend URL directly.
+        response.headers.setdefault(
+            "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
+        )
+        return response
+
+
 def _cors_origins() -> list[str]:
     raw = os.getenv("ALLOWED_ORIGINS", "*").strip()
     parts = [o.strip() for o in raw.split(",") if o.strip()]
@@ -178,7 +203,67 @@ async def _llm_security_check(request: Request) -> None:
         _LLM_BUCKETS[ip] = (tokens - 1.0, now)
 
 
-app = FastAPI(title="BALMORES STRUCTURAL", version="0.1.0")
+_FASTAPI_KW: dict = {"title": "BALMORES STRUCTURAL", "version": "0.1.0"}
+if _LLM_PUBLIC_TUNNEL:
+    # When the local backend is exposed over the Internet, hide FastAPI's
+    # automatic docs / OpenAPI schema so external visitors cannot map the
+    # API surface or fingerprint internal endpoints.
+    _FASTAPI_KW.update({"docs_url": None, "redoc_url": None, "openapi_url": None})
+app = FastAPI(**_FASTAPI_KW)
+
+
+# ---------------------------------------------------------------------------
+# Public-tunnel hardening
+# ---------------------------------------------------------------------------
+# When ``LLM_PUBLIC_TUNNEL=1`` the local backend is reachable over the
+# Internet through Cloudflare Tunnel. We **must** make sure it can ONLY
+# answer the small set of AI/FEA endpoints — never serve files, never accept
+# weird paths that hint at directory traversal, and never expose admin or
+# debug routes (FastAPI's /docs, /redoc, /openapi.json).
+#
+# Anything outside this allow-list returns 404, before it ever reaches the
+# router. The middleware also rejects any path containing ``..`` or NUL.
+
+_PUBLIC_TUNNEL_PATH_ALLOWLIST = (
+    "/health",
+    "/llm/health",
+    "/llm/ask/stream",
+    "/fea/analyze",
+    "/fea/analyze-prompt",
+    "/fea/analyze-prompt/stream",
+    "/ask/stream",  # legacy alias the frontend still hits
+)
+
+
+class PublicTunnelFirewall(BaseHTTPMiddleware):
+    """Reject any path that isn't on the public-tunnel allow-list.
+
+    Only enforced when ``LLM_PUBLIC_TUNNEL=1`` so local development is
+    unaffected. This is what prevents a curious public visitor from
+    poking at static files, docs, traversal payloads, or any future
+    endpoint that wasn't designed to be public.
+    """
+
+    async def dispatch(self, request, call_next):  # type: ignore[override]
+        if not _LLM_PUBLIC_TUNNEL:
+            return await call_next(request)
+        path = request.url.path or "/"
+        # Cheap traversal / NUL byte guard.
+        if ".." in path or "\x00" in path or "//" in path:
+            return JSONResponse(
+                status_code=404,
+                content={"error": {"code": "not_found", "message": "Not found"}},
+            )
+        for allowed in _PUBLIC_TUNNEL_PATH_ALLOWLIST:
+            if path == allowed:
+                return await call_next(request)
+        return JSONResponse(
+            status_code=404,
+            content={"error": {"code": "not_found", "message": "Not found"}},
+        )
+
+
+app.add_middleware(PublicTunnelFirewall)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
@@ -186,6 +271,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(MaxBodyMiddleware)
 app.add_middleware(ProcessTimeMiddleware)
@@ -751,9 +837,29 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
         yield json.dumps(
             {"type": "error", "status": he.status_code, "message": str(he.detail)}
         ) + "\n"
+        # Always emit a `complete` so the frontend doesn't throw
+        # "stream ended without complete payload".
+        yield json.dumps(
+            {
+                "type": "complete",
+                "data": None,
+                "llm_summary": "",
+                "rescue_note": parse_rescue_note,
+                "chat_only": True,
+            }
+        ) + "\n"
         return
     except Exception as e:  # noqa: BLE001
         yield json.dumps({"type": "error", "status": 500, "message": str(e)}) + "\n"
+        yield json.dumps(
+            {
+                "type": "complete",
+                "data": None,
+                "llm_summary": "",
+                "rescue_note": parse_rescue_note,
+                "chat_only": True,
+            }
+        ) + "\n"
         return
 
     fea_payload = fea_result.model_dump(mode="json")
@@ -806,6 +912,11 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
     loop.run_in_executor(None, _producer)
 
     llm_started_at = time.perf_counter()
+    # Hard upper bound on the LLM streaming phase so the user never waits
+    # more than this for the executive summary. Beyond it we fall back to
+    # the deterministic PyNite summary and close the stream cleanly.
+    llm_phase_budget_s = float(os.getenv("LLM_PHASE_BUDGET_SECONDS", "45"))
+    llm_dropped = False
     while True:
         # Block up to ~1.5 s for the next LLM chunk. If nothing arrives, emit a
         # heartbeat so the browser sees we're still alive while DeepSeek-R1 is
@@ -813,6 +924,15 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
         try:
             chunk = await asyncio.wait_for(queue.get(), timeout=1.5)
         except asyncio.TimeoutError:
+            if time.perf_counter() - llm_started_at > llm_phase_budget_s:
+                # Stop waiting for the LLM — give the user the deterministic
+                # summary right now. The PyNite numbers are already ready.
+                accumulated = (
+                    accumulated
+                    or "_Balmores AI took too long, showing the deterministic FEA summary instead._"
+                )
+                llm_dropped = True
+                break
             yield json.dumps(
                 {
                     "type": "tick",
@@ -829,6 +949,26 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
             break
         accumulated += chunk
         yield json.dumps({"type": "llm_token", "text": chunk}) + "\n"
+
+    if llm_dropped:
+        # Replace partial / empty LLM text with the deterministic fallback so
+        # the user gets useful structural commentary even when the model
+        # stalls. We import lazily because the dep is cheap and local-only.
+        try:
+            from .local_llm import _fallback_summary
+
+            accumulated = _fallback_summary(
+                fea_payload,
+                note=(
+                    "Balmores AI was slow this round — showing the "
+                    "deterministic PyNite executive summary instead."
+                ),
+            )
+            yield json.dumps(
+                {"type": "llm_token", "text": "\n\n" + accumulated}
+            ) + "\n"
+        except Exception:  # noqa: BLE001
+            pass
 
     yield json.dumps(
         {

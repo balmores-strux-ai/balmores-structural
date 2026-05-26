@@ -52,17 +52,22 @@ LLM_ENABLED = os.getenv("LLM_ENABLED", "1").lower() in ("1", "true", "yes", "on"
 LLM_OLLAMA_URL = os.getenv("LLM_OLLAMA_URL", DEFAULT_OLLAMA_URL).rstrip("/")
 LLM_MODEL = os.getenv("LLM_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
 LLM_ALLOW_REMOTE = os.getenv("LLM_ALLOW_REMOTE", "0").lower() in ("1", "true", "yes")
-LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.2"))
+LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.15"))
 LLM_TOP_P = float(os.getenv("LLM_TOP_P", "0.9"))
-# DeepSeek-R1 is a reasoning model: most of its tokens go inside <think>...</think>.
-# We strip those before sending to the browser, so num_predict has to cover BOTH the
-# silent reasoning *and* the visible summary. 2048 is a safe default on an 8B Q4 model.
-LLM_MAX_OUTPUT_TOKENS = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "2048"))
-LLM_KEEP_ALIVE = os.getenv("LLM_KEEP_ALIVE", "30m")
-LLM_NUM_CTX = int(os.getenv("LLM_NUM_CTX", "4096"))
-LLM_CACHE_SIZE = int(os.getenv("LLM_CACHE_SIZE", "64"))
-LLM_MAX_INPUT_CHARS = int(os.getenv("LLM_MAX_INPUT_CHARS", "16000"))
-LLM_TIMEOUT_SECONDS = float(os.getenv("LLM_TIMEOUT_SECONDS", "300"))
+# We force ``think: False`` on every Ollama call (see below), so the model
+# emits ONLY the user-visible answer. 512 tokens is plenty for a structural
+# executive summary and keeps perceived latency under a few seconds.
+LLM_MAX_OUTPUT_TOKENS = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "512"))
+LLM_KEEP_ALIVE = os.getenv("LLM_KEEP_ALIVE", "60m")
+LLM_NUM_CTX = int(os.getenv("LLM_NUM_CTX", "2048"))
+LLM_CACHE_SIZE = int(os.getenv("LLM_CACHE_SIZE", "128"))
+LLM_MAX_INPUT_CHARS = int(os.getenv("LLM_MAX_INPUT_CHARS", "8000"))
+# Hard wall-clock budget for any single LLM call. 60 s is generous for a
+# warm 8B Q4 model on CPU; we surface a fallback summary if we blow past it
+# so the user never stares at a blank chat bubble.
+LLM_TIMEOUT_SECONDS = float(os.getenv("LLM_TIMEOUT_SECONDS", "60"))
+# Optional CPU thread hint for Ollama. 0 = let Ollama choose; positive = pin.
+LLM_NUM_THREAD = int(os.getenv("LLM_NUM_THREAD", "0"))
 
 _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1", "0.0.0.0"}
 
@@ -177,19 +182,16 @@ def _compact_fea_for_llm(fea: Dict[str, Any]) -> Dict[str, Any]:
 
 
 _SYSTEM_PROMPT = (
-    "You are a senior licensed structural engineer reviewing a PyNite FEM solve "
-    "for the Balmores Structural assistant. The user asked a question; the FEM "
-    "kernel already produced numeric results. Your job is to write a short, "
-    "client-ready executive summary in clean Markdown.\n\n"
-    "Rules:\n"
-    "- Use only numbers from the supplied PyNite JSON. Do not invent values.\n"
-    "- Be concise: 5–8 bullet points, then 1 short paragraph with the verdict.\n"
-    "- Always state load combination, max drift, governing reactions, and the "
-    "controlling beam/column. Flag DCR > 1.0 or drift > h/400 explicitly.\n"
-    "- Reference NSCP 2015 / ASCE 7 only when the design_criteria already cites it.\n"
-    "- If the FEM clearly shows an unsafe condition, say so plainly.\n"
-    "- Keep any internal reasoning short (<= 200 tokens) — the user only sees the "
-    "final summary, so don't loop or repeat thoughts. Go straight to the answer."
+    "You are Balmores AI, a senior licensed structural engineer. The PyNite "
+    "FEM kernel has already produced numeric results — your only job is to "
+    "write a short, client-ready executive summary in clean Markdown.\n\n"
+    "Hard rules:\n"
+    "- Use ONLY numbers from the supplied PyNite JSON. Never invent values.\n"
+    "- 4–6 bullet points, then 1 short verdict paragraph. No preamble.\n"
+    "- Always state the load combination, the controlling member, and the "
+    "governing reaction. Flag DCR > 1.0 or drift > h/400 explicitly.\n"
+    "- Reference NSCP 2015 / ASCE 7 only when design_criteria already cites it.\n"
+    "- No chain-of-thought. Output the final answer directly."
 )
 
 
@@ -251,6 +253,14 @@ def canonicalize_prompt(message: str, timeout: float = 90.0) -> Optional[str]:
     if cached is not None:
         return cached or None
 
+    canon_options: Dict[str, Any] = {
+        "temperature": 0.05,
+        "top_p": 0.9,
+        "num_ctx": LLM_NUM_CTX,
+        "num_predict": 160,
+    }
+    if LLM_NUM_THREAD > 0:
+        canon_options["num_thread"] = LLM_NUM_THREAD
     body = {
         "model": LLM_MODEL,
         "stream": False,
@@ -259,12 +269,7 @@ def canonicalize_prompt(message: str, timeout: float = 90.0) -> Optional[str]:
         # the few-shot examples are enough and silent reasoning would burn the
         # entire token budget. Drops latency from ~170 s to ~3 s.
         "think": False,
-        "options": {
-            "temperature": 0.05,
-            "top_p": 0.9,
-            "num_ctx": LLM_NUM_CTX,
-            "num_predict": 256,
-        },
+        "options": canon_options,
         "messages": [
             {"role": "system", "content": _CANONICALIZE_SYSTEM},
             {"role": "user", "content": msg[:LLM_MAX_INPUT_CHARS]},
@@ -482,16 +487,24 @@ def stream_summary(
         yield cached
         return
 
+    options: Dict[str, Any] = {
+        "temperature": LLM_TEMPERATURE,
+        "top_p": LLM_TOP_P,
+        "num_ctx": LLM_NUM_CTX,
+        "num_predict": LLM_MAX_OUTPUT_TOKENS,
+    }
+    if LLM_NUM_THREAD > 0:
+        options["num_thread"] = LLM_NUM_THREAD
     body = {
         "model": LLM_MODEL,
         "stream": True,
         "keep_alive": LLM_KEEP_ALIVE,
-        "options": {
-            "temperature": LLM_TEMPERATURE,
-            "top_p": LLM_TOP_P,
-            "num_ctx": LLM_NUM_CTX,
-            "num_predict": LLM_MAX_OUTPUT_TOKENS,
-        },
+        # Skip DeepSeek-R1's internal <think> block entirely. The summary is a
+        # straightforward template; reasoning would just burn tokens and add
+        # 30–90 s of perceived latency on CPU. This is the single biggest
+        # speed win we have.
+        "think": False,
+        "options": options,
         "messages": [
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
@@ -614,6 +627,14 @@ def stream_general_chat(
             messages.append({"role": role, "content": content[:LLM_MAX_INPUT_CHARS]})
     messages.append({"role": "user", "content": msg[:LLM_MAX_INPUT_CHARS]})
 
+    chat_options: Dict[str, Any] = {
+        "temperature": 0.3,
+        "top_p": 0.9,
+        "num_ctx": LLM_NUM_CTX,
+        "num_predict": min(LLM_MAX_OUTPUT_TOKENS, 384),
+    }
+    if LLM_NUM_THREAD > 0:
+        chat_options["num_thread"] = LLM_NUM_THREAD
     body = {
         "model": LLM_MODEL,
         "stream": True,
@@ -622,12 +643,7 @@ def stream_general_chat(
         # reply, not a reasoning trace. Drops first-token latency from minutes
         # to a couple of seconds.
         "think": False,
-        "options": {
-            "temperature": 0.4,
-            "top_p": 0.9,
-            "num_ctx": LLM_NUM_CTX,
-            "num_predict": min(LLM_MAX_OUTPUT_TOKENS, 1024),
-        },
+        "options": chat_options,
         "messages": messages,
     }
 

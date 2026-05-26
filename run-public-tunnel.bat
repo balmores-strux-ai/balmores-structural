@@ -46,14 +46,20 @@ REM Tighter rate limit in public mode so a single client can't pin the GPU.
 set LLM_RATE_CAPACITY=12
 set LLM_RATE_REFILL_PER_SEC=0.25
 
-REM ----- Local LLM bridge -------------------------------------------------
+REM ----- Local LLM bridge (speed-tuned for public chat) -------------------
 set LLM_ENABLED=1
 set LLM_OLLAMA_URL=http://127.0.0.1:11434
 set LLM_ALLOW_REMOTE=0
 if "%LLM_MODEL%"=="" set LLM_MODEL=deepseek-r1:latest
-set LLM_KEEP_ALIVE=30m
-set LLM_MAX_OUTPUT_TOKENS=2048
-set LLM_TIMEOUT_SECONDS=300
+REM Keep the model in RAM/VRAM for an hour so consecutive public requests
+REM avoid the cold-load penalty (~5–15 s on an 8B Q4 model).
+set LLM_KEEP_ALIVE=60m
+REM Hard caps tuned for "fast first answer" UX. The summary template needs
+REM only ~300–500 tokens; thinking is disabled in code.
+set LLM_MAX_OUTPUT_TOKENS=512
+set LLM_NUM_CTX=2048
+set LLM_TIMEOUT_SECONDS=60
+set LLM_PHASE_BUDGET_SECONDS=45
 
 REM ----- CORS — restrict to your real public website + localhost ----------
 REM Public-tunnel mode should not inherit a local-only ALLOWED_ORIGINS value

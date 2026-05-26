@@ -29,14 +29,19 @@ set SECURITY_HEADERS=1
 set ACCESS_LOG_JSON=1
 set MAX_BODY_BYTES=2097152
 
-REM ----- Local LLM bridge -----
+REM ----- Local LLM bridge (speed-tuned for snappy chat) -------------------
 set LLM_ENABLED=1
 set LLM_OLLAMA_URL=http://127.0.0.1:11434
 set LLM_ALLOW_REMOTE=0
 if "%LLM_MODEL%"=="" set LLM_MODEL=deepseek-r1:latest
-set LLM_KEEP_ALIVE=30m
-set LLM_MAX_OUTPUT_TOKENS=2048
-set LLM_TIMEOUT_SECONDS=300
+REM Keep the model loaded in RAM/VRAM so consecutive prompts are instant.
+set LLM_KEEP_ALIVE=60m
+REM Hard caps + small context for "first token in 1–3 s" UX. Internal
+REM <think> reasoning is disabled in code; the model emits the answer only.
+set LLM_MAX_OUTPUT_TOKENS=512
+set LLM_NUM_CTX=2048
+set LLM_TIMEOUT_SECONDS=60
+set LLM_PHASE_BUDGET_SECONDS=45
 set LLM_RATE_CAPACITY=30
 set LLM_RATE_REFILL_PER_SEC=0.5
 set LLM_LOCAL_ONLY=1

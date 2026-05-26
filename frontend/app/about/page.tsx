@@ -29,7 +29,7 @@ const aboutPageLd = {
   url: `${SITE_URL}/about`,
   name: "About Louie Doniego Balmores",
   description:
-    "Profile of Louie Doniego Balmores - born June 26, 1991 in Tuguegarao City, Cagayan Valley, Philippines; Registered Civil Engineer (PRC Philippines, 2013), Master's in Computer Science (on-going), and AI researcher based in Ontario, Canada.",
+    "Profile of Louie Doniego Balmores - born June 26, 1991 in Tuguegarao City, Cagayan Valley, Philippines; Registered Civil Engineer (PRC Philippines, 2013), Master's in Computer Science, Doctor of Information Technology, and AI researcher based in Ontario, Canada.",
   mainEntity: { "@id": `${SITE_URL}/#person` },
   about: {
     "@type": "Person",
@@ -346,14 +346,16 @@ export default function AboutPage() {
           <p style={S.lede} itemProp="description">
             Over <strong>10 years</strong> of structural engineering experience in
             high-performance building design, currently pursuing a{" "}
-            <strong>Master&apos;s degree in Computer Science</strong> with a focus on{" "}
+            <strong>Master&apos;s degree in Computer Science</strong> and a{" "}
+            <strong>Doctor of Information Technology</strong> with a focus on{" "}
             <strong>AI-driven structural optimization</strong> — transforming
             traditional structural analysis into automated, intelligent workflows at{" "}
             <Link href="/" style={S.extLink}>Balmores Lab</Link>.
           </p>
           <div>
             <span style={S.badge}>Civil Engineer, PRC PH</span>
-            <span style={S.badge}>MS Computer Science (on-going)</span>
+            <span style={S.badge}>MS Computer Science</span>
+            <span style={S.badge}>Doctor of Information Technology</span>
             <span style={S.badge}>AI - Structural Optimization</span>
             <span style={S.badge}>10+ Years Experience</span>
           </div>
@@ -501,7 +503,7 @@ export default function AboutPage() {
                 Graduate Studies
               </div>
               <h4 style={{ margin: "6px 0 6px", fontSize: 17, color: "#f1f5f9" }} itemProp="name">
-                MS in Computer Science — on-going
+                MS in Computer Science
               </h4>
               <meta itemProp="credentialCategory" content="Graduate degree (in progress)" />
               <p style={{ ...S.p, margin: 0 }}>
@@ -582,9 +584,6 @@ export default function AboutPage() {
             </div>
             <h3 style={S.h3}>
               <span itemProp="name">MS in Computer Science</span>
-              <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 16 }}>
-                {" — on-going"}
-              </span>
             </h3>
             <p style={S.p}>
               Concentration in <strong>Artificial Intelligence</strong> and{" "}
@@ -646,6 +645,31 @@ export default function AboutPage() {
                 Coursework complete · thesis writing &amp; experimental
                 validation in progress.
               </div>
+            </div>
+          </div>
+
+          <div
+            style={{ ...S.card, marginTop: 16 }}
+            itemProp="alumniOf"
+            itemScope
+            itemType="https://schema.org/EducationalOrganization"
+          >
+            <div style={{ color: "#a5b4fc", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+              Doctoral Studies · in progress
+            </div>
+            <h3 style={S.h3}>
+              <span itemProp="name">Doctor of Information Technology</span>
+            </h3>
+            <p style={S.p}>
+              Research direction: <strong>AI-augmented engineering systems</strong> —
+              applying advanced deep-learning, privacy-preserving computation
+              and intelligent infrastructure to scientific and structural
+              computing workloads, extending the MSc thesis on physics-informed
+              neural surrogates into a full doctoral programme.
+            </p>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Status</div>
+              <div style={S.kvVal}>Currently pursuing.</div>
             </div>
           </div>
 

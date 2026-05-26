@@ -77,6 +77,16 @@ const resumeLd = {
       datePublished: "2013-11-27",
       identifier: "Nov 2013 CE Licensure Examination - Sequence No. 350",
     },
+    {
+      "@type": "EducationalOccupationalCredential",
+      name: "Master of Science in Computer Science",
+      credentialCategory: "Graduate degree (in progress)",
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      name: "Doctor of Information Technology",
+      credentialCategory: "Doctoral degree (in progress)",
+    },
   ],
   knowsAbout: [
     "Structural Engineering",
@@ -193,6 +203,35 @@ export default function CVPage() {
             - research initiative on AI-driven structural optimization.
           </p>
         </header>
+
+        <h2 style={S.h2}>Education</h2>
+        <div style={S.card}>
+          <p style={S.role}>Doctor of Information Technology</p>
+          <p style={S.period}>Currently pursuing</p>
+          <p style={S.p}>
+            Research direction: AI-augmented engineering systems and
+            intelligent computational infrastructure for structural and
+            scientific computing.
+          </p>
+        </div>
+        <div style={S.card}>
+          <p style={S.role}>Master of Science in Computer Science</p>
+          <p style={S.period}>Currently pursuing</p>
+          <p style={S.p}>
+            Focus on Artificial Intelligence and Computational Engineering —
+            deep learning, numerical methods for PDEs, graph neural networks,
+            and distributed scientific computing supporting the thesis
+            programme on AI-accelerated structural analysis.
+          </p>
+        </div>
+        <div style={S.card}>
+          <p style={S.role}>Bachelor of Science in Civil Engineering</p>
+          <p style={S.period}>Philippines</p>
+          <p style={S.p}>
+            Foundation for the November 2013 PRC Civil Engineer Licensure
+            Examination (Sequence No.&nbsp;350) — see Credentials below.
+          </p>
+        </div>
 
         <h2 style={S.h2}>Credentials</h2>
         <div style={S.card}>
