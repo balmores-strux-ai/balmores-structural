@@ -70,11 +70,8 @@ REM PATH refreshes. Prefer PATH, then fall back to the standard MSI location.
 set CLOUDFLARED_EXE=cloudflared
 where cloudflared >NUL 2>&1
 if errorlevel 1 (
-  if exist "C:\Program Files (x86)\cloudflared\cloudflared.exe" (
-    set CLOUDFLARED_EXE=C:\Program Files (x86)\cloudflared\cloudflared.exe
-  ) else if exist "C:\Program Files\cloudflared\cloudflared.exe" (
-    set CLOUDFLARED_EXE=C:\Program Files\cloudflared\cloudflared.exe
-  ) else (
+  for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "$c=@((Join-Path ${env:ProgramFiles(x86)} 'cloudflared\cloudflared.exe'), (Join-Path $env:ProgramFiles 'cloudflared\cloudflared.exe')); $p=$c | Where-Object { Test-Path $_ } | Select-Object -First 1; if ($p) { $p }"`) do set "CLOUDFLARED_EXE=%%i"
+  if "%CLOUDFLARED_EXE%"=="cloudflared" (
     echo.
     echo cloudflared is not installed.
     echo Install with:  winget install Cloudflare.cloudflared
