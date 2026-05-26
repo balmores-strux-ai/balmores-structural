@@ -193,6 +193,116 @@ _SYSTEM_PROMPT = (
 )
 
 
+# ---------------------------------------------------------------------------
+# Prompt canonicalisation — DeepSeek-R1 rewrites loose / typo-ridden briefs
+# (e.g. "design 2m beam simply supptd 2kn.m") into the strict canonical form
+# the regex parser understands. This is the rescue path when the deterministic
+# parser raises ValueError.
+# ---------------------------------------------------------------------------
+
+_CANONICALIZE_SYSTEM = (
+    "You normalise loose structural-engineering prompts into one canonical "
+    "line that a strict regex parser can read. Output ONE line only. No "
+    "reasoning, no preamble, no markdown — just the canonical sentence.\n\n"
+    "Unit rules (NON-NEGOTIABLE):\n"
+    "  - Beam loads are per metre: use kN/m (distributed) or kN (point).\n"
+    "  - Building floor loads are area pressures: use kPa.\n"
+    "  - Lengths in m, slab thickness in mm.\n\n"
+    "Abbreviation hints: supptd→supported, simp→simply, cant→cantilever, "
+    "rc→RC, kn.m/knm/kn-m→kNm (or kN/m for distributed), "
+    "pt→point, sty/storey/floor→storey, bldg→building, hgt→storey height.\n\n"
+    "Few-shot examples (mimic the OUT line exactly):\n\n"
+    "USER: design 2m beam simply supptd 2kn.m\n"
+    "OUT: Simply supported concrete beam, span 2 m, UDL 2 kN/m DL.\n\n"
+    "USER: rc beam 6m, dl 12, ll 8\n"
+    "OUT: Simply supported RC beam, span 6 m, DL 12 kN/m, LL 8 kN/m.\n\n"
+    "USER: cant beam 4m fixed left 25kn pt tip\n"
+    "OUT: Cantilever concrete beam, span 4 m, 25 kN point load at 4 m from the left.\n\n"
+    "USER: continuous beam 4 spans 6m dl12 ll8\n"
+    "OUT: Continuous concrete beam, 4 spans of 6 m, DL 12 kN/m, LL 8 kN/m.\n\n"
+    "USER: 3 bay 6m 4 storey 3.5 dl20 ll8 lat25\n"
+    "OUT: 2D RC moment frame, 3 bays of 6 m, 4 storeys at 3.5 m, DL 20 kN/m, LL 8 kN/m, 25 kN lateral per floor.\n\n"
+    "USER: 5sty rc bldg manila spans 6 8 6 / 5 5 hgt 3.5 dl4.5 ll3\n"
+    "OUT: 5-storey RC building in Manila, X-spans (6, 8, 6 m), Y-spans (5, 5 m), 3.5 m storey heights, 4.5 kPa DL, 3 kPa LL.\n\n"
+    "Hard rules:\n"
+    "  1. Preserve every number the user actually wrote.\n"
+    "  2. If supports are missing for a beam, default to 'Simply supported'.\n"
+    "  3. If material is missing, assume 'concrete'.\n"
+    "  4. NEVER invent values that aren't stated or implied.\n"
+)
+
+
+def canonicalize_prompt(message: str, timeout: float = 90.0) -> Optional[str]:
+    """Use the local LLM to rewrite ``message`` into the canonical regex form.
+
+    Returns the canonical line, or ``None`` if the LLM is unavailable / fails.
+    The output is sanitised: <think> blocks stripped, code-fences removed,
+    only the FIRST non-empty line kept (LLM sometimes adds extra commentary
+    despite the instructions).
+    """
+    enabled, _ = _guard_target()
+    if not enabled:
+        return None
+    msg = (message or "").strip()
+    if not msg:
+        return None
+    cache_key = _digest(LLM_MODEL, "canonicalize_v2", msg)
+    cached = _CACHE.get(cache_key)
+    if cached is not None:
+        return cached or None
+
+    body = {
+        "model": LLM_MODEL,
+        "stream": False,
+        "keep_alive": LLM_KEEP_ALIVE,
+        # Tell DeepSeek-R1 to skip its internal <think> trace — for this task
+        # the few-shot examples are enough and silent reasoning would burn the
+        # entire token budget. Drops latency from ~170 s to ~3 s.
+        "think": False,
+        "options": {
+            "temperature": 0.05,
+            "top_p": 0.9,
+            "num_ctx": LLM_NUM_CTX,
+            "num_predict": 256,
+        },
+        "messages": [
+            {"role": "system", "content": _CANONICALIZE_SYSTEM},
+            {"role": "user", "content": msg[:LLM_MAX_INPUT_CHARS]},
+        ],
+    }
+    try:
+        req = Request(
+            f"{LLM_OLLAMA_URL}/api/chat",
+            data=json.dumps(body).encode("utf-8"),
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(req, timeout=timeout) as resp:
+            payload = json.loads(resp.read().decode("utf-8", errors="ignore") or "{}")
+    except Exception:  # noqa: BLE001
+        return None
+
+    raw = (payload.get("message") or {}).get("content", "") or ""
+    cleaned = _post_clean(raw)
+    cleaned = re.sub(r"^```[a-zA-Z]*\n?|```$", "", cleaned, flags=re.MULTILINE).strip()
+    # Keep only the first non-empty line
+    first = ""
+    for line in cleaned.splitlines():
+        line = line.strip().lstrip("-•").strip()
+        if line:
+            first = line
+            break
+    if not first:
+        _CACHE.put(cache_key, "")
+        return None
+    # Reject obviously empty/echo responses
+    if first.lower() == msg.lower() or len(first) < 12:
+        _CACHE.put(cache_key, "")
+        return None
+    _CACHE.put(cache_key, first)
+    return first
+
+
 def _build_user_prompt(user_message: str, fea_compact: Dict[str, Any]) -> str:
     msg = user_message[:LLM_MAX_INPUT_CHARS]
     body = json.dumps(fea_compact, ensure_ascii=False, default=str)

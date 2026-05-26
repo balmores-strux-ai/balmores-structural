@@ -485,6 +485,31 @@ export default function AboutPage() {
           </div>
 
           <h3 style={{ ...S.h3, marginTop: 28, fontSize: 18 }}>Ongoing Credentials</h3>
+          <div style={{ ...S.grid2 }}>
+            {/* Graduate education block — see the dedicated Education section
+                below for the full thesis details. Kept here as a quick chip so
+                the credentials timeline is complete at a glance. */}
+            <div
+              style={S.card}
+              itemProp="hasCredential"
+              itemScope
+              itemType="https://schema.org/EducationalOccupationalCredential"
+            >
+              <div style={{ color: "#a5b4fc", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                Graduate Studies
+              </div>
+              <h4 style={{ margin: "6px 0 6px", fontSize: 17, color: "#f1f5f9" }} itemProp="name">
+                MS in Computer Science — on-going
+              </h4>
+              <meta itemProp="credentialCategory" content="Graduate degree (in progress)" />
+              <p style={{ ...S.p, margin: 0 }}>
+                Specialisation: Artificial Intelligence &amp; Computational
+                Engineering. Thesis on neural surrogate models for finite-element
+                structural analysis (see <a href="#education" style={S.extLink}>Education</a>).
+              </p>
+            </div>
+          </div>
+          <h3 style={{ ...S.h3, marginTop: 28, fontSize: 18 }}>Professional Candidacies</h3>
           <div style={S.grid2}>
             <div
               style={S.card}
@@ -534,6 +559,103 @@ export default function AboutPage() {
                 {" - United States"}
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* EDUCATION — added per profile update: MS in CS (on-going) with a
+            specific thesis title and supervisor blurb. Visible HTML mirrors
+            the Person/alumniOf JSON-LD so Google's Knowledge Panel picks it
+            up as a verified school affiliation. */}
+        <section style={S.section} aria-labelledby="education-h" id="education">
+          <h2 id="education-h" style={S.h2}>Education</h2>
+
+          <div
+            style={S.card}
+            itemProp="alumniOf"
+            itemScope
+            itemType="https://schema.org/EducationalOrganization"
+          >
+            <div style={{ color: "#a5b4fc", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+              Master of Science · in progress
+            </div>
+            <h3 style={S.h3}>
+              <span itemProp="name">MS in Computer Science</span>
+              <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 16 }}>
+                {" — on-going"}
+              </span>
+            </h3>
+            <p style={S.p}>
+              Concentration in <strong>Artificial Intelligence</strong> and{" "}
+              <strong>Computational Engineering</strong>. Coursework spans deep
+              learning, numerical methods for PDEs, graph neural networks, and
+              distributed scientific computing — chosen to support the thesis
+              programme on AI-accelerated structural analysis.
+            </p>
+
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Thesis (working title)</div>
+              <div style={S.kvVal}>
+                <em>
+                  &ldquo;Physics-Informed Neural Surrogates for Real-Time
+                  Finite-Element Analysis of Reinforced-Concrete Frames under
+                  NSCP&#x2009;2015 / ASCE&#x2009;7 Load Combinations&rdquo;
+                </em>
+              </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Thesis statement</div>
+              <div style={S.kvVal}>
+                A unified neural architecture is trained on parametric PyNite
+                and ETABS solves so that an engineer&apos;s plain-English brief
+                returns ULS member envelopes, storey drift, and base reactions
+                in <strong>under one second</strong> — with explicit physics-loss
+                regularisation against the underlying FEM, so predictions stay
+                code-compliant rather than statistically plausible.
+              </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Research outputs</div>
+              <div style={S.kvVal}>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  <li>
+                    Open-source kernel:{" "}
+                    <Link href="/" style={S.extLink}>
+                      Balmores Strux AI
+                    </Link>{" "}
+                    — natural-language → PyNite FEA, validated against ETABS.
+                  </li>
+                  <li>
+                    Local-first LLM bridge: prompts never leave the user&apos;s
+                    PC (DeepSeek-R1 on loopback). See{" "}
+                    <code style={{ color: "#a5b4fc" }}>LOCAL_AI_SETUP.md</code> in the repo.
+                  </li>
+                  <li>
+                    Dataset generator:{" "}
+                    <code style={{ color: "#a5b4fc" }}>etabs_brain_full.py</code>{" "}
+                    — 1,000+ parametric ETABS archetypes for surrogate
+                    training (concrete + steel).
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Status</div>
+              <div style={S.kvVal}>
+                Coursework complete · thesis writing &amp; experimental
+                validation in progress.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ ...S.card, marginTop: 16 }}>
+            <h4 style={{ margin: 0, color: "#f1f5f9", fontSize: 16 }}>
+              BS in Civil Engineering
+            </h4>
+            <p style={{ ...S.p, marginTop: 8, marginBottom: 0 }}>
+              Foundation for the November 2013 PRC Civil Engineer Licensure
+              Examination (Sequence No.&nbsp;350) — see Professional Licensure
+              above.
+            </p>
           </div>
         </section>
 

@@ -35,7 +35,7 @@ from .store import get_store
 from .inference import build_geometry
 from .model_loader import MODEL_PATH, get_brain
 from .etabs_export import build_etabs_export_json, build_etabs_export_text
-from .local_llm import llm_health, stream_summary, warm_model
+from .local_llm import canonicalize_prompt, llm_health, stream_summary, warm_model
 
 try:
     import sentry_sdk
@@ -92,8 +92,47 @@ _LLM_RATE_REFILL_PER_SEC = float(os.getenv("LLM_RATE_REFILL_PER_SEC", "0.5"))
 _LLM_BUCKETS: dict[str, tuple[float, float]] = {}
 _LLM_BUCKETS_LOCK = asyncio.Lock()
 
+# Defense-in-depth: by default /llm/* refuses every request whose direct TCP
+# peer is not loopback AND every request that arrived through a forwarding
+# proxy. This means a public tunnel (ngrok / Cloudflare Tunnel / reverse
+# proxy) cannot reach the local DeepSeek-R1 even if the operator forgot to
+# bind uvicorn to 127.0.0.1. Set LLM_LOCAL_ONLY=0 to opt out (NOT recommended).
+_LLM_LOCAL_ONLY = os.getenv("LLM_LOCAL_ONLY", "1").lower() in ("1", "true", "yes", "on")
+_LOOPBACK_IPS = {"127.0.0.1", "::1", "localhost"}
+# Optional explicit allow-list (comma-separated), e.g. "127.0.0.1,192.168.1.50".
+_LLM_IP_ALLOWLIST = {
+    ip.strip()
+    for ip in os.getenv("LLM_IP_ALLOWLIST", "").split(",")
+    if ip.strip()
+} or _LOOPBACK_IPS
 
-async def _llm_rate_check(request: Request) -> None:
+
+def _is_loopback_ip(ip: str) -> bool:
+    if not ip:
+        return False
+    if ip in _LOOPBACK_IPS:
+        return True
+    # Cover the IPv4 loopback range 127.0.0.0/8.
+    return ip.startswith("127.")
+
+
+async def _llm_security_check(request: Request) -> None:
+    """Loopback / proxy / rate-limit gate for the LLM endpoints."""
+    # 1. Refuse any request that obviously arrived via a forwarding proxy.
+    if _LLM_LOCAL_ONLY:
+        for h in ("x-forwarded-for", "x-real-ip", "forwarded", "cf-connecting-ip"):
+            if request.headers.get(h):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Local LLM is loopback-only. Proxy/tunnel headers detected.",
+                )
+        peer = (request.client.host if request.client else "") or ""
+        if peer not in _LLM_IP_ALLOWLIST and not _is_loopback_ip(peer):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Local LLM refuses requests from {peer or 'unknown'} (allow-list only).",
+            )
+    # 2. Per-IP token-bucket rate limit.
     ip = (request.client.host if request.client else "?") or "?"
     now = time.monotonic()
     async with _LLM_BUCKETS_LOCK:
@@ -490,7 +529,7 @@ async def _ndjson_progress(req: FeaPromptRequest) -> AsyncIterator[str]:
 # ---------------------------------------------------------------------------
 
 
-@app.get("/llm/health")
+@app.get("/llm/health", dependencies=[Depends(_llm_security_check)])
 def llm_health_route() -> dict:
     """Privacy badge data: model name, endpoint, loopback flag, install status."""
     return llm_health()
@@ -501,9 +540,13 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
 
     Frontend treats each line as one event. Token deltas are ``llm_token``;
     the final ``complete`` carries the full FeaPromptResponse + ``llm_summary``.
-    """
-    fea_req = FeaPromptRequest(message=req.message, run_p_delta=req.run_p_delta)
 
+    If the deterministic regex parser raises ValueError (loose / typo-ridden
+    prompts like "design 2m beam simply supptd 2kn.m"), DeepSeek-R1 is asked
+    to *canonicalise* the brief into the strict regex form, then the solver
+    is retried. The user sees a "rescue" stage event so they understand
+    DeepSeek-R1 interpreted their phrasing.
+    """
     yield json.dumps(
         {
             "type": "stage",
@@ -513,9 +556,77 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
     ) + "\n"
 
     loop = asyncio.get_running_loop()
+
+    # Step A: try the fast regex parser. If it fails, ask DeepSeek-R1 to
+    # canonicalise the prompt and retry — this is what fixes shorthand like
+    # "design 2m beam simply supptd 2kn.m".
+    effective_message = req.message
+    parse_rescue_note: Optional[str] = None
+    try:
+        from .fea_prompt_parser import parse_structural_prompt as _parse
+
+        _parse(req.message)
+    except ValueError as ve:
+        yield json.dumps(
+            {
+                "type": "stage",
+                "stage": "llm_rescue",
+                "label": (
+                    "DeepSeek-R1 is interpreting your shorthand into a "
+                    "canonical structural brief…"
+                ),
+            }
+        ) + "\n"
+        canonical = await loop.run_in_executor(None, canonicalize_prompt, req.message)
+        if canonical:
+            try:
+                from .fea_prompt_parser import parse_structural_prompt as _parse
+
+                _parse(canonical)
+                effective_message = canonical
+                parse_rescue_note = (
+                    f"DeepSeek-R1 normalised your prompt to: **{canonical}**"
+                )
+                yield json.dumps(
+                    {
+                        "type": "stage",
+                        "stage": "llm_rescue_ok",
+                        "label": f"Rescued · {canonical}",
+                    }
+                ) + "\n"
+            except ValueError as ve2:
+                yield json.dumps(
+                    {
+                        "type": "error",
+                        "status": 400,
+                        "message": (
+                            "DeepSeek-R1 tried to interpret your prompt as "
+                            f"'{canonical}' but the parser still couldn't extract "
+                            f"the structure ({ve2}). Try writing it like: "
+                            "'Simply supported concrete beam, span 6 m, "
+                            "DL 12 kN/m, LL 8 kN/m.'"
+                        ),
+                    }
+                ) + "\n"
+                return
+        else:
+            yield json.dumps(
+                {
+                    "type": "error",
+                    "status": 400,
+                    "message": (
+                        f"{ve} (DeepSeek-R1 could not rescue this prompt — "
+                        "is Ollama still running?)"
+                    ),
+                }
+            ) + "\n"
+            return
+
+    fea_req = FeaPromptRequest(message=effective_message, run_p_delta=req.run_p_delta)
+
     solver_task = loop.run_in_executor(None, _run_prompt_pipeline, fea_req)
     started_at = time.perf_counter()
-    estimated = _estimate_solve_seconds(req.message)
+    estimated = _estimate_solve_seconds(effective_message)
 
     stages = [
         (0.10, "build_model", "Assembling stiffness blocks"),
@@ -574,7 +685,12 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
             }
         ) + "\n"
         yield json.dumps(
-            {"type": "complete", "data": fea_payload, "llm_summary": ""}
+            {
+                "type": "complete",
+                "data": fea_payload,
+                "llm_summary": "",
+                "rescue_note": parse_rescue_note,
+            }
         ) + "\n"
         return
 
@@ -640,13 +756,21 @@ async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
         }
     ) + "\n"
     yield json.dumps(
-        {"type": "complete", "data": fea_payload, "llm_summary": accumulated}
+        {
+            "type": "complete",
+            "data": fea_payload,
+            "llm_summary": accumulated,
+            "rescue_note": parse_rescue_note,
+        }
     ) + "\n"
 
 
 @app.post(
     "/llm/ask/stream",
-    dependencies=[Depends(require_api_key_if_configured), Depends(_llm_rate_check)],
+    dependencies=[
+        Depends(require_api_key_if_configured),
+        Depends(_llm_security_check),
+    ],
 )
 async def llm_ask_stream(req: LlmAskRequest) -> StreamingResponse:
     """Stream PyNite progress + local DeepSeek-R1 token commentary as NDJSON.

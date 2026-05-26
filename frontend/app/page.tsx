@@ -23,13 +23,14 @@ import {
   type LlmStreamEvent,
 } from "@/lib/api";
 
-const PLACEHOLDER = `Examples you can paste:
+const PLACEHOLDER = `Ask Balmores Structural — DeepSeek-R1 will interpret your prompt, PyNite will solve, summary returns in this thread.
 
+Examples (typos and shorthand are fine — DeepSeek-R1 rescues them):
+- design 2m beam simply supptd 2kn.m
 - Simply supported steel beam, span 8 m, UDL 15 kN/m DL, 10 kN/m LL, 40 kN point load at midspan.
 - Continuous concrete beam, 4 spans of 6 m, DL 12 kN/m, LL 8 kN/m.
 - 2D RC moment frame, 3 bays of 6 m, 4 storeys at 3.5 m, DL 20 kN/m, LL 8 kN/m, 25 kN lateral per floor.
-- 30-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.
-   (Wind, seismic zone and SBC are auto-resolved from the location.)`;
+- 6-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.`;
 
 const TYPING_PREVIEWS = [
   "6-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.",
@@ -43,22 +44,10 @@ const DEFAULT_PROMPT_KEY = "building-6-manila";
 const DEFAULT_PROMPT_TEXT =
   "6-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.";
 
-const WELCOME_ASSISTANT = `**Balmores Structural - PyNite + local DeepSeek-R1 assistant**
-
-I run **two engines side-by-side, both on your computer**:
-
-1. **PyNite FEM** — open-source finite-element kernel that builds, meshes and solves your structure.
-2. **DeepSeek-R1 (8B)** — runs in your local Ollama on \`127.0.0.1\` and writes the executive summary. Nothing about your project ever leaves the machine.
-
-I support:
-
-- **2D beams** — simply supported, fixed-fixed, cantilevers, **continuous beams with 2 / 3 / 4 / 5 supports**.
-- **2D moment frames** — bay spans, storey heights, gravity + lateral.
-- **3D buildings** — irregular X / Y spans, up to **60 storeys**, P-Δ, drift, base reactions.
-
-**Type a Philippine city** (e.g. *"in Manila"*, *"in Cebu"*, *"in Quezon City"*, *"in Davao"*) and I auto-resolve the **wind speed, seismic zone, PGA, SBC** and **NSCP 2015** combos — every assumption shows in the design-criteria card on the right.
-
-Tip: include explicit numbers and units (e.g. \`UDL 15 kN/m\`, \`X-spans (6, 8, 6m)\`).`;
+/** Local-storage key for chat history (per-browser, per-origin). */
+const CHAT_HISTORY_KEY = "balmores.chat.history.v1";
+/** Cap on persisted messages so localStorage never grows unbounded. */
+const CHAT_HISTORY_MAX = 200;
 
 type QuickPrompt = {
   variant: "beam" | "frame" | "building";
@@ -226,9 +215,10 @@ function shouldUseInstantDemo(text: string): boolean {
 }
 
 export default function HomePage() {
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { id: "welcome", role: "assistant", content: WELCOME_ASSISTANT },
-  ]);
+  // Chat thread starts empty by design — the welcome banner has been removed.
+  // History is restored from localStorage on mount so the user can scroll
+  // backwards through previous Q&A across refreshes (ChatGPT-style).
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [draft, setDraft] = useState(DEFAULT_PROMPT_TEXT);
   const [typedPlaceholder, setTypedPlaceholder] = useState("");
   const [loading, setLoading] = useState(false);
@@ -252,6 +242,33 @@ export default function HomePage() {
   });
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Restore chat history from localStorage on mount.
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CHAT_HISTORY_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ChatMsg[];
+        if (Array.isArray(parsed) && parsed.length) {
+          setMessages(parsed.slice(-CHAT_HISTORY_MAX));
+        }
+      }
+    } catch {
+      /* localStorage may be disabled (private mode) — silently fall back. */
+    }
+  }, []);
+
+  // Persist chat history to localStorage after every change.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        CHAT_HISTORY_KEY,
+        JSON.stringify(messages.slice(-CHAT_HISTORY_MAX)),
+      );
+    } catch {
+      /* ignore quota errors; in-memory state remains correct */
+    }
+  }, [messages]);
 
   useEffect(() => {
     let cancelled = false;
@@ -280,6 +297,15 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  const clearHistory = useCallback(() => {
+    setMessages([]);
+    try {
+      window.localStorage.removeItem(CHAT_HISTORY_KEY);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
@@ -350,7 +376,7 @@ export default function HomePage() {
           },
         ]);
 
-        const { data, llm_summary } = await askLlmStream(text, {
+        const { data, llm_summary, rescue_note } = await askLlmStream(text, {
           run_p_delta: pDelta,
           use_llm_summary: true,
           onProgress: (ev: LlmStreamEvent) => {
@@ -374,6 +400,9 @@ export default function HomePage() {
           typeof data.elapsed_ms === "number"
             ? (data.elapsed_ms / 1000).toFixed(1)
             : null;
+        const rescuePrefix = rescue_note
+          ? `> _${rescue_note}_\n\n`
+          : "";
         const final =
           (llm_summary && llm_summary.trim()) ||
           `${data.input_summary}\n\n${data.summary_markdown}`;
@@ -382,7 +411,9 @@ export default function HomePage() {
           : `\n\n_Commentary generated by local DeepSeek-R1 on your machine — nothing left your PC._`;
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === liveId ? { ...m, content: final + footer } : m,
+            m.id === liveId
+              ? { ...m, content: rescuePrefix + final + footer }
+              : m,
           ),
         );
         return;
@@ -580,9 +611,11 @@ export default function HomePage() {
               rows={4}
               disabled={loading}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && (e.ctrlKey || e.metaKey)) {
+                // Enter alone sends; Shift+Enter inserts a newline. This is
+                // the ChatGPT convention users expect.
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  void runAnalysis();
+                  if (!loading && draft.trim()) void runAnalysis();
                 }
               }}
             />
@@ -598,7 +631,25 @@ export default function HomePage() {
               </button>
             </div>
             <p className="hint-line small-muted">
-              Enter - new line - Ctrl+Enter - send - type a Philippine city for NSCP wind / seismic / SBC
+              Enter sends · Shift+Enter for a new line · type a Philippine city for
+              NSCP wind/seismic/SBC ·{" "}
+              <button
+                type="button"
+                onClick={clearHistory}
+                className="link-button"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "inherit",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  padding: 0,
+                  font: "inherit",
+                }}
+                title="Erase all messages from this browser (does not touch the server)"
+              >
+                Clear history
+              </button>
             </p>
           </div>
         </section>

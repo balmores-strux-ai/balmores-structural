@@ -443,7 +443,12 @@ export type LlmStreamEvent =
       llm_elapsed_seconds?: number;
     }
   | { type: "llm_token"; text: string }
-  | { type: "complete"; data: FeaPromptResponse; llm_summary: string }
+  | {
+      type: "complete";
+      data: FeaPromptResponse;
+      llm_summary: string;
+      rescue_note?: string | null;
+    }
   | { type: "error"; status?: number; message: string };
 
 /**
@@ -459,7 +464,7 @@ export async function askLlmStream(
     onProgress?: (ev: LlmStreamEvent) => void;
     onLlmToken?: (text: string, accumulated: string) => void;
   },
-): Promise<{ data: FeaPromptResponse; llm_summary: string }> {
+): Promise<{ data: FeaPromptResponse; llm_summary: string; rescue_note?: string | null }> {
   const body = JSON.stringify({
     message,
     run_p_delta: opts.run_p_delta !== false,
@@ -485,6 +490,7 @@ export async function askLlmStream(
   let accumulated = "";
   let complete: FeaPromptResponse | null = null;
   let summary = "";
+  let rescueNote: string | null | undefined = undefined;
   let lastError: string | null = null;
 
   const consume = (line: string) => {
@@ -503,6 +509,7 @@ export async function askLlmStream(
     } else if (ev.type === "complete") {
       complete = ev.data;
       summary = ev.llm_summary || accumulated;
+      rescueNote = ev.rescue_note ?? null;
     } else if (ev.type === "error") {
       lastError = ev.message;
     }
@@ -519,7 +526,7 @@ export async function askLlmStream(
   if (buffer.trim()) consume(buffer);
   if (lastError) throw new Error(lastError);
   if (!complete) throw new Error("LLM stream ended without complete payload");
-  return { data: complete, llm_summary: summary };
+  return { data: complete, llm_summary: summary, rescue_note: rescueNote };
 }
 
 /**
