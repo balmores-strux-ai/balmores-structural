@@ -15,8 +15,12 @@ import { downloadFeaEtabsExports } from "@/lib/exportFeaEtabs";
 import { downloadAndTryOpenDocx, feaResultToDocxBlob } from "@/lib/exportFeaDocx";
 import {
   analyzeFeaPromptStream,
+  askLlmStream,
+  getLlmHealth,
   type FeaProgressEvent,
   type FeaPromptResponse,
+  type LlmHealth,
+  type LlmStreamEvent,
 } from "@/lib/api";
 
 const PLACEHOLDER = `Examples you can paste:
@@ -28,21 +32,31 @@ const PLACEHOLDER = `Examples you can paste:
    (Wind, seismic zone and SBC are auto-resolved from the location.)`;
 
 const TYPING_PREVIEWS = [
+  "6-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.",
   "30-storey RC tower in Cebu, X-spans (6, 8, 12, 8, 6m), Y-spans (5, 9, 9, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.",
   "2D steel moment frame, 5 bays of 7 m, 6 storeys at 3.6 m, DL 18 kN/m, LL 10 kN/m on every beam, 35 kN wind per floor.",
   "Continuous concrete beam, spans (6, 8, 10, 8, 6 m), 6 supports. DL 22 kN/m, LL 18 kN/m. Left and right ends fixed.",
-  "25-storey structural steel tower in Makati, X-spans (8, 10, 8m), Y-spans (6, 6m), 3.8m storey heights, 3 kPa DL, 4 kPa LL.",
 ];
 
-const WELCOME_ASSISTANT = `**Balmores Structural - PyNite assistant**
+/** Default sample prompt to load on first open (Manila 6-storey RC). */
+const DEFAULT_PROMPT_KEY = "building-6-manila";
+const DEFAULT_PROMPT_TEXT =
+  "6-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.";
 
-I am powered by the **open-source PyNite** finite-element library, integrated directly into this app. Tell me about a structure in plain English and I will build, analyse, and report it. I support:
+const WELCOME_ASSISTANT = `**Balmores Structural - PyNite + local DeepSeek-R1 assistant**
 
-1. **2D beams** - simply supported, fixed-fixed, cantilevers, **continuous beams with 2 / 3 / 4 / 5 supports**.
-2. **2D moment frames** - bay spans, storey heights, gravity + lateral.
-3. **3D buildings** - irregular X / Y spans, up to **60 storeys**, P-Delta, drift, base reactions.
+I run **two engines side-by-side, both on your computer**:
 
-**Type a city in the Philippines** (e.g. *"in Manila"*, *"in Cebu"*, *"in Quezon City"*, *"in Davao"*) and I will look up the local **wind speed**, **seismic zone**, **PGA**, **SBC** and **NSCP 2015** context - every assumption is shown in the design-criteria table on the right.
+1. **PyNite FEM** — open-source finite-element kernel that builds, meshes and solves your structure.
+2. **DeepSeek-R1 (8B)** — runs in your local Ollama on \`127.0.0.1\` and writes the executive summary. Nothing about your project ever leaves the machine.
+
+I support:
+
+- **2D beams** — simply supported, fixed-fixed, cantilevers, **continuous beams with 2 / 3 / 4 / 5 supports**.
+- **2D moment frames** — bay spans, storey heights, gravity + lateral.
+- **3D buildings** — irregular X / Y spans, up to **60 storeys**, P-Δ, drift, base reactions.
+
+**Type a Philippine city** (e.g. *"in Manila"*, *"in Cebu"*, *"in Quezon City"*, *"in Davao"*) and I auto-resolve the **wind speed, seismic zone, PGA, SBC** and **NSCP 2015** combos — every assumption shows in the design-criteria card on the right.
 
 Tip: include explicit numbers and units (e.g. \`UDL 15 kN/m\`, \`X-spans (6, 8, 6m)\`).`;
 
@@ -215,7 +229,7 @@ export default function HomePage() {
   const [messages, setMessages] = useState<ChatMsg[]>([
     { id: "welcome", role: "assistant", content: WELCOME_ASSISTANT },
   ]);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(DEFAULT_PROMPT_TEXT);
   const [typedPlaceholder, setTypedPlaceholder] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FeaPromptResponse | null>(null);
@@ -226,6 +240,9 @@ export default function HomePage() {
   const [exportingDoc, setExportingDoc] = useState(false);
   const [showReactArrows, setShowReactArrows] = useState(true);
   const [showLoadArrows, setShowLoadArrows] = useState(true);
+  const [useLlm, setUseLlm] = useState(true);
+  const [llmHealth, setLlmHealth] = useState<LlmHealth | null>(null);
+  const [, setStreamingLlmText] = useState<string>("");
   const [diagVis, setDiagVis] = useState<DiagramVisibility>({
     beamShear: true,
     beamMoment: true,
@@ -242,8 +259,21 @@ export default function HomePage() {
       .then((bundle) => {
         if (!cancelled && bundle) {
           setSampleBundle(bundle);
-          setResult(bundle.samples[bundle.defaultKey] ?? null);
+          // Always prefer the Manila 6-storey sample on first open.
+          const sample =
+            bundle.samples[DEFAULT_PROMPT_KEY] ??
+            bundle.samples[bundle.defaultKey] ??
+            null;
+          setResult(sample);
           setDemoMode(true);
+        }
+      })
+      .catch(() => {});
+    getLlmHealth()
+      .then((h) => {
+        if (!cancelled) {
+          setLlmHealth(h);
+          if (h && !h.ok) setUseLlm(false);
         }
       })
       .catch(() => {});
@@ -281,6 +311,7 @@ export default function HomePage() {
     if (!text || loading) return;
     setLoading(true);
     setProgressEvent(null);
+    setStreamingLlmText("");
     const userMsg: ChatMsg = { id: uid(), role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
     setDraft("");
@@ -298,12 +329,65 @@ export default function HomePage() {
               id: uid(),
               role: "assistant",
               content:
-                "**Instant verified showcase loaded**\n\nThe 60-storey stress-test is intentionally not used as the default because its preliminary bare-frame drift is not appropriate for client presentation without a core/wall system. For a polished and faster first impression, I loaded the precomputed **30-storey RC tower in Cebu, Philippines** sample with full tables, drift, reactions, beams, columns, design criteria, handcalcs, ETABS export, and Word report.\n\nPhilippines-only location mode is active for this release while the NSCP dataset is polished.",
+                "**Instant verified showcase loaded**\n\nThe 60-storey stress-test is intentionally not used as the default because its preliminary bare-frame drift is not appropriate for client presentation without a core/wall system. For a polished first impression, I loaded the precomputed **6-storey RC building in Manila** sample with full tables, drift, reactions, beams, columns, design criteria, handcalcs, ETABS export and Word report.\n\nPhilippines-only location mode is active for this release while the NSCP dataset is polished.",
             },
           ]);
           return;
         }
       }
+
+      // Route through the local DeepSeek-R1 bridge if it's available + enabled.
+      const llmEligible = useLlm && (llmHealth?.ok ?? false);
+
+      if (llmEligible) {
+        const liveId = uid();
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: liveId,
+            role: "assistant",
+            content: "_DeepSeek-R1 on `127.0.0.1` is reviewing your model…_",
+          },
+        ]);
+
+        const { data, llm_summary } = await askLlmStream(text, {
+          run_p_delta: pDelta,
+          use_llm_summary: true,
+          onProgress: (ev: LlmStreamEvent) => {
+            if (ev.type === "stage" || ev.type === "tick") {
+              setProgressEvent(ev as FeaProgressEvent);
+            }
+          },
+          onLlmToken: (_chunk, accumulated) => {
+            setStreamingLlmText(accumulated);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === liveId ? { ...m, content: accumulated || m.content } : m,
+              ),
+            );
+          },
+        });
+
+        setResult(data);
+        setDemoMode(false);
+        const elapsedSeconds =
+          typeof data.elapsed_ms === "number"
+            ? (data.elapsed_ms / 1000).toFixed(1)
+            : null;
+        const final =
+          (llm_summary && llm_summary.trim()) ||
+          `${data.input_summary}\n\n${data.summary_markdown}`;
+        const footer = elapsedSeconds
+          ? `\n\n_PyNite kernel solved in ${elapsedSeconds} s; commentary by local DeepSeek-R1 on your machine._`
+          : `\n\n_Commentary generated by local DeepSeek-R1 on your machine — nothing left your PC._`;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === liveId ? { ...m, content: final + footer } : m,
+          ),
+        );
+        return;
+      }
+
       const res = await analyzeFeaPromptStream(text, {
         run_p_delta: pDelta,
         onProgress: (ev) => setProgressEvent(ev),
@@ -324,7 +408,6 @@ export default function HomePage() {
         },
       ]);
     } catch (e: unknown) {
-      setResult(null);
       const msg = e instanceof Error ? e.message : "Request failed";
       setMessages((prev) => [
         ...prev,
@@ -338,8 +421,9 @@ export default function HomePage() {
     } finally {
       setLoading(false);
       setProgressEvent(null);
+      setStreamingLlmText("");
     }
-  }, [draft, loading, pDelta, sampleBundle]);
+  }, [draft, loading, pDelta, sampleBundle, useLlm, llmHealth]);
 
   const has2DDiagrams =
     !!result?.diagrams &&
@@ -377,12 +461,51 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           {result ? (
             <span className="analysis-type-badge" title="Detected from your message">
               {analysisLabel(result.analysis_type)}
             </span>
           ) : null}
+          {llmHealth ? (
+            <span
+              className="analysis-type-badge"
+              title={
+                llmHealth.ok
+                  ? `Local LLM ready: ${llmHealth.model} on ${llmHealth.endpoint} — loopback only, prompts never leave your PC.`
+                  : llmHealth.reason || "Local LLM unavailable"
+              }
+              style={{
+                background: llmHealth.ok
+                  ? "rgba(0,180,120,0.18)"
+                  : "rgba(255,180,80,0.18)",
+                borderColor: llmHealth.ok
+                  ? "rgba(0,200,140,0.45)"
+                  : "rgba(255,180,80,0.45)",
+                color: llmHealth.ok ? "#7dffc1" : "#ffd58a",
+              }}
+            >
+              {llmHealth.ok
+                ? `🔒 Private · ${llmHealth.model}`
+                : "Local LLM offline"}
+            </span>
+          ) : null}
+          <label
+            className="pdelta-toggle small-muted"
+            title={
+              llmHealth?.ok
+                ? "Pipe PyNite results through your local DeepSeek-R1 for a client-ready executive summary. Prompts never leave 127.0.0.1."
+                : "Install Ollama + run `ollama pull deepseek-r1` to enable this."
+            }
+          >
+            <input
+              type="checkbox"
+              checked={useLlm && (llmHealth?.ok ?? false)}
+              disabled={!llmHealth?.ok}
+              onChange={(e) => setUseLlm(e.target.checked)}
+            />
+            DeepSeek-R1 summary
+          </label>
           <label className="pdelta-toggle small-muted">
             <input type="checkbox" checked={pDelta} onChange={(e) => setPDelta(e.target.checked)} />
             P-Delta analysis

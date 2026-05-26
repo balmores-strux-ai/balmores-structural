@@ -6,7 +6,7 @@ import json
 import os
 import time
 import uuid
-from typing import AsyncIterator, Iterator
+from typing import AsyncIterator, Iterator, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +27,7 @@ from .schemas import (
     FeaBuildingResponse,
     FeaPromptRequest,
     FeaPromptResponse,
+    LlmAskRequest,
     VerifyRequest,
     VerifyResponse,
 )
@@ -34,6 +35,7 @@ from .store import get_store
 from .inference import build_geometry
 from .model_loader import MODEL_PATH, get_brain
 from .etabs_export import build_etabs_export_json, build_etabs_export_text
+from .local_llm import llm_health, stream_summary, warm_model
 
 try:
     import sentry_sdk
@@ -79,6 +81,33 @@ def _cors_origins() -> list[str]:
     return parts if parts else ["*"]
 
 
+# ---------------------------------------------------------------------------
+# Tiny IP rate-limiter for the /llm/* endpoints (token-bucket, in-process).
+# Backs the local DeepSeek-R1 bridge against accidental flooding from a public
+# tunnel. Use Redis/NGINX in front of multi-worker deployments.
+# ---------------------------------------------------------------------------
+
+_LLM_RATE_CAPACITY = max(1, int(os.getenv("LLM_RATE_CAPACITY", "30")))
+_LLM_RATE_REFILL_PER_SEC = float(os.getenv("LLM_RATE_REFILL_PER_SEC", "0.5"))
+_LLM_BUCKETS: dict[str, tuple[float, float]] = {}
+_LLM_BUCKETS_LOCK = asyncio.Lock()
+
+
+async def _llm_rate_check(request: Request) -> None:
+    ip = (request.client.host if request.client else "?") or "?"
+    now = time.monotonic()
+    async with _LLM_BUCKETS_LOCK:
+        tokens, ts = _LLM_BUCKETS.get(ip, (float(_LLM_RATE_CAPACITY), now))
+        tokens = min(
+            float(_LLM_RATE_CAPACITY),
+            tokens + (now - ts) * _LLM_RATE_REFILL_PER_SEC,
+        )
+        if tokens < 1.0:
+            _LLM_BUCKETS[ip] = (tokens, now)
+            raise HTTPException(status_code=429, detail="Rate limit: slow down")
+        _LLM_BUCKETS[ip] = (tokens - 1.0, now)
+
+
 app = FastAPI(title="BALMORES STRUCTURAL", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
@@ -119,6 +148,11 @@ def _prewarm() -> None:
     except Exception:
         # Pre-warm is best-effort — never block startup if it fails on Render.
         pass
+    try:
+        # Best-effort: warm DeepSeek-R1 in Ollama RAM so the first chat is fast.
+        warm_model(timeout=3.0)
+    except Exception:
+        pass
 
 
 @app.exception_handler(HTTPException)
@@ -146,6 +180,11 @@ def health() -> dict:
     except Exception as e:
         out["pynite_path_ok"] = False
         out["pynite_error"] = str(e)[:200]
+
+    try:
+        out["llm"] = llm_health()
+    except Exception as e:  # noqa: BLE001
+        out["llm"] = {"enabled": False, "ok": False, "reason": str(e)[:200]}
 
     try:
         brain = get_brain()
@@ -444,6 +483,183 @@ async def _ndjson_progress(req: FeaPromptRequest) -> AsyncIterator[str]:
         }
     ) + "\n"
     yield json.dumps({"type": "complete", "data": result.model_dump(mode="json")}) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# Local LLM bridge (Ollama / DeepSeek-R1) — loopback-only, summarises PyNite
+# ---------------------------------------------------------------------------
+
+
+@app.get("/llm/health")
+def llm_health_route() -> dict:
+    """Privacy badge data: model name, endpoint, loopback flag, install status."""
+    return llm_health()
+
+
+async def _llm_ndjson(req: LlmAskRequest) -> AsyncIterator[str]:
+    """NDJSON pipeline: PyNite progress -> result -> streamed LLM commentary.
+
+    Frontend treats each line as one event. Token deltas are ``llm_token``;
+    the final ``complete`` carries the full FeaPromptResponse + ``llm_summary``.
+    """
+    fea_req = FeaPromptRequest(message=req.message, run_p_delta=req.run_p_delta)
+
+    yield json.dumps(
+        {
+            "type": "stage",
+            "stage": "llm_route",
+            "label": "Routing through local DeepSeek-R1 (loopback only)",
+        }
+    ) + "\n"
+
+    loop = asyncio.get_running_loop()
+    solver_task = loop.run_in_executor(None, _run_prompt_pipeline, fea_req)
+    started_at = time.perf_counter()
+    estimated = _estimate_solve_seconds(req.message)
+
+    stages = [
+        (0.10, "build_model", "Assembling stiffness blocks"),
+        (0.30, "loads", "Applying gravity / wind / seismic load cases"),
+        (0.55, "solve", "Solving K·u = F"),
+        (0.78, "pdelta", "P-Δ second-order iteration"),
+        (0.92, "post", "Extracting member envelopes + storey drift"),
+    ]
+    next_stage_idx = 0
+    while not solver_task.done():
+        await asyncio.sleep(0.35)
+        elapsed = time.perf_counter() - started_at
+        progress = min(0.95, elapsed / max(estimated, 0.1))
+        while next_stage_idx < len(stages) and progress >= stages[next_stage_idx][0]:
+            _, sname, slabel = stages[next_stage_idx]
+            yield json.dumps(
+                {
+                    "type": "stage",
+                    "stage": sname,
+                    "label": slabel,
+                    "progress": round(progress, 3),
+                    "elapsed_seconds": round(elapsed, 1),
+                }
+            ) + "\n"
+            next_stage_idx += 1
+        yield json.dumps(
+            {
+                "type": "tick",
+                "progress": round(progress, 3),
+                "elapsed_seconds": round(elapsed, 1),
+                "estimated_total_seconds": round(estimated, 1),
+            }
+        ) + "\n"
+
+    try:
+        fea_result = await solver_task
+    except HTTPException as he:
+        yield json.dumps(
+            {"type": "error", "status": he.status_code, "message": str(he.detail)}
+        ) + "\n"
+        return
+    except Exception as e:  # noqa: BLE001
+        yield json.dumps({"type": "error", "status": 500, "message": str(e)}) + "\n"
+        return
+
+    fea_payload = fea_result.model_dump(mode="json")
+
+    if not req.use_llm_summary:
+        yield json.dumps(
+            {
+                "type": "stage",
+                "stage": "done",
+                "label": "Solve complete",
+                "progress": 1.0,
+                "elapsed_seconds": round(time.perf_counter() - started_at, 1),
+            }
+        ) + "\n"
+        yield json.dumps(
+            {"type": "complete", "data": fea_payload, "llm_summary": ""}
+        ) + "\n"
+        return
+
+    yield json.dumps(
+        {
+            "type": "stage",
+            "stage": "llm_summary",
+            "label": "DeepSeek-R1 reviewing the PyNite result on your local PC",
+            "progress": 0.97,
+        }
+    ) + "\n"
+
+    accumulated = ""
+
+    queue: asyncio.Queue[Optional[str]] = asyncio.Queue()
+
+    def _producer() -> None:
+        try:
+            for chunk in stream_summary(req.message, fea_payload):
+                if chunk:
+                    asyncio.run_coroutine_threadsafe(queue.put(chunk), loop)
+        except Exception as e:  # noqa: BLE001
+            asyncio.run_coroutine_threadsafe(
+                queue.put(f"\n\n_(LLM bridge error: {e})_"), loop
+            )
+        finally:
+            asyncio.run_coroutine_threadsafe(queue.put(None), loop)
+
+    loop.run_in_executor(None, _producer)
+
+    llm_started_at = time.perf_counter()
+    while True:
+        # Block up to ~1.5 s for the next LLM chunk. If nothing arrives, emit a
+        # heartbeat so the browser sees we're still alive while DeepSeek-R1 is
+        # silently producing its <think> block (which we strip server-side).
+        try:
+            chunk = await asyncio.wait_for(queue.get(), timeout=1.5)
+        except asyncio.TimeoutError:
+            yield json.dumps(
+                {
+                    "type": "tick",
+                    "progress": 0.97,
+                    "elapsed_seconds": round(time.perf_counter() - started_at, 1),
+                    "llm_elapsed_seconds": round(
+                        time.perf_counter() - llm_started_at, 1
+                    ),
+                    "phase": "llm_thinking",
+                }
+            ) + "\n"
+            continue
+        if chunk is None:
+            break
+        accumulated += chunk
+        yield json.dumps({"type": "llm_token", "text": chunk}) + "\n"
+
+    yield json.dumps(
+        {
+            "type": "stage",
+            "stage": "done",
+            "label": "Local LLM commentary complete",
+            "progress": 1.0,
+            "elapsed_seconds": round(time.perf_counter() - started_at, 1),
+        }
+    ) + "\n"
+    yield json.dumps(
+        {"type": "complete", "data": fea_payload, "llm_summary": accumulated}
+    ) + "\n"
+
+
+@app.post(
+    "/llm/ask/stream",
+    dependencies=[Depends(require_api_key_if_configured), Depends(_llm_rate_check)],
+)
+async def llm_ask_stream(req: LlmAskRequest) -> StreamingResponse:
+    """Stream PyNite progress + local DeepSeek-R1 token commentary as NDJSON.
+
+    All inference runs on the user's loopback Ollama (127.0.0.1:11434).
+    Nothing leaves the local machine unless the operator overrides
+    ``LLM_OLLAMA_URL`` AND sets ``LLM_ALLOW_REMOTE=1``.
+    """
+    return StreamingResponse(
+        _llm_ndjson(req),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post(

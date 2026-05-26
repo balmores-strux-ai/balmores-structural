@@ -395,9 +395,132 @@ export type FeaProgressEvent =
       progress: number;
       elapsed_seconds: number;
       estimated_total_seconds?: number;
+      /** Set by /llm/ask/stream during the DeepSeek-R1 thinking phase. */
+      phase?: "fea" | "llm_thinking";
+      llm_elapsed_seconds?: number;
     }
   | { type: "complete"; data: FeaPromptResponse }
+  | { type: "llm_token"; text: string }
   | { type: "error"; status?: number; message: string };
+
+/** /llm/health response — used by frontend for the privacy-mode badge. */
+export type LlmHealth = {
+  enabled: boolean;
+  ok: boolean;
+  model: string;
+  endpoint: string;
+  loopback_only: boolean;
+  installed_models?: string[];
+  reason?: string;
+};
+
+export async function getLlmHealth(): Promise<LlmHealth | null> {
+  try {
+    const res = await fetch(`${API_URL}/llm/health`, {
+      headers: authHeaders(),
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as LlmHealth;
+  } catch {
+    return null;
+  }
+}
+
+export type LlmStreamEvent =
+  | {
+      type: "stage";
+      stage: string;
+      label: string;
+      progress?: number;
+      elapsed_seconds?: number;
+    }
+  | {
+      type: "tick";
+      progress: number;
+      elapsed_seconds: number;
+      phase?: "fea" | "llm_thinking";
+      llm_elapsed_seconds?: number;
+    }
+  | { type: "llm_token"; text: string }
+  | { type: "complete"; data: FeaPromptResponse; llm_summary: string }
+  | { type: "error"; status?: number; message: string };
+
+/**
+ * Stream a user prompt through PyNite + local DeepSeek-R1 commentary.
+ * All inference stays on 127.0.0.1 by design.
+ */
+export async function askLlmStream(
+  message: string,
+  opts: {
+    run_p_delta?: boolean;
+    use_llm_summary?: boolean;
+    signal?: AbortSignal;
+    onProgress?: (ev: LlmStreamEvent) => void;
+    onLlmToken?: (text: string, accumulated: string) => void;
+  },
+): Promise<{ data: FeaPromptResponse; llm_summary: string }> {
+  const body = JSON.stringify({
+    message,
+    run_p_delta: opts.run_p_delta !== false,
+    use_llm_summary: opts.use_llm_summary !== false,
+  });
+
+  const res = await fetch(`${API_URL}/llm/ask/stream`, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body,
+    signal: opts.signal,
+  });
+  if (!res.ok || !res.body) {
+    if (res.status === 404 || res.status === 405) {
+      const data = await analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
+      return { data, llm_summary: "" };
+    }
+    throw new Error(await parseError(res));
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let accumulated = "";
+  let complete: FeaPromptResponse | null = null;
+  let summary = "";
+  let lastError: string | null = null;
+
+  const consume = (line: string) => {
+    const t = line.trim();
+    if (!t) return;
+    let ev: LlmStreamEvent;
+    try {
+      ev = JSON.parse(t) as LlmStreamEvent;
+    } catch {
+      return;
+    }
+    opts.onProgress?.(ev);
+    if (ev.type === "llm_token") {
+      accumulated += ev.text;
+      opts.onLlmToken?.(ev.text, accumulated);
+    } else if (ev.type === "complete") {
+      complete = ev.data;
+      summary = ev.llm_summary || accumulated;
+    } else if (ev.type === "error") {
+      lastError = ev.message;
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n");
+    buffer = parts.pop() ?? "";
+    for (const line of parts) consume(line);
+  }
+  if (buffer.trim()) consume(buffer);
+  if (lastError) throw new Error(lastError);
+  if (!complete) throw new Error("LLM stream ended without complete payload");
+  return { data: complete, llm_summary: summary };
+}
 
 /**
  * Stream the analysis with STAAD-style progress events. Falls back to the

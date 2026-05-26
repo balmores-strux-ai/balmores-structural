@@ -162,6 +162,14 @@ class FeaPromptRequest(BaseModel):
     run_p_delta: bool = True
 
 
+class LlmAskRequest(BaseModel):
+    """Prompt routed through PyNite first, then summarized by the local LLM."""
+
+    message: str = Field(..., min_length=8, max_length=32000)
+    run_p_delta: bool = True
+    use_llm_summary: bool = True
+
+
 class FeaPromptResponse(BaseModel):
     """Chat-style prompt → parsed inputs + PyNite FEA result (2D beam, 2D frame, or 3D building)."""
 

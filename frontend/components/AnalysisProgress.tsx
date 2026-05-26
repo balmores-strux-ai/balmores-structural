@@ -94,6 +94,14 @@ export default function AnalysisProgress({ event, active, fallbackTotal }: Props
       if (typeof event.elapsed_seconds === "number") setElapsed(event.elapsed_seconds);
       if (typeof event.estimated_total_seconds === "number")
         setEstimated(event.estimated_total_seconds);
+      if (event.phase === "llm_thinking") {
+        setStageKey("llm_thinking");
+        const llm =
+          typeof event.llm_elapsed_seconds === "number"
+            ? `${event.llm_elapsed_seconds.toFixed(0)} s`
+            : "…";
+        setStage(`DeepSeek-R1 is reasoning on your local PC (${llm})`);
+      }
     } else if (event.type === "error") {
       setStage(`Solver error: ${event.message}`);
       setStageKey("error");
@@ -115,7 +123,9 @@ export default function AnalysisProgress({ event, active, fallbackTotal }: Props
       <div className="ap-head">
         <div className="ap-title">
           <span className="ap-spinner" aria-hidden />
-          Running PyNite FEM
+          {stageKey === "llm_thinking" || stageKey === "llm_summary"
+            ? "Local DeepSeek-R1 + PyNite FEM"
+            : "Running PyNite FEM"}
         </div>
         <div className="ap-meta">
           <span className="ap-pct">{pct}%</span>
@@ -152,9 +162,9 @@ export default function AnalysisProgress({ event, active, fallbackTotal }: Props
       </ol>
 
       <p className="ap-hint small-muted">
-        Tip: large 3D buildings (40 +&nbsp;storeys with P-Δ) can take 30–60 s on shared
-        hosting. Stay on this page — every member force, drift and reaction will appear here
-        the moment PyNite finishes solving.
+        {stageKey === "llm_thinking" || stageKey === "llm_summary"
+          ? "DeepSeek-R1 (8B) is reading your PyNite result on 127.0.0.1 — nothing leaves your PC. On CPU this typically takes 2–4 min the first time; subsequent prompts are much faster (model stays warm)."
+          : "Tip: large 3D buildings (40 + storeys with P-Δ) can take 30–60 s on shared hosting. Stay on this page — every member force, drift and reaction will appear here the moment PyNite finishes solving."}
       </p>
     </div>
   );
