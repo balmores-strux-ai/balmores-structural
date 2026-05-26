@@ -18,6 +18,8 @@ services:
     # CPU torch: use --extra-index-url so torch deps (jinja2, etc.) resolve from PyPI (avoids pip metadata errors).
     buildCommand: pip install --no-cache-dir torch==2.2.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu && pip install --no-cache-dir -r requirements-render.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Optional env (set in dashboard): DATABASE_URL (Render Postgres), ALLOWED_ORIGINS (comma-separated),
+    # SENTRY_DSN. See DEPLOY.md and backend/.env.example.
 
   - type: web
     name: balmores-structural-frontend
@@ -33,6 +35,11 @@ services:
       # Server-side proxy target (browser calls same-origin /api/backend/*)
       - key: BACKEND_PROXY_URL
         value: https://balmores-structural-backend.onrender.com
+      # Private server-side API key for the /api/backend/* proxy.
+      # Set this in Render when BACKEND_PROXY_URL points to run-public-tunnel.bat.
+      # Do NOT expose it as NEXT_PUBLIC_API_KEY.
+      - key: BACKEND_API_KEY
+        sync: false
       # Leave unset (or empty) so the app uses /api/backend → BACKEND_PROXY_URL (avoids mixed-content HTTP API).
       - key: NEXT_PUBLIC_API_URL
         sync: false

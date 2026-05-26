@@ -2,6 +2,7 @@
 const backend =
   process.env.BACKEND_PROXY_URL?.replace(/\/$/, "") ||
   "http://127.0.0.1:8000";
+const useSecureApiProxy = Boolean(process.env.BACKEND_API_KEY?.trim());
 
 const nextConfig = {
   experimental: { serverActions: { allowedOrigins: ["*"] } },
@@ -16,6 +17,11 @@ const nextConfig = {
     ];
   },
   async rewrites() {
+    // When BACKEND_API_KEY is set, the App Router proxy at
+    // app/api/backend/[...path]/route.ts handles /api/backend/* and injects
+    // the key server-side. Do not rewrite directly, otherwise the browser
+    // would have to carry a public NEXT_PUBLIC_API_KEY.
+    if (useSecureApiProxy) return [];
     return [
       {
         source: "/api/backend/:path*",

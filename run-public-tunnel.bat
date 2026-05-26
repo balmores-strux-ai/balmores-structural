@@ -56,7 +56,9 @@ set LLM_MAX_OUTPUT_TOKENS=2048
 set LLM_TIMEOUT_SECONDS=300
 
 REM ----- CORS — restrict to your real public website + localhost ----------
-if "%ALLOWED_ORIGINS%"=="" set ALLOWED_ORIGINS=https://www.balmoreslab.com,https://balmoreslab.com,http://127.0.0.1:3000,http://localhost:3000
+REM Public-tunnel mode should not inherit a local-only ALLOWED_ORIGINS value
+REM from a prior run-local-ai.bat shell.
+set ALLOWED_ORIGINS=https://www.balmoreslab.com,https://balmoreslab.com,http://127.0.0.1:3000,http://localhost:3000
 
 REM ----- Free port 8000 so a stale backend can't hijack the boot ----------
 powershell -NoProfile -Command "$c = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue; if ($c) { foreach ($x in $c) { try { Stop-Process -Id $x.OwningProcess -Force -ErrorAction SilentlyContinue } catch {} }; Start-Sleep -Seconds 1 }"
@@ -94,12 +96,13 @@ echo  -------------------------------------------------------------------------
 echo  Save the API_KEY above. Configure your public site to send it as:
 echo      X-API-Key: %API_KEY%
 echo  In Render (or wherever the public frontend is hosted) set:
-echo      NEXT_PUBLIC_API_URL=https://YOUR-CLOUDFLARE-URL
-echo      NEXT_PUBLIC_API_KEY=%API_KEY%
+echo      BACKEND_PROXY_URL=https://YOUR-CLOUDFLARE-URL
+echo      BACKEND_API_KEY=%API_KEY%
+echo  Leave NEXT_PUBLIC_API_URL and NEXT_PUBLIC_API_KEY empty for best security.
 echo  -------------------------------------------------------------------------
 echo  A new window will open running cloudflared. Watch its output for the
 echo  trycloudflare.com URL (or your named-tunnel hostname) and paste that
-echo  into NEXT_PUBLIC_API_URL.
+echo  into BACKEND_PROXY_URL.
 echo ==========================================================================
 echo.
 
