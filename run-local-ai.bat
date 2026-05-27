@@ -59,7 +59,7 @@ echo  -------------------------------------------------------------------------
 echo  API     : http://127.0.0.1:8000   (loopback only - not reachable on LAN)
 echo  LLM     : %LLM_MODEL%
 echo  Ollama  : %LLM_OLLAMA_URL%
-echo  Routes  : /llm/health  /llm/ask/stream  (+ /ask/stream legacy)
+echo  Routes  : /llm/health  /llm/summarize  /fea/analyze-prompt  (+ /llm/ask/stream legacy)
 echo  Front   : run-frontend.bat  in another terminal, then open
 echo            http://127.0.0.1:3000
 echo  -------------------------------------------------------------------------

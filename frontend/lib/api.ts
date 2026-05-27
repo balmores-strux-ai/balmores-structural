@@ -540,25 +540,26 @@ export async function askLlmStream(
     for (const line of parts) consume(line);
   }
   if (buffer.trim()) consume(buffer);
-  if (lastError && !feaReady && !complete) throw new Error(lastError);
-  if (!sawComplete) {
-    if (feaReady) {
-      return {
-        data: feaReady,
-        llm_summary: accumulated.trim() || summary,
-        rescue_note: rescueNote,
-        chat_only: false,
-      };
-    }
-    throw new Error("LLM stream ended without complete payload");
+  if (sawComplete) {
+    return {
+      data: complete,
+      llm_summary: summary,
+      rescue_note: rescueNote,
+      chat_only: chatOnly,
+    };
   }
-  // complete received but data may be null on error paths handled above
-  return {
-    data: complete,
-    llm_summary: summary,
-    rescue_note: rescueNote,
-    chat_only: chatOnly,
-  };
+  if (feaReady) {
+    return {
+      data: feaReady,
+      llm_summary: accumulated.trim() || summary,
+      rescue_note: rescueNote,
+      chat_only: false,
+    };
+  }
+  if (lastError) {
+    throw new Error(lastError);
+  }
+  throw new Error("LLM stream ended without complete payload");
 }
 
 /**
@@ -626,13 +627,37 @@ export async function analyzeFeaPromptStream(
     for (const line of parts) consume(line);
   }
   if (buffer.trim()) consume(buffer);
-  if (lastError) throw new Error(lastError);
-  if (!complete) {
-    // Some hosts terminate long-lived streams before the final NDJSON line.
-    // Fall back to the regular endpoint so users don't see a broken stream error.
+  if (complete) return complete;
+  // Stream ended early or returned an error event — retry once on the JSON endpoint.
+  try {
+    return await analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
+  } catch (fallbackErr) {
+    if (lastError) throw new Error(lastError);
+    throw fallbackErr;
+  }
+}
+
+/** Run PyNite with streaming progress; always falls back to the JSON endpoint. */
+export async function runFeaAnalysisResilient(
+  message: string,
+  opts: {
+    run_p_delta?: boolean;
+    signal?: AbortSignal;
+    onProgress?: (ev: FeaProgressEvent) => void;
+  },
+): Promise<FeaPromptResponse> {
+  try {
+    return await analyzeFeaPromptStream(message, opts);
+  } catch {
     return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
   }
-  return complete;
+}
+
+function feaResultForLlmSummary(res: FeaPromptResponse): FeaPromptResponse {
+  return {
+    ...res,
+    diagrams: {},
+  };
 }
 
 /**
@@ -648,7 +673,7 @@ export async function summarizeFeaWithLlm(
     const res = await fetch(`${API_URL}/llm/summarize`, {
       method: "POST",
       headers: jsonHeaders(),
-      body: JSON.stringify({ message, fea_result: feaResult }),
+      body: JSON.stringify({ message, fea_result: feaResultForLlmSummary(feaResult) }),
       signal: opts?.signal,
     });
     if (!res.ok) {

@@ -14,8 +14,8 @@ import StructureModel3D from "@/components/StructureModel3D";
 import { downloadFeaEtabsExports } from "@/lib/exportFeaEtabs";
 import { downloadAndTryOpenDocx, feaResultToDocxBlob } from "@/lib/exportFeaDocx";
 import {
-  analyzeFeaPromptStream,
   getLlmHealth,
+  runFeaAnalysisResilient,
   summarizeFeaWithLlm,
   type FeaProgressEvent,
   type FeaPromptResponse,
@@ -38,6 +38,7 @@ const TYPING_PREVIEWS = [
   "Continuous concrete beam, spans (6, 8, 10, 8, 6 m), 6 supports. DL 22 kN/m, LL 18 kN/m. Left and right ends fixed.",
 ];
 
+const DEFAULT_PROMPT_KEY = "building-6-manila";
 const DEFAULT_PROMPT_TEXT =
   "6-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.";
 
@@ -196,6 +197,21 @@ function deriveDesignTitle(prompt: string, result: FeaPromptResponse | null): st
   return analysisLabel(result?.analysis_type);
 }
 
+type SampleBundle = {
+  version: number;
+  defaultKey: string;
+  samples: Record<string, FeaPromptResponse>;
+};
+
+async function loadSampleBundle(): Promise<SampleBundle | null> {
+  try {
+    const r = await fetch("/sample-results.json", { cache: "force-cache" });
+    return r.ok ? ((await r.json()) as SampleBundle) : null;
+  } catch {
+    return null;
+  }
+}
+
 const APP_VERSION =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_VERSION
     ? process.env.NEXT_PUBLIC_APP_VERSION
@@ -234,6 +250,7 @@ export default function HomePage() {
   const [typedPlaceholder, setTypedPlaceholder] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FeaPromptResponse | null>(null);
+  const [sampleBundle, setSampleBundle] = useState<SampleBundle | null>(null);
   const [pDelta, setPDelta] = useState(false);
   const [progressEvent, setProgressEvent] = useState<FeaProgressEvent | null>(null);
   const [lastSubmittedPrompt, setLastSubmittedPrompt] = useState(DEFAULT_PROMPT_TEXT);
@@ -282,6 +299,17 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
+    loadSampleBundle()
+      .then((bundle) => {
+        if (cancelled || !bundle) return;
+        setSampleBundle(bundle);
+        const sample =
+          bundle.samples[DEFAULT_PROMPT_KEY] ??
+          bundle.samples[bundle.defaultKey] ??
+          null;
+        if (sample) setResult(sample);
+      })
+      .catch(() => {});
     getLlmHealth()
       .then((h) => {
         if (!cancelled) setLlmHealth(h);
@@ -368,7 +396,7 @@ export default function HomePage() {
         }
       }
 
-      const res = await analyzeFeaPromptStream(text, {
+      const res = await runFeaAnalysisResilient(text, {
         run_p_delta: pDelta,
         onProgress: (ev) => setProgressEvent(ev),
       });
@@ -381,11 +409,20 @@ export default function HomePage() {
         assistantBody += `\n\n_Solved in ${elapsedSeconds} s._`;
       }
 
-      if (llmEligible) {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === liveId ? { ...m, content: assistantBody } : m)),
+      );
+
+      if (llmEligible && useLlm) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === liveId
-              ? { ...m, content: "_Balmores AI is reviewing the PyNite result…_" }
+              ? {
+                  ...m,
+                  content:
+                    assistantBody +
+                    "\n\n---\n\n_Balmores AI (DeepSeek-R1) is writing recommendations and conclusion…_",
+                }
               : m,
           ),
         );
@@ -393,8 +430,8 @@ export default function HomePage() {
         if (llmSummary) {
           assistantBody = llmSummary;
         } else {
-          assistantBody =
-            `${assistantBody}\n\n_Balmores AI could not be reached — showing the deterministic PyNite summary. Start Ollama with deepseek-r1 for recommendations and conclusions._`;
+          assistantBody +=
+            "\n\n_Balmores AI could not be reached — PyNite tables and the deterministic summary above are authoritative. Start `run-local-ai.bat` and Ollama (`ollama pull deepseek-r1`) for AI recommendations._";
         }
       }
 
@@ -410,11 +447,23 @@ export default function HomePage() {
         lower.includes("describe the structure") ||
         lower.includes("request failed (422)") ||
         lower.includes("at least 12 characters");
+      const apiKeyHint =
+        lower.includes("invalid or missing api key") || lower.includes("(401)")
+          ? "\n\n_If the backend has API_KEY set, add the same value as NEXT_PUBLIC_API_KEY for local dev, or unset API_KEY in the backend environment._"
+          : "";
+      const backendHint =
+        lower.includes("failed to fetch") ||
+        lower.includes("networkerror") ||
+        lower.includes("connection refused")
+          ? "\n\n_Start the local backend with `run-local-ai.bat` on port 8000, then refresh this page._"
+          : "";
       const hint = looksLikeParserFail
         ? "\n\n_Try a fuller brief such as: 'Simply supported concrete beam, span 6 m, DL 12 kN/m, LL 8 kN/m.' With Ollama running, Balmores AI can also interpret loose shorthand._"
-        : llmHealth?.ok
-          ? ""
-          : "\n\n_Start the local backend (`run-local-ai.bat`) and Ollama (`ollama pull deepseek-r1`) for AI recommendations after each solve._";
+        : apiKeyHint ||
+          backendHint ||
+          (llmHealth?.ok
+            ? ""
+            : "\n\n_Start the local backend (`run-local-ai.bat`) and Ollama (`ollama pull deepseek-r1`) for AI recommendations after each solve._");
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== liveId),
         {
@@ -614,6 +663,8 @@ export default function HomePage() {
                   onClick={() => {
                     setDraft(q.prompt);
                     setLastSubmittedPrompt(q.prompt);
+                    const sample = sampleBundle?.samples[q.sampleKey];
+                    if (sample) setResult(sample);
                     textareaRef.current?.focus();
                   }}
                 >

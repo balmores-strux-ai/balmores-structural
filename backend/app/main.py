@@ -1077,6 +1077,15 @@ async def llm_ask_stream(req: LlmAskRequest) -> StreamingResponse:
     )
 
 
+async def _ndjson_progress_safe(req: FeaPromptRequest) -> AsyncIterator[str]:
+    """Ensure the NDJSON stream never dies without at least an error line."""
+    try:
+        async for chunk in _ndjson_progress(req):
+            yield chunk
+    except Exception as e:  # noqa: BLE001
+        yield json.dumps({"type": "error", "status": 500, "message": str(e)}) + "\n"
+
+
 @app.post(
     "/fea/analyze-prompt/stream",
     dependencies=[Depends(require_api_key_if_configured)],
@@ -1091,7 +1100,7 @@ async def fea_analyze_prompt_stream(req: FeaPromptRequest) -> StreamingResponse:
       * ``{"type":"error", ...}``     — fatal error
     """
     return StreamingResponse(
-        _ndjson_progress(req),
+        _ndjson_progress_safe(req),
         media_type="application/x-ndjson",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
