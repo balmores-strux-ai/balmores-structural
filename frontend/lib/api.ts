@@ -552,6 +552,7 @@ export async function askLlmStream(
     }
     throw new Error("LLM stream ended without complete payload");
   }
+  // complete received but data may be null on error paths handled above
   return {
     data: complete,
     llm_summary: summary,
@@ -632,6 +633,33 @@ export async function analyzeFeaPromptStream(
     return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
   }
   return complete;
+}
+
+/**
+ * DeepSeek-R1 executive summary (recommendations + conclusion) after PyNite has finished.
+ * Non-streaming — avoids NDJSON timeout issues on long solves.
+ */
+export async function summarizeFeaWithLlm(
+  message: string,
+  feaResult: FeaPromptResponse,
+  opts?: { signal?: AbortSignal },
+): Promise<string> {
+  try {
+    const res = await fetch(`${API_URL}/llm/summarize`, {
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify({ message, fea_result: feaResult }),
+      signal: opts?.signal,
+    });
+    if (!res.ok) {
+      if (res.status === 404 || res.status === 405 || res.status === 403) return "";
+      throw new Error(await parseError(res));
+    }
+    const j = (await res.json()) as { llm_summary?: string };
+    return (j.llm_summary || "").trim();
+  } catch {
+    return "";
+  }
 }
 
 export async function downloadEtabsExport(projectId: string, format: "txt" | "json"): Promise<void> {

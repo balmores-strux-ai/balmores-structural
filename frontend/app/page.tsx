@@ -15,12 +15,11 @@ import { downloadFeaEtabsExports } from "@/lib/exportFeaEtabs";
 import { downloadAndTryOpenDocx, feaResultToDocxBlob } from "@/lib/exportFeaDocx";
 import {
   analyzeFeaPromptStream,
-  askLlmStream,
   getLlmHealth,
+  summarizeFeaWithLlm,
   type FeaProgressEvent,
   type FeaPromptResponse,
   type LlmHealth,
-  type LlmStreamEvent,
 } from "@/lib/api";
 
 const PLACEHOLDER = `Ask Balmores AI anything — the assistant interprets your prompt, PyNite solves it, and the summary lands in this thread.
@@ -39,10 +38,10 @@ const TYPING_PREVIEWS = [
   "Continuous concrete beam, spans (6, 8, 10, 8, 6 m), 6 supports. DL 22 kN/m, LL 18 kN/m. Left and right ends fixed.",
 ];
 
-/** Default sample prompt to load on first open (Manila 6-storey RC). */
-const DEFAULT_PROMPT_KEY = "building-6-manila";
 const DEFAULT_PROMPT_TEXT =
   "6-storey RC building in Manila, X-spans (6, 8, 6m), Y-spans (5, 5m), 3.5m storey heights, 4.5 kPa DL, 3 kPa LL, 200mm slab.";
+
+const PROJECT_TITLE = "BALMORES STRUCTURAL";
 
 /** Local-storage key for chat history (per-browser, per-origin). */
 const CHAT_HISTORY_KEY = "balmores.chat.history.v1";
@@ -226,26 +225,6 @@ function fmtDriftRatio(r: unknown): string {
   return `1/${Math.round(1 / n).toLocaleString()}`;
 }
 
-type SampleBundle = {
-  version: number;
-  defaultKey: string;
-  samples: Record<string, FeaPromptResponse>;
-};
-
-async function loadSampleBundle(): Promise<SampleBundle | null> {
-  try {
-    const r = await fetch("/sample-results.json", { cache: "force-cache" });
-    return r.ok ? ((await r.json()) as SampleBundle) : null;
-  } catch {
-    return null;
-  }
-}
-
-function shouldUseInstantDemo(text: string): boolean {
-  const t = text.toLowerCase();
-  return /\b60[\s-]*(storey|story|floor)\b/.test(t) || /\btaipei\b/.test(t);
-}
-
 export default function HomePage() {
   // Chat thread starts empty by design — the welcome banner has been removed.
   // History is restored from localStorage on mount so the user can scroll
@@ -255,10 +234,8 @@ export default function HomePage() {
   const [typedPlaceholder, setTypedPlaceholder] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FeaPromptResponse | null>(null);
-  const [sampleBundle, setSampleBundle] = useState<SampleBundle | null>(null);
   const [pDelta, setPDelta] = useState(false);
   const [progressEvent, setProgressEvent] = useState<FeaProgressEvent | null>(null);
-  const [demoMode, setDemoMode] = useState(true);
   const [lastSubmittedPrompt, setLastSubmittedPrompt] = useState(DEFAULT_PROMPT_TEXT);
   const [exportingDoc, setExportingDoc] = useState(false);
   const [showReactArrows, setShowReactArrows] = useState(true);
@@ -305,29 +282,9 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    loadSampleBundle()
-      .then((bundle) => {
-        if (!cancelled && bundle) {
-          setSampleBundle(bundle);
-          // Always prefer the Manila 6-storey sample on first open.
-          const sample =
-            bundle.samples[DEFAULT_PROMPT_KEY] ??
-            bundle.samples[bundle.defaultKey] ??
-            null;
-          setResult(sample);
-          setDemoMode(true);
-          setLastSubmittedPrompt(DEFAULT_PROMPT_TEXT);
-        }
-      })
-      .catch(() => {});
     getLlmHealth()
       .then((h) => {
-        if (!cancelled) {
-          setLlmHealth(h);
-          // Do NOT force useLlm=false here even if the probe fails.
-          // The user may start Ollama after the page loads — runAnalysis
-          // re-probes on every submit, so we stay opportunistic.
-        }
+        if (!cancelled) setLlmHealth(h);
       })
       .catch(() => {});
     return () => {
@@ -378,35 +335,23 @@ export default function HomePage() {
     const userMsg: ChatMsg = { id: uid(), role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
     setDraft("");
+    const liveId = uid();
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: liveId,
+        role: "assistant",
+        content: "_Running structural analysis…_",
+      },
+    ]);
+
     try {
-      if (shouldUseInstantDemo(text)) {
-        const bundle = sampleBundle ?? (await loadSampleBundle());
-        const demo = bundle?.samples[bundle.defaultKey];
-        if (demo) {
-          if (bundle) setSampleBundle(bundle);
-          setResult(demo);
-          setDemoMode(true);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              role: "assistant",
-              content:
-                "**Instant verified showcase loaded**\n\nThe 60-storey stress-test is intentionally not used as the default because its preliminary bare-frame drift is not appropriate for client presentation without a core/wall system. For a polished first impression, I loaded the precomputed **6-storey RC building in Manila** sample with full tables, drift, reactions, beams, columns, design criteria, handcalcs, ETABS export and Word report.\n\nPhilippines-only location mode is active for this release while the NSCP dataset is polished.",
-            },
-          ]);
-          return;
-        }
+      if (text.length < 12) {
+        throw new Error(
+          "Describe the structure with spans, supports, and loads (at least 12 characters).",
+        );
       }
 
-      // Route policy: ALWAYS prefer the local DeepSeek-R1 bridge so every
-      // user input gets an answer (greetings, off-topic Qs, FEA briefs,
-      // shorthand). The backend's /llm/ask/stream handles three branches
-      // internally: regex parse, LLM rescue, or chat-only reply.
-      //
-      // We re-probe /llm/health right before sending so that if Ollama was
-      // started AFTER the page loaded, the next message still goes through
-      // DeepSeek-R1 without forcing the user to refresh.
       let llmEligible = useLlm && (llmHealth?.ok ?? false);
       if (!llmEligible) {
         try {
@@ -419,109 +364,8 @@ export default function HomePage() {
             }
           }
         } catch {
-          /* swallow — fall back to legacy path below */
+          /* PyNite-only fallback below */
         }
-      }
-
-      if (llmEligible) {
-        const liveId = uid();
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: liveId,
-            role: "assistant",
-            content: "_Balmores AI is reviewing your model…_",
-          },
-        ]);
-
-        const { data, llm_summary, rescue_note, chat_only } = await askLlmStream(
-          text,
-          {
-            run_p_delta: pDelta,
-            use_llm_summary: true,
-            onProgress: (ev: LlmStreamEvent) => {
-              if (ev.type === "stage" || ev.type === "tick") {
-                setProgressEvent(ev as FeaProgressEvent);
-              }
-            },
-            onFeaReady: (fea) => {
-              setResult(fea);
-              setDemoMode(false);
-            },
-            onLlmToken: (_chunk, accumulated) => {
-              setStreamingLlmText(accumulated);
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === liveId ? { ...m, content: accumulated || m.content } : m,
-                ),
-              );
-            },
-          },
-        );
-
-        // Chat-only path: the input wasn't a solvable structural brief, so
-        // we just received a DeepSeek-R1 reply with no FEA result attached.
-        // Keep the right-hand panel pointing at whatever sample was already
-        // there and don't overwrite it.
-        if (chat_only || !data) {
-          const finalChat =
-            (llm_summary && llm_summary.trim()) ||
-            "_(The assistant returned an empty reply — try rephrasing.)_";
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === liveId ? { ...m, content: finalChat } : m,
-            ),
-          );
-          return;
-        }
-
-        setResult(data);
-        setDemoMode(false);
-        const elapsedSeconds =
-          typeof data.elapsed_ms === "number"
-            ? (data.elapsed_ms / 1000).toFixed(1)
-            : null;
-        const rescuePrefix = rescue_note
-          ? `> _${rescue_note.replace(/DeepSeek[- ]?R1\s+normalised/i, "Interpreted").replace(/DeepSeek[- ]?R1\s+rewrote/i, "Interpreted")}_\n\n`
-          : "";
-        const final =
-          (llm_summary && llm_summary.trim()) ||
-          `${data.input_summary}\n\n${data.summary_markdown}`;
-        // Footer intentionally dropped — clients only care about the result,
-        // not which model produced it.
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === liveId ? { ...m, content: rescuePrefix + final } : m,
-          ),
-        );
-        return;
-      }
-
-      // Legacy / PyNite-only path. We reach here only when the LLM bridge is
-      // unreachable (e.g. running against the public Render backend, or the
-      // user hasn't started Ollama yet, or the backend was never restarted
-      // after the upgrade so the /llm/* routes don't exist).
-      //
-      // The legacy /ask/stream endpoint requires ≥ 8 chars and only solves
-      // structural briefs, so we pre-empt the 422 with a clear message and
-      // tell the user how to enable DeepSeek-R1.
-      if (text.length < 8) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: uid(),
-            role: "assistant",
-            content:
-              "**Balmores AI is offline right now.**\n\n" +
-              "Your message is too short for the structural FEA parser, " +
-              "and the assistant isn't reachable, so I can't reply " +
-              "conversationally either. Please try again in a moment, or " +
-              "send a longer brief such as: " +
-              "_Simply supported concrete beam, span 6 m, DL 12 kN/m, LL 8 kN/m._",
-            isError: true,
-          },
-        ]);
-        return;
       }
 
       const res = await analyzeFeaPromptStream(text, {
@@ -529,65 +373,50 @@ export default function HomePage() {
         onProgress: (ev) => setProgressEvent(ev),
       });
       setResult(res);
-      setDemoMode(false);
+
+      let assistantBody = `${res.input_summary}\n\n${res.summary_markdown}`;
       const elapsedSeconds =
         typeof res.elapsed_ms === "number" ? (res.elapsed_ms / 1000).toFixed(1) : null;
-      const assistantBody = `${res.input_summary}\n\n${res.summary_markdown}${
-        elapsedSeconds ? `\n\n_Solved in ${elapsedSeconds} s by the integrated PyNite kernel._` : ""
-      }`;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: uid(),
-          role: "assistant",
-          content: assistantBody,
-        },
-      ]);
+      if (elapsedSeconds) {
+        assistantBody += `\n\n_Solved in ${elapsedSeconds} s._`;
+      }
+
+      if (llmEligible) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === liveId
+              ? { ...m, content: "_Balmores AI is reviewing the PyNite result…_" }
+              : m,
+          ),
+        );
+        const llmSummary = await summarizeFeaWithLlm(text, res);
+        if (llmSummary) {
+          assistantBody = llmSummary;
+        } else {
+          assistantBody =
+            `${assistantBody}\n\n_Balmores AI could not be reached — showing the deterministic PyNite summary. Start Ollama with deepseek-r1 for recommendations and conclusions._`;
+        }
+      }
+
+      setMessages((prev) =>
+        prev.map((m) => (m.id === liveId ? { ...m, content: assistantBody } : m)),
+      );
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Request failed";
       const lower = msg.toLowerCase();
-      const streamCutOff = lower.includes("stream ended without complete payload");
-      if (streamCutOff || lower.includes("request failed")) {
-        try {
-          const res = await analyzeFeaPromptStream(text, {
-            run_p_delta: pDelta,
-            onProgress: (ev) => setProgressEvent(ev),
-          });
-          setResult(res);
-          setDemoMode(false);
-          const elapsedSeconds =
-            typeof res.elapsed_ms === "number" ? (res.elapsed_ms / 1000).toFixed(1) : null;
-          const assistantBody = `${res.input_summary}\n\n${res.summary_markdown}${
-            elapsedSeconds ? `\n\n_Solved in ${elapsedSeconds} s by the integrated PyNite kernel._` : ""
-          }`;
-          setMessages((prev) => [
-            ...prev.filter((m) => m.role !== "assistant" || !m.content.includes("reviewing your model")),
-            {
-              id: uid(),
-              role: "assistant",
-              content: assistantBody,
-            },
-          ]);
-          return;
-        } catch {
-          /* fall through to error message below */
-        }
-      }
-      // Recognise the legacy-parser failure for loose prompts and explain
-      // exactly how to enable the DeepSeek-R1 rescue path.
-      const lower = msg.toLowerCase();
-      const looksLikeLegacyParserFail =
+      const looksLikeParserFail =
         lower.includes("could not find beam span") ||
         lower.includes("could not find the number of storeys") ||
-        lower.includes("describe the structure with spans") ||
-        lower.includes("request failed (422)");
-      const hint = looksLikeLegacyParserFail
-        ? "\n\n_Try a fuller brief such as: 'Simply supported concrete beam, " +
-          "span 6 m, DL 12 kN/m, LL 8 kN/m.' The assistant interprets loose " +
-          "shorthand only when it is connected._"
-        : "";
+        lower.includes("describe the structure") ||
+        lower.includes("request failed (422)") ||
+        lower.includes("at least 12 characters");
+      const hint = looksLikeParserFail
+        ? "\n\n_Try a fuller brief such as: 'Simply supported concrete beam, span 6 m, DL 12 kN/m, LL 8 kN/m.' With Ollama running, Balmores AI can also interpret loose shorthand._"
+        : llmHealth?.ok
+          ? ""
+          : "\n\n_Start the local backend (`run-local-ai.bat`) and Ollama (`ollama pull deepseek-r1`) for AI recommendations after each solve._";
       setMessages((prev) => [
-        ...prev,
+        ...prev.filter((m) => m.id !== liveId),
         {
           id: uid(),
           role: "assistant",
@@ -600,7 +429,7 @@ export default function HomePage() {
       setProgressEvent(null);
       setStreamingLlmText("");
     }
-  }, [draft, loading, pDelta, sampleBundle, useLlm, llmHealth]);
+  }, [draft, loading, pDelta, useLlm, llmHealth]);
 
   const has2DDiagrams =
     !!result?.diagrams &&
@@ -632,10 +461,8 @@ export default function HomePage() {
         <div className="brand">
           <div className="brand-badge" aria-hidden />
           <div>
-            <div className="brand-title">BALMORES STRUCTURAL</div>
-            <div className="small-muted">
-              Natural-language FEA - PyNite kernel - 2D beams - continuous beams - 2D frames - 3D buildings
-            </div>
+            <div className="brand-title">{PROJECT_TITLE}</div>
+            <div className="small-muted">Natural-language Finite Element Analysis (FEA)</div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -772,15 +599,10 @@ export default function HomePage() {
                 Clear history
               </button>
             </p>
-            {/* Sample-prompt chips were moved BELOW the hint line so the
-                input + send button stay the visual center of the composer.
-                Clicking a chip drops its canonical brief into the textarea
-                and pre-loads the matching precomputed sample in the right
-                panel for an instant demo. */}
             <div
               className="fea-quick-prompts fea-quick-prompts-below"
               role="group"
-              aria-label="Sample prompts"
+              aria-label="Example prompts"
             >
               {QUICK_PROMPTS.map((q, i) => (
                 <button
@@ -792,11 +614,6 @@ export default function HomePage() {
                   onClick={() => {
                     setDraft(q.prompt);
                     setLastSubmittedPrompt(q.prompt);
-                    const sample = sampleBundle?.samples[q.sampleKey];
-                    if (sample) {
-                      setResult(sample);
-                      setDemoMode(true);
-                    }
                     textareaRef.current?.focus();
                   }}
                 >
@@ -810,9 +627,10 @@ export default function HomePage() {
         <section className="panel panel-results panel-fea-report" aria-label="Analysis results">
           <div className="panel-header fea-report-header">
             <div>
-              <strong>PyNite output</strong>
-              <span className="small-muted">
-                {result ? ` - ${result.engine} - ${result.load_combination}` : "-"}
+              <strong>{PROJECT_TITLE}</strong>
+              <span className="small-muted" style={{ display: "block", marginTop: 4 }}>
+                Structural analysis and Design
+                {result ? ` · ${result.load_combination}` : ""}
               </span>
             </div>
             <div className="fea-report-header-actions">
@@ -831,22 +649,10 @@ export default function HomePage() {
                     type="button"
                     className="btn btn-ghost"
                     onClick={() => downloadFeaEtabsExports(result)}
-                    title="Download ETABS-oriented text and JSON model files from this result"
+                    title="Export CSI ETABS .e2k — import in ETABS via File → Import → ETABS (.e2k)"
                   >
-                    ETABS model (.txt/.json)
+                    Export Etabs(.e2k)
                   </button>
-                  {demoMode ? (
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => {
-                        setResult(null);
-                        setDemoMode(false);
-                      }}
-                    >
-                      Clear sample
-                    </button>
-                  ) : null}
                 </>
               ) : null}
             </div>
@@ -854,8 +660,9 @@ export default function HomePage() {
           <div className="panel-body results-scroll fea-report-body">
             {!result && !loading ? (
               <p className="small-muted empty-hint">
-                Send a building description to see parsed inputs, design criteria, reactions,
-                members, and drift. A 60-storey sample may load on open.
+                Send a structural brief to run PyNite FEA and view ULS tables, diagrams, drift,
+                and design criteria. Balmores AI (DeepSeek-R1 via Ollama) adds recommendations and
+                a conclusion after each solve when the local backend is running.
               </p>
             ) : null}
 

@@ -28,6 +28,7 @@ from .schemas import (
     FeaPromptRequest,
     FeaPromptResponse,
     LlmAskRequest,
+    LlmSummarizeRequest,
     VerifyRequest,
     VerifyResponse,
 )
@@ -40,6 +41,7 @@ from .local_llm import (
     llm_health,
     stream_general_chat,
     stream_summary,
+    summarize_fea_result,
     warm_model,
 )
 
@@ -228,6 +230,7 @@ _PUBLIC_TUNNEL_PATH_ALLOWLIST = (
     "/health",
     "/llm/health",
     "/llm/ask/stream",
+    "/llm/summarize",
     "/fea/analyze",
     "/fea/analyze-prompt",
     "/fea/analyze-prompt/stream",
@@ -460,8 +463,27 @@ def fea_analyze(req: FeaBuildingRequest) -> FeaBuildingResponse:
     )
 
 
-def _run_prompt_pipeline(req: FeaPromptRequest) -> FeaPromptResponse:
+def _parse_prompt_with_rescue(message: str) -> tuple[dict, list[str], Optional[str]]:
+    """Regex parse first; optional DeepSeek-R1 canonicalisation for shorthand briefs."""
     from .fea_prompt_parser import parse_structural_prompt
+
+    try:
+        params, parse_notes = parse_structural_prompt(message)
+        return params, parse_notes, None
+    except ValueError as first_err:
+        canonical = canonicalize_prompt(message)
+        if not canonical:
+            raise first_err
+        try:
+            params, parse_notes = parse_structural_prompt(canonical)
+        except ValueError:
+            raise first_err
+        rescue_note = f"Interpreted your prompt as: **{canonical}**"
+        parse_notes = [rescue_note, *parse_notes]
+        return params, parse_notes, rescue_note
+
+
+def _run_prompt_pipeline(req: FeaPromptRequest) -> FeaPromptResponse:
     from .pynite_fea import (
         run_beam_analysis,
         run_frame_2d_analysis,
@@ -470,7 +492,7 @@ def _run_prompt_pipeline(req: FeaPromptRequest) -> FeaPromptResponse:
     from .schemas import GeometryPayload, ResultCard
 
     try:
-        params, parse_notes = parse_structural_prompt(req.message)
+        params, parse_notes, _rescue = _parse_prompt_with_rescue(req.message)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -650,6 +672,19 @@ async def _ndjson_progress(req: FeaPromptRequest) -> AsyncIterator[str]:
 def llm_health_route() -> dict:
     """Privacy badge data: model name, endpoint, loopback flag, install status."""
     return llm_health()
+
+
+@app.post(
+    "/llm/summarize",
+    dependencies=[
+        Depends(require_api_key_if_configured),
+        Depends(_llm_security_check),
+    ],
+)
+def llm_summarize(req: LlmSummarizeRequest) -> dict:
+    """DeepSeek-R1 recommendations + conclusion from an existing PyNite result (non-streaming)."""
+    summary = summarize_fea_result(req.message, req.fea_result)
+    return {"llm_summary": summary}
 
 
 async def _stream_chat_only(

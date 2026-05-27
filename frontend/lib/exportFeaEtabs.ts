@@ -1,4 +1,5 @@
 import type { FeaPromptResponse } from "@/lib/api";
+import { downloadFeaE2k } from "@/lib/exportFeaE2k";
 
 function fmt(n: unknown, d = 4): string {
   const v = typeof n === "number" ? n : Number(n);
@@ -9,11 +10,11 @@ export function buildFeaEtabsText(res: FeaPromptResponse): string {
   const lines: string[] = [];
   lines.push("BALMORES STRUCTURAL - ETABS-ORIENTED MODEL EXPORT");
   lines.push("=".repeat(72));
-  lines.push("NOTE: This is an ETABS-ready text/JSON model description, not a binary CSI .edb file.");
-  lines.push("Use the nodes, frame connectivity, supports, load patterns, and combinations below to verify in ETABS.");
+  lines.push("NOTE: Use the companion .e2k file for direct ETABS import (File → Import → ETABS .e2k).");
+  lines.push("This text file is a human-readable cross-check of the same model.");
   lines.push("");
   lines.push(`Analysis type: ${res.analysis_type}`);
-  lines.push(`Load combination used in PyNite output: ${res.load_combination}`);
+  lines.push(`Load combination used in structural analysis: ${res.load_combination}`);
   lines.push(`Engine: ${res.engine}`);
   lines.push("");
   lines.push("INTERPRETED INPUTS");
@@ -55,7 +56,13 @@ export function buildFeaEtabsText(res: FeaPromptResponse): string {
   return lines.join("\n");
 }
 
+/** Primary export: CSI ETABS .e2k for File → Import → ETABS (.e2k). */
 export function downloadFeaEtabsExports(res: FeaPromptResponse) {
+  downloadFeaE2k(res);
+}
+
+/** Legacy text + JSON bundle (optional cross-check). */
+export function downloadFeaEtabsLegacyBundle(res: FeaPromptResponse) {
   const base = `balmores_etabs_${res.analysis_type}_${Date.now()}`;
   const payload = {
     format: "balmores_etabs_fea_prompt_v2",

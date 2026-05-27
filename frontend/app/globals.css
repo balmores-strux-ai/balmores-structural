@@ -106,7 +106,7 @@ button, input, select, textarea {
   align-items: stretch;
 }
 
-/* Two-column: chat | PyNite output (no 3D viewer) */
+/* Two-column: chat | structural analysis report (no 3D viewer) */
 .layout-fea-2 {
   grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
   align-items: stretch;

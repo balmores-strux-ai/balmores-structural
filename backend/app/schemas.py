@@ -176,6 +176,13 @@ class LlmAskRequest(BaseModel):
     use_llm_summary: bool = True
 
 
+class LlmSummarizeRequest(BaseModel):
+    """PyNite result already solved — local DeepSeek-R1 writes recommendations + conclusion."""
+
+    message: str = Field(..., min_length=1, max_length=32000)
+    fea_result: Dict[str, Any] = Field(default_factory=dict)
+
+
 class FeaPromptResponse(BaseModel):
     """Chat-style prompt → parsed inputs + PyNite FEA result (2D beam, 2D frame, or 3D building)."""
 

@@ -183,13 +183,21 @@ def _compact_fea_for_llm(fea: Dict[str, Any]) -> Dict[str, Any]:
 
 _SYSTEM_PROMPT = (
     "You are Balmores AI, a senior licensed structural engineer. The PyNite "
-    "FEM kernel has already produced numeric results — your only job is to "
-    "write a short, client-ready executive summary in clean Markdown.\n\n"
+    "FEM kernel has already produced numeric results — your job is a client-ready "
+    "Markdown report with explicit engineering judgement.\n\n"
+    "Required structure (use these exact headings):\n"
+    "## Executive summary\n"
+    "3–5 bullets: load combination, controlling member/action, governing reaction, "
+    "drift or deflection check, and overall adequacy.\n"
+    "## Recommendations\n"
+    "3–6 actionable bullets (verification steps, detailing, ETABS cross-check, "
+    "load-case review, section optimisation) grounded ONLY in the JSON.\n"
+    "## Conclusion\n"
+    "One short paragraph: PASS / MARGINAL / FAIL style verdict with the "
+    "critical number that drives it.\n\n"
     "Hard rules:\n"
     "- Use ONLY numbers from the supplied PyNite JSON. Never invent values.\n"
-    "- 4–6 bullet points, then 1 short verdict paragraph. No preamble.\n"
-    "- Always state the load combination, the controlling member, and the "
-    "governing reaction. Flag DCR > 1.0 or drift > h/400 explicitly.\n"
+    "- Flag DCR > 1.0, drift > h/400, or deflection exceedance explicitly.\n"
     "- Reference NSCP 2015 / ASCE 7 only when design_criteria already cites it.\n"
     "- No chain-of-thought. Output the final answer directly."
 )
@@ -684,6 +692,18 @@ def stream_general_chat(
         _CACHE.put(cache_key, full)
 
 
+def summarize_fea_result(user_message: str, fea_result: Dict[str, Any]) -> str:
+    """Non-streaming summary for POST /llm/summarize (reliable after FEA completes)."""
+    parts: list[str] = []
+    for chunk in stream_summary(user_message, fea_result):
+        if chunk:
+            parts.append(chunk)
+    text = _post_clean("".join(parts))
+    if text:
+        return text
+    return _fallback_summary(fea_result, note="LLM commentary unavailable.")
+
+
 def _fallback_summary(fea_result: Dict[str, Any], note: str = "") -> str:
     """Deterministic, useful text when the LLM is unavailable."""
     if not isinstance(fea_result, dict):
@@ -697,7 +717,7 @@ def _fallback_summary(fea_result: Dict[str, Any], note: str = "") -> str:
         return f"**{val}{(' ' + unit) if unit else ''}**"
 
     lines = [
-        "## Executive summary (deterministic fallback)",
+        "## Executive summary",
         f"- **Solver:** {fea_result.get('engine', 'PyNite FEM')} · "
         f"**Combo:** {fea_result.get('load_combination', '—')}",
     ]
@@ -711,6 +731,19 @@ def _fallback_summary(fea_result: Dict[str, Any], note: str = "") -> str:
         for label in ("Max drift", "Beam max moment", "Beam max shear", "Column axial", "DCR proxy"):
             if label in cards:
                 lines.append(f"- {label}: {card(label)}")
+    lines.extend(
+        [
+            "",
+            "## Recommendations",
+            "- Cross-check member envelopes and support reactions in ETABS (import the exported .e2k).",
+            "- Confirm load combinations and pattern directions match the governing ULS case above.",
+            "- Review detailing and connection capacity outside this linear elastic envelope check.",
+            "",
+            "## Conclusion",
+            "Deterministic PyNite results are shown in the tables; enable the local Balmores AI "
+            "bridge (Ollama + deepseek-r1) for a model-generated executive summary.",
+        ]
+    )
     if note:
         lines.append(f"\n_{note}_")
     return "\n".join(lines)
