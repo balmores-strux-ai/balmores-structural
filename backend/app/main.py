@@ -266,7 +266,66 @@ class PublicTunnelFirewall(BaseHTTPMiddleware):
         )
 
 
+_FORWARDING_HEADERS = (
+    "x-forwarded-for",
+    "x-real-ip",
+    "forwarded",
+    "cf-connecting-ip",
+    "x-forwarded-host",
+    "true-client-ip",
+)
+
+
+class LocalOnlyFirewall(BaseHTTPMiddleware):
+    """Whole-app loopback lockdown for private local mode (defense-in-depth).
+
+    When ``LLM_LOCAL_ONLY=1`` and the public tunnel is OFF (the default for
+    ``run-local-ai.bat``), EVERY endpoint — not just ``/llm/*`` — is refused
+    unless:
+
+    * the direct TCP peer is loopback (``127.0.0.0/8`` / ``::1``) or on the
+      explicit ``LLM_IP_ALLOWLIST``; and
+    * the request carries no proxy/forwarding headers (which would mean it
+      was relayed from another machine).
+
+    Combined with binding uvicorn to ``127.0.0.1`` this means a process on
+    another device on your LAN/Wi-Fi (or the public Internet) cannot reach
+    the FEA solver, the model bridge, or any other route — so a prompt or a
+    crafted request can't be used to probe your PC. When you deliberately
+    publish the assistant with ``LLM_PUBLIC_TUNNEL=1`` this guard steps aside
+    and the API-key gate takes over instead.
+    """
+
+    async def dispatch(self, request, call_next):  # type: ignore[override]
+        if _LLM_PUBLIC_TUNNEL or not _LLM_LOCAL_ONLY:
+            return await call_next(request)
+        for h in _FORWARDING_HEADERS:
+            if request.headers.get(h):
+                return JSONResponse(
+                    status_code=403,
+                    content={
+                        "error": {
+                            "code": "forbidden",
+                            "message": "Private local mode: proxied requests are refused.",
+                        }
+                    },
+                )
+        peer = (request.client.host if request.client else "") or ""
+        if peer not in _LLM_IP_ALLOWLIST and not _is_loopback_ip(peer):
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "error": {
+                        "code": "forbidden",
+                        "message": "Private local mode: only this PC (loopback) may call the API.",
+                    }
+                },
+            )
+        return await call_next(request)
+
+
 app.add_middleware(PublicTunnelFirewall)
+app.add_middleware(LocalOnlyFirewall)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
