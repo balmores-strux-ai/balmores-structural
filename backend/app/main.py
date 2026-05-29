@@ -38,6 +38,7 @@ from .model_loader import MODEL_PATH, get_brain
 from .etabs_export import build_etabs_export_json, build_etabs_export_text
 from .local_llm import (
     canonicalize_prompt,
+    deterministic_executive_summary,
     llm_health,
     stream_general_chat,
     stream_summary,
@@ -122,6 +123,7 @@ def _cors_origins() -> list[str]:
 
 _LLM_RATE_CAPACITY = max(1, int(os.getenv("LLM_RATE_CAPACITY", "30")))
 _LLM_RATE_REFILL_PER_SEC = float(os.getenv("LLM_RATE_REFILL_PER_SEC", "0.5"))
+_LLM_ENABLED = os.getenv("LLM_ENABLED", "1").lower() in ("1", "true", "yes", "on")
 _LLM_BUCKETS: dict[str, tuple[float, float]] = {}
 _LLM_BUCKETS_LOCK = asyncio.Lock()
 
@@ -190,19 +192,31 @@ async def _llm_security_check(request: Request) -> None:
                 status_code=403,
                 detail=f"Local LLM refuses requests from {peer or 'unknown'} (allow-list only).",
             )
-    # Per-IP token-bucket rate limit applies in both modes.
-    ip = (request.client.host if request.client else "?") or "?"
-    now = time.monotonic()
-    async with _LLM_BUCKETS_LOCK:
-        tokens, ts = _LLM_BUCKETS.get(ip, (float(_LLM_RATE_CAPACITY), now))
-        tokens = min(
-            float(_LLM_RATE_CAPACITY),
-            tokens + (now - ts) * _LLM_RATE_REFILL_PER_SEC,
-        )
-        if tokens < 1.0:
-            _LLM_BUCKETS[ip] = (tokens, now)
-            raise HTTPException(status_code=429, detail="Rate limit: slow down")
-        _LLM_BUCKETS[ip] = (tokens - 1.0, now)
+    # Per-IP token-bucket rate limit protects a local GPU from flooding.
+    # On the public cloud backend (LLM_LOCAL_ONLY=0, LLM_ENABLED=0) every
+    # visitor reaches us through one frontend proxy IP and /llm/summarize only
+    # returns deterministic text — throttling there would 429 normal PyNite
+    # solves after the FEA step already succeeded. Skip the bucket in that
+    # mode and for cheap health probes.
+    path = (request.url.path or "").rstrip("/") or "/"
+    skip_rate_limit = (
+        not _LLM_ENABLED
+        or not _LLM_LOCAL_ONLY
+        or path == "/llm/health"
+    )
+    if not skip_rate_limit:
+        ip = (request.client.host if request.client else "?") or "?"
+        now = time.monotonic()
+        async with _LLM_BUCKETS_LOCK:
+            tokens, ts = _LLM_BUCKETS.get(ip, (float(_LLM_RATE_CAPACITY), now))
+            tokens = min(
+                float(_LLM_RATE_CAPACITY),
+                tokens + (now - ts) * _LLM_RATE_REFILL_PER_SEC,
+            )
+            if tokens < 1.0:
+                _LLM_BUCKETS[ip] = (tokens, now)
+                raise HTTPException(status_code=429, detail="Rate limit: slow down")
+            _LLM_BUCKETS[ip] = (tokens - 1.0, now)
 
 
 _FASTAPI_KW: dict = {"title": "BALMORES STRUCTURAL", "version": "0.1.0"}
@@ -585,7 +599,7 @@ def _run_prompt_pipeline(req: FeaPromptRequest) -> FeaPromptResponse:
     parsed_model = {k: v for k, v in params.items() if _is_jsonable(v)}
     parsed_model["analysis_type"] = atype
 
-    return FeaPromptResponse(
+    response = FeaPromptResponse(
         analysis_type=raw.get("analysis_type", atype),
         input_summary=input_summary,
         parse_notes=parse_notes,
@@ -607,6 +621,8 @@ def _run_prompt_pipeline(req: FeaPromptRequest) -> FeaPromptResponse:
         elapsed_ms=elapsed_ms,
         pynite_path=raw.get("pynite_path", ""),
     )
+    response.executive_summary = deterministic_executive_summary(response.model_dump(mode="json"))
+    return response
 
 
 @app.post(

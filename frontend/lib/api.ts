@@ -72,7 +72,7 @@ async function fetchWithRetry(
   opts?: { retries?: number; retryOn?: number[] },
 ): Promise<Response> {
   const retries = opts?.retries ?? 2;
-  const retryOn = opts?.retryOn ?? [502, 503, 504];
+  const retryOn = opts?.retryOn ?? [429, 502, 503, 504];
   let last: Response | null = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const res = await fetch(url, init);
@@ -357,6 +357,7 @@ export type FeaPromptResponse = {
   diagrams?: FeaDiagrams;
   design_criteria?: FeaDesignCriteria;
   elapsed_ms?: number;
+  executive_summary?: string;
   pynite_path?: string;
 };
 
@@ -677,7 +678,9 @@ export async function summarizeFeaWithLlm(
       signal: opts?.signal,
     });
     if (!res.ok) {
-      if (res.status === 404 || res.status === 405 || res.status === 403) return "";
+      if (res.status === 404 || res.status === 405 || res.status === 403 || res.status === 429) {
+        return "";
+      }
       throw new Error(await parseError(res));
     }
     const j = (await res.json()) as { llm_summary?: string };

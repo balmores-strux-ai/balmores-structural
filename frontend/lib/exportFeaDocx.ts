@@ -99,7 +99,7 @@ function steelSizingParagraphs(res: FeaPromptResponse): Paragraph[] {
   const beam = pick(mu);
   const col = pick(Math.max(0, ...res.columns.map((c) => Math.max(Math.abs(c.My_max_kNm || 0), Math.abs(c.Mz_max_kNm || 0)))), pu);
   return [
-    h1("7. Preliminary W-shape steel sizing"),
+    h1("6. Preliminary W-shape steel sizing"),
     p(`Beam trial section: ${beam.s.name}; Mu = ${fmt(mu, 1)} kN-m; phiMn = ${fmt(phiMn(beam.s.sx), 1)} kN-m; utilization = ${fmt(beam.u, 2)}.`),
     p(`Column/gravity trial section: ${col.s.name}; Pu = ${fmt(pu, 1)} kN; phiPn(short-column screen) = ${fmt(phiPn(col.s.area), 1)} kN; utilization = ${fmt(col.u, 2)}.`),
     p("Assumptions: Fy = 345 MPa, phi_b = phi_c = 0.90, W-shape catalogue screening only. This is a preliminary selection aiming for roughly 0.70 to 0.90 utilization where possible; final NSCP/AISC design must include unbraced length, KL/r, local buckling, shear, P-M interaction, deflection, connections, and constructability."),
@@ -107,8 +107,7 @@ function steelSizingParagraphs(res: FeaPromptResponse): Paragraph[] {
 }
 
 function handcalcParagraphs(res: FeaPromptResponse): Paragraph[] {
-  const out: Paragraph[] = [];
-  out.push(h1("5. Engineer hand-checks / teaching calculations"));
+  const out: Paragraph[] = [h1("7. Engineer hand-checks / teaching calculations")];
   if (res.analysis_type === "beam_2d") {
     const span = res.parsed_model?.span_m;
     const dl = res.parsed_model?.dl_kN_per_m ?? 0;
@@ -141,7 +140,7 @@ function handcalcParagraphs(res: FeaPromptResponse): Paragraph[] {
 function diagramParagraphs(res: FeaPromptResponse): Paragraph[] {
   const d = res.diagrams;
   if (!d) return [];
-  const out: Paragraph[] = [h1("6. Diagram data / graph points")];
+  const out: Paragraph[] = [h1("8. Diagram data / graph points")];
   const addPair = (name: string, pair?: [number[], number[]]) => {
     if (!pair || pair[0].length < 2) return;
     const xs = pair[0];
@@ -167,6 +166,17 @@ function diagramParagraphs(res: FeaPromptResponse): Paragraph[] {
   return out.length > 1 ? out : [];
 }
 
+function executiveSummaryParagraphs(res: FeaPromptResponse): Paragraph[] {
+  const raw = (res.executive_summary || "").trim();
+  if (!raw) return [];
+  const out: Paragraph[] = [h1("Executive summary — recommendations and conclusion")];
+  for (const block of raw.split(/\n{2,}/)) {
+    const text = block.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").trim();
+    if (text) out.push(p(text));
+  }
+  return out;
+}
+
 export async function feaResultToDocxBlob(res: FeaPromptResponse, title = "Balmores Structural FEA report"): Promise<Blob> {
   const dateStr = new Date().toLocaleString("en-PH", { dateStyle: "long", timeStyle: "short" });
 
@@ -187,16 +197,17 @@ export async function feaResultToDocxBlob(res: FeaPromptResponse, title = "Balmo
       ],
     }),
     p(`Generated: ${dateStr} · ${res.engine} · type: ${res.analysis_type}`),
-    p("This document reproduces the application output for your records. Verify with a professional engineer; not a design certificate.", { size: 9 }),
-    h1("1. Interpreted inputs"),
-    p(res.input_summary),
+    p("Prepared for engineering review. Verify with a licensed professional engineer; this is not a design certificate.", { size: 9 }),
+    h1("1. Project summary"),
+    p(res.input_summary.replace(/\*\*/g, "")),
+    ...executiveSummaryParagraphs(res),
     h1("2. Design parameters (NSCP / location)"),
     ...criteriaToParagraphs(res.design_criteria),
     h1("3. Structural analysis method and justification"),
     p("The analysis model is assembled from the interpreted natural-language input and solved using PyNite finite elements. Nodes, members, supports, and loads are explicitly listed in the web output and ETABS-oriented export."),
     p("For beams and frames, the model uses elastic beam-column elements. For 3D buildings, gravity loads are tributary-area converted to frame line loads; wind/seismic are simplified preliminary lateral actions based on the resolved NSCP-style criteria."),
     p("This is a professional preliminary analysis package for engineering review, education, and model setup. Final client submissions must still be checked against the governing NSCP load combinations, member design provisions, P-Delta stability, diaphragm/core behavior, and licensed engineer judgment."),
-    h1("4. Governing result summary"),
+    h1("4. Governing PyNite result summary"),
   ];
 
   for (const card of res.result_cards) {
@@ -208,11 +219,11 @@ export async function feaResultToDocxBlob(res: FeaPromptResponse, title = "Balmo
   }
   if (res.summary_markdown) {
     children.push(
-      h1("4. Methodology summary (from PyNite output)"),
+      h1("5. Methodology summary (from PyNite output)"),
       p(res.summary_markdown.replace(/\*\*/g, "")),
     );
   } else {
-    children.push(h1("4. Methodology"));
+    children.push(h1("5. Methodology"));
   }
   if (res.p_delta_note) children.push(p(`P-Δ: ${res.p_delta_note}`));
   if (typeof res.elapsed_ms === "number") {
@@ -225,7 +236,7 @@ export async function feaResultToDocxBlob(res: FeaPromptResponse, title = "Balmo
 
   if (res.base_reactions.length) {
     children.push(
-      h1("8. Support reactions (ULS) — kN, kN-m"),
+      h1("9. Support reactions (ULS) — kN, kN-m"),
     );
     const hRow = new TableRow({
       children: [
@@ -261,7 +272,7 @@ export async function feaResultToDocxBlob(res: FeaPromptResponse, title = "Balmo
 
   if (res.storey_drifts.length) {
     children.push(
-      h1("9. Storey drift"),
+      h1("10. Storey drift"),
     );
     const dRows: TableRow[] = [
       new TableRow({
@@ -288,7 +299,7 @@ export async function feaResultToDocxBlob(res: FeaPromptResponse, title = "Balmo
 
   if (res.beams.length) {
     children.push(
-      h1("10. Beams (envelopes, excerpt)"),
+      h1("11. Beams (envelopes, excerpt)"),
     );
     const bRows: TableRow[] = [
       new TableRow({ children: [cell("Member"), cell("|M| (kN·m)"), cell("|V| (kN)"), cell("δ (mm)")] }),
@@ -311,7 +322,7 @@ export async function feaResultToDocxBlob(res: FeaPromptResponse, title = "Balmo
   }
   if (res.columns.length) {
     children.push(
-      h1("11. Columns (envelopes, excerpt)"),
+      h1("12. Columns (envelopes, excerpt)"),
     );
     const cRows: TableRow[] = [
       new TableRow({
@@ -336,7 +347,7 @@ export async function feaResultToDocxBlob(res: FeaPromptResponse, title = "Balmo
     );
   }
   children.push(
-    h1("12. Assumptions and limits"),
+    h1("13. Assumptions and limits"),
   );
   for (const a of res.assumptions) {
     children.push(

@@ -406,36 +406,38 @@ export default function HomePage() {
         assistantBody += `\n\n_Solved in ${elapsedSeconds} s._`;
       }
 
+      // Every PyNite solve ships a deterministic executive summary. Append it
+      // now so public users always see recommendations even if /llm/summarize
+      // is throttled or the local model is offline.
+      const embeddedSummary = (res.executive_summary || "").trim();
+      if (embeddedSummary) {
+        assistantBody += `\n\n---\n\n${embeddedSummary}`;
+      }
+
       setMessages((prev) =>
         prev.map((m) => (m.id === liveId ? { ...m, content: assistantBody } : m)),
       );
 
-      // Always request a written recommendations + conclusion block. When the
-      // owner's local DeepSeek-R1 is reachable this is a model-authored
-      // executive summary; otherwise the backend returns a deterministic
-      // engineering summary derived from the PyNite numbers. Either way the
-      // user gets real commentary in the chat — never an install instruction.
-      if (useLlm) {
-        if (llmOnline) {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === liveId
-                ? {
-                    ...m,
-                    content:
-                      assistantBody +
-                      "\n\n---\n\n_Balmores AI is writing recommendations and conclusion…_",
-                  }
-                : m,
-            ),
-          );
-        }
+      // Optional upgrade: when the owner's local DeepSeek-R1 is online, replace
+      // the deterministic block with a model-authored executive summary.
+      if (useLlm && llmOnline) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === liveId
+              ? {
+                  ...m,
+                  content:
+                    assistantBody +
+                    "\n\n_Balmores AI is refining recommendations and conclusion…_",
+                }
+              : m,
+          ),
+        );
         const llmSummary = await summarizeFeaWithLlm(text, res);
         if (llmSummary) {
-          assistantBody = llmSummary;
+          const base = `${res.input_summary}\n\n${res.summary_markdown}`;
+          assistantBody = `${base}${elapsedSeconds ? `\n\n_Solved in ${elapsedSeconds} s._` : ""}\n\n---\n\n${llmSummary}`;
         }
-        // If the summary call returns nothing (e.g. backend offline), we keep
-        // the deterministic PyNite summary already shown — no scary note.
       }
 
       setMessages((prev) =>
@@ -455,6 +457,7 @@ export default function HomePage() {
         lower.includes("failed to fetch") ||
         lower.includes("networkerror") ||
         lower.includes("connection refused") ||
+        lower.includes("request failed (429)") ||
         lower.includes("(500)") ||
         lower.includes("(502)") ||
         lower.includes("(503)") ||

@@ -695,6 +695,11 @@ def stream_general_chat(
         _CACHE.put(cache_key, full)
 
 
+def deterministic_executive_summary(fea_result: Dict[str, Any]) -> str:
+    """Public wrapper: recommendations + conclusion without calling Ollama."""
+    return _fallback_summary(fea_result)
+
+
 def summarize_fea_result(user_message: str, fea_result: Dict[str, Any]) -> str:
     """Non-streaming summary for POST /llm/summarize (reliable after FEA completes)."""
     parts: list[str] = []

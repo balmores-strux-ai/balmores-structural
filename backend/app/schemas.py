@@ -220,4 +220,8 @@ class FeaPromptResponse(BaseModel):
         default=0,
         description="Wall-clock time spent inside the PyNite kernel (post-parsing).",
     )
+    executive_summary: str = Field(
+        default="",
+        description="Deterministic recommendations + conclusion derived from PyNite envelopes (always present).",
+    )
     pynite_path: str = ""
