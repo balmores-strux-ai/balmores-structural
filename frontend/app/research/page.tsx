@@ -62,6 +62,38 @@ const articles = [
     ],
     datePublished: "2026-02-10",
   },
+  {
+    slug: "privacy-preserving-on-device-llm-fem-loop",
+    headline:
+      "A Privacy-Preserving On-Device Loop: Local LLM Interpretation → FEM Solve → LLM Review for Structural Briefs",
+    abstract:
+      "A closed loop that keeps every prompt on the engineer's own machine. A locally-hosted reasoning LLM (DeepSeek-R1 on Ollama, loopback only) canonicalises a plain-English structural brief; the deterministic PyNite finite-element kernel solves it; the same local LLM then reviews the authoritative numeric result and writes recommendations and a conclusion. No prompt, model, or result ever leaves the device. We characterise latency, the <think>-trace scrubbing pipeline, the loopback/API-key security gates, and a deterministic fallback that guarantees the system never fails closed.",
+    keywords: [
+      "privacy-preserving AI",
+      "on-device inference",
+      "DeepSeek-R1",
+      "retrieval-augmented engineering",
+      "PyNite",
+      "human-in-the-loop",
+    ],
+    datePublished: "2026-04-05",
+  },
+  {
+    slug: "physics-informed-surrogates-doctoral",
+    headline:
+      "Physics-Informed Neural Surrogates for Real-Time RC/Steel Frame Analysis under NSCP 2015 / ASCE 7 (Doctoral Programme)",
+    abstract:
+      "Doctoral research direction extending the MSc thesis: a unified surrogate trained on parametric PyNite/ETABS solves with an explicit physics-residual loss against the governing stiffness equations, so sub-second predictions remain code-consistent rather than merely statistically plausible. Targets uncertainty-quantified member envelopes, storey drift, and base reactions, with an audit trail back to a verifying FEM solve.",
+    keywords: [
+      "physics-informed neural networks",
+      "surrogate modeling",
+      "uncertainty quantification",
+      "Information Technology",
+      "scientific machine learning",
+      "ETABS",
+    ],
+    datePublished: "2026-05-20",
+  },
 ];
 
 const researchLd = {
@@ -195,6 +227,65 @@ export default function ResearchPage() {
             <meta itemProp="publisher" content="Balmores Lab" />
           </section>
         ))}
+
+        <h2 style={S.h2}>The Closed Loop (system under study)</h2>
+        <div style={S.article}>
+          <p style={{ ...S.abstract, marginTop: 0 }}>
+            The live demo on this site is also the primary research artifact: a
+            fully on-device pipeline where the engineer&apos;s intent is
+            interpreted, solved, and reviewed without any data leaving the
+            machine.
+          </p>
+          <ol style={{ color: "#cbd5e1", lineHeight: 1.7, fontSize: 15, paddingLeft: 20, margin: "12px 0 0" }}>
+            <li>
+              <strong>Interpret.</strong> A locally-hosted reasoning LLM
+              (DeepSeek-R1 via Ollama, loopback&nbsp;only) canonicalises a
+              plain-English or shorthand structural brief into a strict,
+              parseable form.
+            </li>
+            <li>
+              <strong>Solve.</strong> The deterministic PyNite finite-element
+              kernel runs the analysis — beams, 2D frames, and 3D buildings
+              with P-Δ, drift, and base reactions.
+            </li>
+            <li>
+              <strong>Review.</strong> The same local LLM reads the
+              authoritative numeric result and writes an executive summary,
+              recommendations, and a conclusion — grounded only in the FEM
+              output.
+            </li>
+            <li>
+              <strong>Return.</strong> The commentary streams back into the
+              chat, token by token. A deterministic engineering summary is
+              substituted if the model is unavailable, so the system never
+              fails closed.
+            </li>
+          </ol>
+        </div>
+
+        <h2 style={S.h2}>Research Roadmap</h2>
+        <div style={S.article}>
+          <ul style={{ color: "#cbd5e1", lineHeight: 1.7, fontSize: 15, paddingLeft: 20, margin: 0 }}>
+            <li>
+              <strong>MSc (Computer Science) — now.</strong> Physics-informed
+              neural surrogates that reproduce PyNite/ETABS envelopes in under
+              a second with a physics-residual regulariser.
+            </li>
+            <li>
+              <strong>DIT (Information Technology) — next.</strong> Productionising
+              the privacy-preserving on-device loop: uncertainty quantification,
+              an immutable audit trail back to a verifying FEM solve, and
+              secure local deployment for engineering practices.
+            </li>
+            <li>
+              <strong>Future.</strong> Multi-objective generative design with
+              embodied-carbon as a first-class objective; expansion from
+              Philippine NSCP 2015 to multi-code (ASCE 7, Eurocode) support;
+              and on-device fine-tuning so the assistant learns a firm&apos;s
+              detailing preferences without sharing data.
+            </li>
+          </ul>
+        </div>
 
         <h2 style={S.h2}>Cite this work</h2>
         <div style={{ ...S.article, fontFamily: "ui-monospace, monospace", fontSize: 13, color: "#cbd5e1" }}>

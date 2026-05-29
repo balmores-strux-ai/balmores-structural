@@ -299,6 +299,13 @@ class LocalOnlyFirewall(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):  # type: ignore[override]
         if _LLM_PUBLIC_TUNNEL or not _LLM_LOCAL_ONLY:
             return await call_next(request)
+        # Health/readiness probes must ALWAYS succeed, even in loopback-only
+        # mode — otherwise a platform health checker (Render, Kubernetes, a
+        # load balancer) that legitimately connects from a non-loopback IP
+        # would be 403'd and the service would be marked permanently
+        # unhealthy. These endpoints expose no sensitive data.
+        if request.url.path in ("/health", "/ready"):
+            return await call_next(request)
         for h in _FORWARDING_HEADERS:
             if request.headers.get(h):
                 return JSONResponse(

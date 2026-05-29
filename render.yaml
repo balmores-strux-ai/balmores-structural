@@ -15,6 +15,31 @@ services:
       # 3.10.14 is not always available on Render; 3.10.12 is stable.
       - key: PYTHON_VERSION
         value: "3.10.12"
+      # CRITICAL for cloud hosting: the backend defaults to LLM_LOCAL_ONLY=1,
+      # which makes LocalOnlyFirewall reject EVERY request that isn't loopback
+      # (including Render's own /health probe and the frontend proxy) with 403.
+      # On Render the backend sits behind a load balancer that adds
+      # x-forwarded-for, so leaving this at the default 403s the whole service
+      # and the deploy never goes healthy. Turn the loopback lockdown OFF here:
+      # PyNite FEA then serves everyone, and the local DeepSeek-R1 bridge simply
+      # reports "offline" (there is no Ollama on Render) instead of crashing.
+      - key: LLM_LOCAL_ONLY
+        value: "0"
+      - key: LLM_PUBLIC_TUNNEL
+        value: "0"
+      # The cloud backend has no GPU/Ollama — disable the LLM bridge so health
+      # checks and FEA never wait on a model that can't exist here. The real
+      # DeepSeek-R1 loop runs on the owner's PC via run-public-tunnel.bat.
+      - key: LLM_ENABLED
+        value: "0"
+      # All public visitors reach the backend through the frontend proxy, so
+      # they share one source IP. Raise the /llm/* token bucket generously so
+      # the (cheap, model-less) deterministic summary endpoint isn't throttled
+      # under normal traffic.
+      - key: LLM_RATE_CAPACITY
+        value: "240"
+      - key: LLM_RATE_REFILL_PER_SEC
+        value: "10"
     # CPU torch: use --extra-index-url so torch deps (jinja2, etc.) resolve from PyPI (avoids pip metadata errors).
     buildCommand: pip install --no-cache-dir torch==2.2.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu && pip install --no-cache-dir -r requirements-render.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT

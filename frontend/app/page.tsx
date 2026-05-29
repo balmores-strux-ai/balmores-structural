@@ -380,20 +380,17 @@ export default function HomePage() {
         );
       }
 
-      let llmEligible = useLlm && (llmHealth?.ok ?? false);
-      if (!llmEligible) {
-        try {
-          const fresh = await getLlmHealth();
-          if (fresh) {
-            setLlmHealth(fresh);
-            if (fresh.ok) {
-              llmEligible = true;
-              setUseLlm(true);
-            }
-          }
-        } catch {
-          /* PyNite-only fallback below */
+      // Re-probe the local DeepSeek-R1 bridge so the badge reflects reality,
+      // but never block the solve on it — PyNite always runs.
+      let llmOnline = llmHealth?.ok ?? false;
+      try {
+        const fresh = await getLlmHealth();
+        if (fresh) {
+          setLlmHealth(fresh);
+          llmOnline = fresh.ok;
         }
+      } catch {
+        /* PyNite-only path below */
       }
 
       const res = await runFeaAnalysisResilient(text, {
@@ -413,26 +410,32 @@ export default function HomePage() {
         prev.map((m) => (m.id === liveId ? { ...m, content: assistantBody } : m)),
       );
 
-      if (llmEligible && useLlm) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === liveId
-              ? {
-                  ...m,
-                  content:
-                    assistantBody +
-                    "\n\n---\n\n_Balmores AI (DeepSeek-R1) is writing recommendations and conclusion…_",
-                }
-              : m,
-          ),
-        );
+      // Always request a written recommendations + conclusion block. When the
+      // owner's local DeepSeek-R1 is reachable this is a model-authored
+      // executive summary; otherwise the backend returns a deterministic
+      // engineering summary derived from the PyNite numbers. Either way the
+      // user gets real commentary in the chat — never an install instruction.
+      if (useLlm) {
+        if (llmOnline) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === liveId
+                ? {
+                    ...m,
+                    content:
+                      assistantBody +
+                      "\n\n---\n\n_Balmores AI is writing recommendations and conclusion…_",
+                  }
+                : m,
+            ),
+          );
+        }
         const llmSummary = await summarizeFeaWithLlm(text, res);
         if (llmSummary) {
           assistantBody = llmSummary;
-        } else {
-          assistantBody +=
-            "\n\n_Balmores AI could not be reached — PyNite tables and the deterministic summary above are authoritative. Start `run-local-ai.bat` and Ollama (`ollama pull deepseek-r1`) for AI recommendations._";
         }
+        // If the summary call returns nothing (e.g. backend offline), we keep
+        // the deterministic PyNite summary already shown — no scary note.
       }
 
       setMessages((prev) =>
@@ -446,30 +449,30 @@ export default function HomePage() {
         lower.includes("could not find the number of storeys") ||
         lower.includes("describe the structure") ||
         lower.includes("request failed (422)") ||
+        lower.includes("request failed (400)") ||
         lower.includes("at least 12 characters");
-      const apiKeyHint =
-        lower.includes("invalid or missing api key") || lower.includes("(401)")
-          ? "\n\n_If the backend has API_KEY set, add the same value as NEXT_PUBLIC_API_KEY for local dev, or unset API_KEY in the backend environment._"
-          : "";
-      const backendHint =
+      const looksLikeNetwork =
         lower.includes("failed to fetch") ||
         lower.includes("networkerror") ||
-        lower.includes("connection refused")
-          ? "\n\n_Start the local backend with `run-local-ai.bat` on port 8000, then refresh this page._"
-          : "";
+        lower.includes("connection refused") ||
+        lower.includes("(500)") ||
+        lower.includes("(502)") ||
+        lower.includes("(503)") ||
+        lower.includes("(504)");
+      // Public-friendly guidance only — never reference local batch files or
+      // model installs. Most failures are an incomplete brief; the rest are
+      // transient server hiccups that succeed on retry.
       const hint = looksLikeParserFail
-        ? "\n\n_Try a fuller brief such as: 'Simply supported concrete beam, span 6 m, DL 12 kN/m, LL 8 kN/m.' With Ollama running, Balmores AI can also interpret loose shorthand._"
-        : apiKeyHint ||
-          backendHint ||
-          (llmHealth?.ok
-            ? ""
-            : "\n\n_Start the local backend (`run-local-ai.bat`) and Ollama (`ollama pull deepseek-r1`) for AI recommendations after each solve._");
+        ? "\n\n_Tip: include the span, supports, and loads. For example — **Simply supported concrete beam, span 6 m, UDL 12 kN/m DL, 8 kN/m LL** — or pick one of the example chips below._"
+        : looksLikeNetwork
+          ? "\n\n_The analysis service was briefly unavailable. Please press **Send & analyze** again — it usually succeeds on the next try._"
+          : "";
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== liveId),
         {
           id: uid(),
           role: "assistant",
-          content: `**Analysis failed**\n\n${msg}${hint}`,
+          content: `**Couldn't run that one yet**\n\n${msg}${hint}`,
           isError: true,
         },
       ]);
@@ -538,21 +541,20 @@ export default function HomePage() {
                 color: llmHealth.ok ? "#7dffc1" : "#ffd58a",
               }}
             >
-              {llmHealth.ok ? "🔒 Private AI · online" : "Balmores AI · offline"}
+              {llmHealth.ok ? "🔒 Private AI · online" : "AI summary · deterministic"}
             </span>
           ) : null}
           <label
             className="pdelta-toggle small-muted"
             title={
               llmHealth?.ok
-                ? "Pipe PyNite results through the assistant for a client-ready executive summary."
-                : "The assistant is currently unreachable — analysis will still run on the deterministic FEM kernel."
+                ? "Pipe PyNite results through DeepSeek-R1 on the owner's PC for a model-authored executive summary."
+                : "Adds an engineering recommendations + conclusion block derived from the PyNite results."
             }
           >
             <input
               type="checkbox"
-              checked={useLlm && (llmHealth?.ok ?? false)}
-              disabled={!llmHealth?.ok}
+              checked={useLlm}
               onChange={(e) => setUseLlm(e.target.checked)}
             />
             AI summary
@@ -712,8 +714,9 @@ export default function HomePage() {
             {!result && !loading ? (
               <p className="small-muted empty-hint">
                 Send a structural brief to run PyNite FEA and view ULS tables, diagrams, drift,
-                and design criteria. Balmores AI (DeepSeek-R1 via Ollama) adds recommendations and
-                a conclusion after each solve when the local backend is running.
+                and design criteria. Every solve also returns an engineering recommendations and
+                conclusion block — authored by Balmores AI (DeepSeek-R1) when the private AI is
+                online, or derived deterministically from the results otherwise.
               </p>
             ) : null}
 

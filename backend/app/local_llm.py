@@ -484,7 +484,10 @@ def stream_summary(
     """
     enabled, reason = _guard_target()
     if not enabled:
-        yield _fallback_summary(fea_result, note=reason)
+        # Public/cloud deployments run with the model bridge disabled. Don't
+        # leak the internal reason (e.g. "LLM_ENABLED=0") into the user-facing
+        # chat — just return the deterministic engineering summary.
+        yield _fallback_summary(fea_result)
         return
 
     compact = _compact_fea_for_llm(fea_result)
@@ -731,17 +734,29 @@ def _fallback_summary(fea_result: Dict[str, Any], note: str = "") -> str:
         for label in ("Max drift", "Beam max moment", "Beam max shear", "Column axial", "DCR proxy"):
             if label in cards:
                 lines.append(f"- {label}: {card(label)}")
+    # Pull a couple of governing numbers so the conclusion is specific, not
+    # boilerplate. These come straight from the PyNite result cards / totals.
+    governing_bits: list[str] = []
+    for label in ("Beam max moment", "Beam max shear", "Max deflection", "Column axial", "DCR proxy"):
+        if label in cards:
+            governing_bits.append(f"{label.lower()} {card(label)}")
+    governing = "; ".join(governing_bits[:3]) if governing_bits else "the member envelopes above"
+
     lines.extend(
         [
             "",
             "## Recommendations",
-            "- Cross-check member envelopes and support reactions in ETABS (import the exported .e2k).",
-            "- Confirm load combinations and pattern directions match the governing ULS case above.",
-            "- Review detailing and connection capacity outside this linear elastic envelope check.",
+            "- Verify the governing member against your code (NSCP 2015 / ASCE 7) capacity "
+            "equations — these PyNite numbers are demands, not a capacity check.",
+            "- Confirm the load combination and pattern directions match the governing ULS case.",
+            "- Cross-check support reactions and member envelopes in ETABS (use the **Export ETABS (.e2k)** button).",
+            "- Review serviceability: deflection / storey-drift limits and any long-term effects.",
+            "- Check detailing and connection capacity, which fall outside this linear-elastic envelope.",
             "",
             "## Conclusion",
-            "Deterministic PyNite results are shown in the tables; enable the local Balmores AI "
-            "bridge (Ollama + deepseek-r1) for a model-generated executive summary.",
+            f"The PyNite finite-element solve completed and reports {governing}. "
+            "Treat these as the authoritative demands for this model and proceed to code-based "
+            "capacity checks before issuing the design.",
         ]
     )
     if note:

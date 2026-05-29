@@ -728,6 +728,18 @@ export default function AboutPage() {
                 embodied-carbon awareness as a first-class objective.
               </p>
             </div>
+            <div style={S.card}>
+              <h4 style={{ margin: 0, color: "#f1f5f9", fontSize: 16 }}>
+                Privacy-Preserving On-Device AI
+              </h4>
+              <p style={{ ...S.p, marginTop: 8 }}>
+                A closed loop where a local reasoning LLM interprets the brief,
+                PyNite solves it, and the LLM reviews the result — entirely on
+                the engineer&apos;s own machine, so no project data ever leaves
+                the device. See the{" "}
+                <Link href="/research" style={S.extLink}>Research</Link> page.
+              </p>
+            </div>
           </div>
         </section>
 
