@@ -3,8 +3,8 @@ import Link from "next/link";
 import ProfileBadges from "@/components/ProfileBadges";
 import ResearchPartnerCard from "@/components/ResearchPartnerCard";
 import SiteNav from "@/components/SiteNav";
-import { sandraPersonLd } from "@/lib/research-team";
 import { breadcrumbLd, JOB_TITLE, PERSON_NAME, SITE_URL } from "@/lib/seo";
+import { SANDRA_AGCAOILI } from "@/lib/research-team";
 
 export const metadata: Metadata = {
   title: "About Louie Doniego Balmores - Structural Engineer & AI Researcher",
@@ -166,7 +166,7 @@ const faqLd = {
       acceptedAnswer: {
         "@type": "Answer",
         text:
-          "Sandra Agcaoili is an AI researcher and research partner at Balmores Lab. She is pursuing a PhD in Artificial Intelligence at the University of the Philippines Diliman (since September 2023), is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), and is currently based in Singapore. She collaborates with Louie Doniego Balmores on AI-driven structural engineering research.",
+          "Sandra Agcaoili is an AI researcher and research partner at Balmores Lab. She is pursuing a PhD in Artificial Intelligence at the University of the Philippines Diliman (since September 2023), is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), and is currently based in Singapore. Her official profile is at https://www.balmoreslab.com/about/sandra-agcaoili.",
       },
     },
   ],
@@ -328,12 +328,6 @@ export default function AboutPage() {
     <main style={S.page} itemScope itemType="https://schema.org/ProfilePage">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({ "@context": "https://schema.org", ...sandraPersonLd() }),
-        }}
-      />
 
       <SiteNav current="/about" />
 
@@ -810,7 +804,10 @@ export default function AboutPage() {
           <p style={S.p}>
             Balmores Lab research is a collaborative effort. Louie Doniego Balmores
             leads structural engineering and FEM integration;{" "}
-            <strong>Sandra Agcaoili</strong> partners on AI methodology, model
+            <Link href={SANDRA_AGCAOILI.profilePath} style={S.extLink}>
+              <strong>Sandra Agcaoili</strong>
+            </Link>{" "}
+            partners on AI methodology, model
             evaluation, and deep-learning pipeline design.
           </p>
           <ResearchPartnerCard />
@@ -908,9 +905,10 @@ export default function AboutPage() {
               the University of the Philippines Diliman (September 2023 –
               present), is a member of the Analytics and Artificial Intelligence
               Association of the Philippines (AAP), and is currently based in
-              Singapore. She collaborates with Louie Doniego Balmores on
-              AI-driven structural engineering — neural surrogates,
-              privacy-preserving inference, and physics-informed models.
+              Singapore.{" "}
+              <Link href={SANDRA_AGCAOILI.profilePath} style={S.extLink}>
+                Official profile →
+              </Link>
             </p>
           </details>
 

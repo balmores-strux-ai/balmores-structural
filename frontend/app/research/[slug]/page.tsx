@@ -107,9 +107,11 @@ export default function ResearchArticlePage({ params }: Props) {
             </span>
           </Link>
           {" & "}
-          <span itemProp="author" itemScope itemType="https://schema.org/Person">
-            <span itemProp="name">{SANDRA_AGCAOILI.name}</span>
-          </span>
+          <Link href={SANDRA_AGCAOILI.profilePath} style={S.link}>
+            <span itemProp="author" itemScope itemType="https://schema.org/Person">
+              <span itemProp="name">{SANDRA_AGCAOILI.name}</span>
+            </span>
+          </Link>
           {" · "}
           <time itemProp="datePublished" dateTime={article.datePublished}>
             {new Date(article.datePublished).toLocaleDateString("en-US", {

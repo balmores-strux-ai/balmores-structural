@@ -13,6 +13,13 @@ GitHub:   https://github.com/balmores-strux-ai/balmores-structural
 X:        @louiedbalmores
 From:     Tuguegarao City, Philippines — based in Toronto, Ontario, Canada
 
+Research Partner: Sandra Agcaoili
+Role:     AI Researcher · Research Partner, Balmores Lab
+Education: PhD Artificial Intelligence, UP Diliman (2023–present)
+Society:  Analytics and Artificial Intelligence Association of the Philippines (AAP)
+Location: Singapore
+Profile:  https://www.balmoreslab.com/about/sandra-agcaoili
+
 /* SITE */
 
 Last update: 2026-05-29

@@ -4,7 +4,7 @@ import ProfileBadges from "@/components/ProfileBadges";
 import ResearchPartnerCard from "@/components/ResearchPartnerCard";
 import SiteNav from "@/components/SiteNav";
 import { RESEARCH_ARTICLES } from "@/lib/research-articles";
-import { sandraPersonLd, SANDRA_AGCAOILI } from "@/lib/research-team";
+import { SANDRA_AGCAOILI } from "@/lib/research-team";
 import { breadcrumbLd, JOB_TITLE, PERSON_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -115,12 +115,6 @@ export default function ResearchPage() {
         }}
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({ "@context": "https://schema.org", ...sandraPersonLd() }),
-        }}
-      />
 
       <SiteNav current="/research" />
 
@@ -132,8 +126,11 @@ export default function ResearchPage() {
           <Link href="/about" style={S.link}>
             {PERSON_NAME}
           </Link>
-          , {JOB_TITLE}, in collaboration with{" "}
-          <strong>{SANDRA_AGCAOILI.name}</strong>, AI Researcher and research
+          , {JOB_TITLE}          , in collaboration with{" "}
+          <Link href={SANDRA_AGCAOILI.profilePath} style={S.link}>
+            <strong>{SANDRA_AGCAOILI.name}</strong>
+          </Link>
+          , AI Researcher and research
           partner (PhD in Artificial Intelligence, University of the Philippines
           Diliman · based in Singapore). Focus areas: AI models for structural
           integrity, computational design, and material efficiency — validated
@@ -174,7 +171,9 @@ export default function ResearchPage() {
               </span>
               {" & "}
               <span itemProp="author" itemScope itemType="https://schema.org/Person">
-                <span itemProp="name">{SANDRA_AGCAOILI.name}</span>
+                <Link href={SANDRA_AGCAOILI.profilePath} itemProp="name" style={S.link}>
+                  {SANDRA_AGCAOILI.name}
+                </Link>
               </span>
               {" · "}
               <time itemProp="datePublished" dateTime={a.datePublished}>

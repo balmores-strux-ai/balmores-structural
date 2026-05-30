@@ -4,7 +4,7 @@ import ProfileBadges from "@/components/ProfileBadges";
 import ResearchPartnerCard from "@/components/ResearchPartnerCard";
 import SiteNav from "@/components/SiteNav";
 import { RESEARCH_ARTICLES } from "@/lib/research-articles";
-import { sandraPersonLd } from "@/lib/research-team";
+import { SANDRA_AGCAOILI } from "@/lib/research-team";
 import { breadcrumbLd, JOB_TITLE, PERSON_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -179,12 +179,6 @@ export default function CVPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(resumeLd) }}
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({ "@context": "https://schema.org", ...sandraPersonLd() }),
-        }}
-      />
 
       <SiteNav current="/cv" />
 
@@ -294,8 +288,11 @@ export default function CVPage() {
             Research on AI-driven structural optimization. Building
             Balmores Strux AI — natural-language-to-PyNite 3D FEM
             pipeline with PyTorch surrogate models trained on parametric
-            ETABS datasets. Research partner:{" "}
-            <strong>Sandra Agcaoili</strong> (AI Researcher, UP Diliman PhD).
+            ETABS datasets.             Research partner:{" "}
+            <Link href={SANDRA_AGCAOILI.profilePath} style={S.link}>
+              <strong>Sandra Agcaoili</strong>
+            </Link>{" "}
+            (AI Researcher, UP Diliman PhD).
           </p>
         </div>
         <div style={S.card}>

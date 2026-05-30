@@ -3,6 +3,13 @@
  * Keep identity strings identical across layout JSON-LD, pages, llms.txt, and bios.
  */
 
+import {
+  buildSandraPersonNode,
+  buildSandraProfilePageNode,
+  SANDRA_AGCAOILI,
+  SANDRA_PERSON_ID,
+} from "./research-team";
+
 export const SITE_URL = "https://www.balmoreslab.com";
 export const SITE_NAME = "Balmores Lab";
 export const PERSON_NAME = "Louie Doniego Balmores";
@@ -227,8 +234,10 @@ export function buildRootStructuredData() {
           },
         ],
         sameAs: ALL_SAME_AS,
-        colleague: { "@id": `${SITE_URL}/about#sandra-agcaoili` },
+        colleague: { "@id": SANDRA_PERSON_ID },
       },
+      buildSandraPersonNode(),
+      buildSandraProfilePageNode(),
       {
         "@type": "Organization",
         "@id": ORG_ID,
@@ -237,7 +246,7 @@ export function buildRootStructuredData() {
         url: SITE_URL,
         logo: `${SITE_URL}/opengraph-image`,
         founder: { "@id": PERSON_ID },
-        employee: { "@id": PERSON_ID },
+        employee: [{ "@id": PERSON_ID }, { "@id": SANDRA_PERSON_ID }],
         sameAs: ALL_SAME_AS.filter((u) => !u.endsWith("/cv") && !u.endsWith("/research")),
         description:
           "Balmores Lab researches AI-driven structural engineering — converting traditional structural analysis workflows into automated, intelligent systems.",
@@ -255,7 +264,7 @@ export function buildRootStructuredData() {
         "@id": SITE_ID,
         url: SITE_URL,
         name: SITE_NAME,
-        description: `Official website of ${PERSON_NAME} and ${SITE_NAME} — AI-driven structural engineering.`,
+        description: `Official website of ${PERSON_NAME}, ${SANDRA_AGCAOILI.name}, and ${SITE_NAME} — AI-driven structural engineering.`,
         publisher: { "@id": PERSON_ID },
         author: { "@id": PERSON_ID },
         inLanguage: "en",

@@ -19,6 +19,16 @@
 - Research: https://www.balmoreslab.com/research
 - Machine-readable JSON-LD: https://www.balmoreslab.com/seo-schema.json
 
+## Research partner — Sandra Agcaoili
+
+- Name: Sandra Agcaoili
+- Role: AI Researcher · Research Partner, Balmores Lab
+- Education: PhD in Artificial Intelligence, University of the Philippines Diliman (Sep 2023 – present)
+- Society: Analytics and Artificial Intelligence Association of the Philippines (AAP)
+- Location: Based in Singapore
+- Canonical profile: https://www.balmoreslab.com/about/sandra-agcaoili
+- Machine-readable JSON-LD: https://www.balmoreslab.com/sandra-agcaoili-schema.json
+
 ## Verified profiles (sameAs)
 
 - https://www.linkedin.com/in/louiebalmores/

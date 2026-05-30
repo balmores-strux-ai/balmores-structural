@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SANDRA_AGCAOILI } from "@/lib/research-team";
 
 const cardStyle: React.CSSProperties = {
@@ -56,9 +57,14 @@ export default function ResearchPartnerCard({ compact = false }: ResearchPartner
           fontWeight: 600,
           color: "#f1f5f9",
         }}
-        itemProp="name"
       >
-        {p.name}
+        <Link
+          href={p.profilePath}
+          style={{ color: "inherit", textDecoration: "none" }}
+          itemProp="url"
+        >
+          <span itemProp="name">{p.name}</span>
+        </Link>
       </h3>
       <p style={{ margin: "0 0 12px", color: "#a5b4fc", fontSize: compact ? 15 : 17 }} itemProp="jobTitle">
         {p.jobTitle}
@@ -131,6 +137,23 @@ export default function ResearchPartnerCard({ compact = false }: ResearchPartner
           </div>
         </>
       ) : null}
+
+      {!compact ? (
+        <p style={{ margin: "12px 0 0", fontSize: 14 }}>
+          <Link
+            href={p.profilePath}
+            style={{ color: "#93c5fd", textDecoration: "underline", textUnderlineOffset: 3 }}
+          >
+            View full profile →
+          </Link>
+        </p>
+      ) : (
+        <p style={{ margin: "8px 0 0", fontSize: 13 }}>
+          <Link href={p.profilePath} style={{ color: "#93c5fd" }}>
+            Full profile →
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

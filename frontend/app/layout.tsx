@@ -27,6 +27,8 @@ export const metadata: Metadata = {
   keywords: [
     "Louie Balmores",
     "Louie Doniego Balmores",
+    "Sandra Agcaoili",
+    "Sandra Agcaoili AI researcher",
     "Balmores Structural",
     "Balmores Lab",
     "balmoreslab",
@@ -141,6 +143,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Expose the raw JSON-LD as a discoverable alternate - helps AI crawlers and
             linked-data indexers ingest the entity graph directly. */}
         <link rel="alternate" type="application/ld+json" href="/seo-schema.json" />
+        <link rel="alternate" type="application/ld+json" href="/sandra-agcaoili-schema.json" title="Sandra Agcaoili profile" />
         <link rel="alternate" type="application/atom+xml" title="Balmores Lab feed" href="/feed.xml" />
         <link rel="alternate" type="application/rdf+xml" title="FOAF profile" href="/foaf.rdf" />
 

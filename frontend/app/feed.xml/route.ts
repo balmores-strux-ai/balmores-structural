@@ -2,6 +2,7 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 import { RESEARCH_ARTICLES } from "@/lib/research-articles";
+import { SANDRA_AGCAOILI, SANDRA_PROFILE_URL } from "@/lib/research-team";
 
 const SITE_URL = "https://www.balmoreslab.com";
 
@@ -12,6 +13,13 @@ const staticItems = [
     link: `${SITE_URL}/about`,
     summary:
       "Official profile. Registered Civil Engineer (PRC Philippines, Nov 2013, Seq. 350). 10+ years high-performance structural design. Founder, Balmores Lab.",
+    published: "2026-05-29T00:00:00Z",
+  },
+  {
+    id: SANDRA_PROFILE_URL,
+    title: `${SANDRA_AGCAOILI.name} - AI Researcher | Balmores Lab`,
+    link: SANDRA_PROFILE_URL,
+    summary: SANDRA_AGCAOILI.bio,
     published: "2026-05-29T00:00:00Z",
   },
   {
