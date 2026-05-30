@@ -106,7 +106,6 @@ const PROFILES: Profile[] = [
     href: "https://github.com/balmores-strux-ai/balmores-structural",
     hoverColor: "#ffffff",
     svg: Ico.github,
-    hidden: true,
   },
   {
     id: "aboutme",

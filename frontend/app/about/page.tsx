@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProfileBadges from "@/components/ProfileBadges";
-
-const SITE_URL = "https://www.balmoreslab.com";
+import ResearchPartnerCard from "@/components/ResearchPartnerCard";
+import SiteNav from "@/components/SiteNav";
+import { sandraPersonLd } from "@/lib/research-team";
+import { breadcrumbLd, JOB_TITLE, PERSON_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "About Louie Doniego Balmores - Structural Engineer & AI Researcher",
@@ -129,6 +131,42 @@ const faqLd = {
         "@type": "Answer",
         text:
           "His Philippine Civil Engineer license is officially registered with the Professional Regulation Commission (PRC) at prc.gov.ph. He appears in the PRC's November 2013 Civil Engineer Licensure Examination results as Sequence No. 350.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Where is Louie Balmores from?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Louie Doniego Balmores was born on June 26, 1991 in Tuguegarao City, Cagayan Valley (Region II), Philippines. He is Filipino by nationality and is currently based in Toronto, Ontario, Canada.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What is Louie Balmores's official website?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "The official website of Louie Doniego Balmores is https://www.balmoreslab.com — the home of Balmores Lab, his structural engineering and AI research initiative. His canonical profile page is https://www.balmoreslab.com/about.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Who founded Balmores Lab?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Balmores Lab was founded by Louie Doniego Balmores, a Registered Civil Engineer (PRC Philippines) and AI researcher. The lab develops AI-driven structural optimization tools including Balmores Strux AI.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Who is Sandra Agcaoili?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Sandra Agcaoili is an AI researcher and research partner at Balmores Lab. She is pursuing a PhD in Artificial Intelligence at the University of the Philippines Diliman (since September 2023), is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), and is currently based in Singapore. She collaborates with Louie Doniego Balmores on AI-driven structural engineering research.",
       },
     },
   ],
@@ -290,16 +328,14 @@ export default function AboutPage() {
     <main style={S.page} itemScope itemType="https://schema.org/ProfilePage">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({ "@context": "https://schema.org", ...sandraPersonLd() }),
+        }}
+      />
 
-      <nav style={S.topnav} aria-label="Primary">
-        <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-          <span style={S.brandTitle}>BALMORES - LAB</span>
-        </Link>
-        <div>
-          <Link href="/" style={S.link}>Home</Link>
-          <Link href="/about" style={{ ...S.link, color: "#fff" }} aria-current="page">About</Link>
-        </div>
-      </nav>
+      <SiteNav current="/about" />
 
       <article
         style={S.container}
@@ -360,6 +396,31 @@ export default function AboutPage() {
             <span style={S.badge}>10+ Years Experience</span>
           </div>
         </header>
+
+        {/* PROFESSIONAL SUMMARY — crawlable identity paragraph for entity recognition */}
+        <section style={S.section} aria-labelledby="summary-h">
+          <h2 id="summary-h" style={S.h2}>Professional Summary</h2>
+          <p style={S.p}>
+            <strong>Louie Doniego Balmores</strong> (also known as{" "}
+            <strong>Louie Balmores</strong>) is a Filipino{" "}
+            <strong>structural engineer</strong> and <strong>AI researcher</strong>{" "}
+            based in Toronto, Ontario, Canada. He holds a{" "}
+            <strong>Registered Civil Engineer</strong> license from the Professional
+            Regulation Commission of the Philippines (November 2013, Sequence No.&nbsp;350)
+            and brings more than a decade of experience in reinforced-concrete and steel
+            design for mid- and high-rise buildings.
+          </p>
+          <p style={S.p}>
+            As founder of{" "}
+            <Link href="/" style={S.extLink}>Balmores Lab</Link>, he leads research on{" "}
+            <Link href="/research" style={S.extLink}>AI-driven structural optimization</Link>
+            — combining PyNite finite-element analysis, ETABS parametric datasets, and
+            deep-learning surrogate models. His public{" "}
+            <Link href="/cv" style={S.extLink}>curriculum vitae</Link> and{" "}
+            <Link href="/" style={S.extLink}>Balmores Strux AI</Link> demo are hosted at{" "}
+            <strong>balmoreslab.com</strong>, his canonical web presence.
+          </p>
+        </section>
 
         {/* AT A GLANCE */}
         <section style={S.section} aria-labelledby="glance-h">
@@ -743,6 +804,18 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* RESEARCH TEAM */}
+        <section style={S.section} aria-labelledby="team-h" id="research-team">
+          <h2 id="team-h" style={S.h2}>Research Team</h2>
+          <p style={S.p}>
+            Balmores Lab research is a collaborative effort. Louie Doniego Balmores
+            leads structural engineering and FEM integration;{" "}
+            <strong>Sandra Agcaoili</strong> partners on AI methodology, model
+            evaluation, and deep-learning pipeline design.
+          </p>
+          <ResearchPartnerCard />
+        </section>
+
         {/* FAQ (visible) - mirrors the FAQ JSON-LD above. Must stay in
             sync with the schema, otherwise Google treats it as hidden
             structured-data spam. */}
@@ -757,7 +830,7 @@ export default function AboutPage() {
               (Professional Regulation Commission of the Philippines,
               November 2013, Sequence No. 350) with over 10 years of
               professional practice, and is the founder of Balmores
-              Laboratory - a research initiative on AI-driven structural
+              Lab — a research initiative on AI-driven structural
               optimization.
             </p>
           </details>
@@ -770,8 +843,7 @@ export default function AboutPage() {
               Philippines. He passed the November 2013 Civil Engineer
               Licensure Examination with Sequence No. 350. He is also a
               PEng Candidate with Professional Engineers Ontario
-              and a US PE Candidate in the United States
-             .
+              and a US PE Candidate in the United States.
             </p>
           </details>
 
@@ -780,7 +852,7 @@ export default function AboutPage() {
             <p style={{ ...S.p, marginTop: 12 }}>
               His research focuses on AI models for structural integrity,
               computational design, and material efficiency. At Balmores
-              Laboratory he develops deep-learning surrogate models on top
+              Lab he develops deep-learning surrogate models on top
               of PyNite finite-element analysis, converting plain-English
               structural briefs into validated 3D frame models with
               reactions, drift, and member envelopes.
@@ -796,6 +868,49 @@ export default function AboutPage() {
               workflows into automated, intelligent systems - combining
               classical finite-element methods with neural surrogate
               models.
+            </p>
+          </details>
+
+          <details style={{ ...S.card, marginBottom: 12 }}>
+            <summary style={{ ...S.h3, cursor: "pointer" }}>Where is Louie Balmores from?</summary>
+            <p style={{ ...S.p, marginTop: 12 }}>
+              Louie Doniego Balmores was born on June 26, 1991 in Tuguegarao
+              City, Cagayan Valley (Region II), Philippines. He is Filipino by
+              nationality and is currently based in Toronto, Ontario, Canada.
+            </p>
+          </details>
+
+          <details style={{ ...S.card, marginBottom: 12 }}>
+            <summary style={{ ...S.h3, cursor: "pointer" }}>What is Louie Balmores&apos;s official website?</summary>
+            <p style={{ ...S.p, marginTop: 12 }}>
+              The official website is{" "}
+              <a href={SITE_URL} style={S.extLink}>balmoreslab.com</a> — the
+              home of Balmores Lab. His canonical profile is at{" "}
+              <Link href="/about" style={S.extLink}>/about</Link>.
+            </p>
+          </details>
+
+          <details style={{ ...S.card, marginBottom: 12 }}>
+            <summary style={{ ...S.h3, cursor: "pointer" }}>Who founded Balmores Lab?</summary>
+            <p style={{ ...S.p, marginTop: 12 }}>
+              Balmores Lab was founded by Louie Doniego Balmores, a Registered
+              Civil Engineer (PRC Philippines) and AI researcher. The lab
+              develops AI-driven structural optimization tools including{" "}
+              <Link href="/" style={S.extLink}>Balmores Strux AI</Link>.
+            </p>
+          </details>
+
+          <details style={{ ...S.card, marginBottom: 12 }}>
+            <summary style={{ ...S.h3, cursor: "pointer" }}>Who is Sandra Agcaoili?</summary>
+            <p style={{ ...S.p, marginTop: 12 }}>
+              Sandra Agcaoili is an AI researcher and research partner at
+              Balmores Lab. She is pursuing a PhD in Artificial Intelligence at
+              the University of the Philippines Diliman (September 2023 –
+              present), is a member of the Analytics and Artificial Intelligence
+              Association of the Philippines (AAP), and is currently based in
+              Singapore. She collaborates with Louie Doniego Balmores on
+              AI-driven structural engineering — neural surrogates,
+              privacy-preserving inference, and physics-informed models.
             </p>
           </details>
 

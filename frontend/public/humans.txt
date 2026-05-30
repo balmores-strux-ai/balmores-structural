@@ -1,22 +1,28 @@
 /* TEAM */
 
 Engineer & AI Researcher: Louie Doniego Balmores
-Role:     Founder, Balmores Laboratory; Structural Engineer & AI Researcher
-Credentials: Registered Civil Engineer, Professional Regulation Commission of the Philippines (November 2013, Sequence No. 350). P.Eng Candidate (PEO, 2027), PE Candidate (NCEES, 2028).
+Role:     Founder, Balmores Lab; Structural Engineer & AI Researcher
+Credentials: Registered Civil Engineer, Professional Regulation Commission of the Philippines (November 2013, Sequence No. 350). P.Eng Candidate (PEO), PE Candidate (NCEES).
 Contact:  https://www.balmoreslab.com/about
-LinkedIn: louiebalmores
+CV:       https://www.balmoreslab.com/cv
+Research: https://www.balmoreslab.com/research
+LinkedIn: https://www.linkedin.com/in/louiebalmores/
+ORCID:    https://orcid.org/0009-0008-5479-4033
+Wikidata: https://www.wikidata.org/wiki/Q139544451
+GitHub:   https://github.com/balmores-strux-ai/balmores-structural
 X:        @louiedbalmores
-From:     Philippines
+From:     Tuguegarao City, Philippines — based in Toronto, Ontario, Canada
 
 /* SITE */
 
-Last update: 2026-04-22
+Last update: 2026-05-29
 Language:    English
 Doctype:     HTML5
 Components:  Next.js 14 · React 18 · Three.js (react-three-fiber) · PyNite FEM
-Machine:     PyTorch surrogate model on parametric ETABS datasets
+Standards:   Schema.org JSON-LD · FAQPage · Atom feed · WebFinger · IndexNow
 
 /* RESEARCH */
 
 Focus:  AI-driven structural optimization, computational design, material efficiency.
 Goal:   Convert traditional structural analysis into automated, intelligent workflows.
+Author: Louie Doniego Balmores — https://www.balmoreslab.com/research

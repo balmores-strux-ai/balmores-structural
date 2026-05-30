@@ -1,20 +1,36 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProfileBadges from "@/components/ProfileBadges";
-
-const SITE_URL = "https://www.balmoreslab.com";
+import ResearchPartnerCard from "@/components/ResearchPartnerCard";
+import SiteNav from "@/components/SiteNav";
+import { RESEARCH_ARTICLES } from "@/lib/research-articles";
+import { sandraPersonLd } from "@/lib/research-team";
+import { breadcrumbLd, JOB_TITLE, PERSON_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Curriculum Vitae - Louie Doniego Balmores",
   description:
-    "Public CV of Louie Doniego Balmores, Registered Civil Engineer (PRC Philippines, 2013, Seq. 350). 10+ years structural design - AI-driven structural optimization research.",
+    "Public CV of Louie Doniego Balmores, Registered Civil Engineer (PRC Philippines, 2013, Seq. 350). 10+ years structural design, MS Computer Science and DIT in progress, AI-driven structural optimization research at Balmores Lab.",
   alternates: { canonical: "/cv" },
+  keywords: [
+    "Louie Balmores CV",
+    "Louie Doniego Balmores resume",
+    "structural engineer Philippines",
+    "PRC civil engineer",
+    "AI researcher CV",
+  ],
   openGraph: {
     type: "profile",
     url: `${SITE_URL}/cv`,
-    title: "CV - Louie Doniego Balmores",
+    title: `CV - ${PERSON_NAME}`,
     description:
-      "Structural Engineer (PRC PH) and AI researcher. CV / resume - Balmores Lab.",
+      "Structural Engineer (PRC PH) and AI researcher. CV / resume — Balmores Lab.",
+    firstName: "Louie",
+    lastName: "Balmores",
+  } as Metadata["openGraph"],
+  twitter: {
+    title: `CV - ${PERSON_NAME}`,
+    description: "Registered Civil Engineer & AI researcher — Balmores Lab.",
   },
 };
 
@@ -151,12 +167,26 @@ const S = {
 };
 
 export default function CVPage() {
+  const crumbs = breadcrumbLd([
+    { name: "Home", path: "/" },
+    { name: "CV", path: "/cv" },
+  ]);
+
   return (
     <main style={S.page}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(resumeLd) }}
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({ "@context": "https://schema.org", ...sandraPersonLd() }),
+        }}
+      />
+
+      <SiteNav current="/cv" />
 
       <article
         style={S.container}
@@ -220,8 +250,13 @@ export default function CVPage() {
           <p style={S.p}>
             Focus on Artificial Intelligence and Computational Engineering —
             deep learning, numerical methods for PDEs, graph neural networks,
-            and distributed scientific computing supporting the thesis
-            programme on AI-accelerated structural analysis.
+            and distributed scientific computing. Thesis (working title):{" "}
+            <em>
+              Physics-Informed Neural Surrogates for Real-Time Finite-Element
+              Analysis of Reinforced-Concrete Frames under NSCP 2015 / ASCE 7
+              Load Combinations
+            </em>
+            .
           </p>
         </div>
         <div style={S.card}>
@@ -253,13 +288,14 @@ export default function CVPage() {
 
         <h2 style={S.h2}>Experience</h2>
         <div style={S.card}>
-          <p style={S.role}>Founder - Balmores Lab</p>
-          <p style={S.period}>2023 - present - balmoreslab.com</p>
+          <p style={S.role}>Founder — Balmores Lab</p>
+          <p style={S.period}>2023 – present · balmoreslab.com</p>
           <p style={S.p}>
             Research on AI-driven structural optimization. Building
-            Balmores Strux AI - natural-language-to-PyNite 3D FEM
+            Balmores Strux AI — natural-language-to-PyNite 3D FEM
             pipeline with PyTorch surrogate models trained on parametric
-            ETABS datasets.
+            ETABS datasets. Research partner:{" "}
+            <strong>Sandra Agcaoili</strong> (AI Researcher, UP Diliman PhD).
           </p>
         </div>
         <div style={S.card}>
@@ -271,6 +307,9 @@ export default function CVPage() {
             effects, drift control, foundation design.
           </p>
         </div>
+
+        <h2 style={S.h2}>Research Collaboration</h2>
+        <ResearchPartnerCard compact />
 
         <h2 style={S.h2}>Skills</h2>
         <div>
@@ -297,15 +336,35 @@ export default function CVPage() {
 
         <h2 style={S.h2}>Selected Projects</h2>
         <div style={S.card}>
-          <p style={S.role}>Balmores Strux AI (2024-present)</p>
+          <p style={S.role}>Balmores Strux AI (2024–present)</p>
           <p style={S.p}>
             Open-source structural-AI playground. Chat with a PyNite FEM
             backend in plain English to produce 3D frame models with
             reactions, storey drift, member envelopes, and P-Delta. PyTorch
-            surrogate trained on ~5000 parametric ETABS models.{" "}
+            surrogate trained on ~5,000 parametric ETABS models.{" "}
             <Link href="/" style={S.link}>View demo</Link>
           </p>
         </div>
+
+        <h2 style={S.h2}>Research Publications (working papers)</h2>
+        {RESEARCH_ARTICLES.slice(0, 3).map((a) => (
+          <div key={a.slug} style={S.card}>
+            <p style={S.role}>
+              <Link href={`/research/${a.slug}`} style={S.link}>
+                {a.headline}
+              </Link>
+            </p>
+            <p style={S.period}>
+              {new Date(a.datePublished).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+              })}
+            </p>
+          </div>
+        ))}
+        <p style={S.p}>
+          Full list: <Link href="/research" style={S.link}>/research</Link>
+        </p>
 
         <h2 style={S.h2}>Contact & Identity</h2>
         <p style={S.p}>

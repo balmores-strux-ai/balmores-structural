@@ -1,127 +1,42 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProfileBadges from "@/components/ProfileBadges";
-
-const SITE_URL = "https://www.balmoreslab.com";
+import ResearchPartnerCard from "@/components/ResearchPartnerCard";
+import SiteNav from "@/components/SiteNav";
+import { RESEARCH_ARTICLES } from "@/lib/research-articles";
+import { sandraPersonLd, SANDRA_AGCAOILI } from "@/lib/research-team";
+import { breadcrumbLd, JOB_TITLE, PERSON_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Research - AI-Driven Structural Engineering",
   description:
-    "Research programme at Balmores Lab: AI for structural integrity, computational design, and material efficiency. Led by Louie Doniego Balmores.",
+    "Research programme at Balmores Lab by Louie Doniego Balmores and Sandra Agcaoili: AI for structural integrity, computational design, material efficiency, physics-informed neural surrogates, and privacy-preserving on-device FEM loops.",
   alternates: { canonical: "/research" },
+  keywords: [
+    "structural AI research",
+    "Louie Balmores research",
+    "Sandra Agcaoili AI researcher",
+    "PyNite",
+    "physics-informed neural networks",
+    "structural optimization",
+    "computational design",
+  ],
+  authors: [
+    { name: PERSON_NAME, url: `${SITE_URL}/about` },
+    { name: SANDRA_AGCAOILI.name },
+  ],
   openGraph: {
     type: "website",
     url: `${SITE_URL}/research`,
+    title: "Research - Balmores Lab | Louie Doniego Balmores",
+    description:
+      "AI-driven structural optimization, NL-to-FEM pipelines, and physics-informed surrogates.",
+  },
+  twitter: {
     title: "Research - Balmores Lab",
     description:
-      "AI-driven structural optimization, computational design, and material efficiency.",
+      "AI-driven structural engineering research by Louie Doniego Balmores.",
   },
-};
-
-const articles = [
-  {
-    slug: "ai-driven-structural-optimization",
-    headline:
-      "AI-Driven Structural Optimization: Neural Surrogates on Parametric ETABS Datasets",
-    abstract:
-      "Training deep-learning surrogate models on 5,000+ parametric ETABS models to predict member demand and preliminary sizing in seconds. Early results show strong correlation for RC-frame envelopes with material-efficiency gains up to 12% vs. engineer-only baselines.",
-    keywords: [
-      "structural optimization",
-      "deep learning",
-      "ETABS",
-      "reinforced concrete",
-      "surrogate modeling",
-    ],
-    datePublished: "2025-11-01",
-  },
-  {
-    slug: "natural-language-to-pynite",
-    headline:
-      "Natural-Language-to-FEM: A Prompt-Driven PyNite Pipeline for 3D Irregular Frames",
-    abstract:
-      "A parser + LLM-assisted pipeline that converts plain-English building briefs into validated PyNite 3D models. Handles irregular grids, asymmetric bays, storey heights, DL/LL loadings, wind, and simplified seismic. Produces reactions, storey drift, P-Delta, and member envelopes.",
-    keywords: [
-      "natural language processing",
-      "PyNite",
-      "finite element analysis",
-      "computational design",
-    ],
-    datePublished: "2025-12-15",
-  },
-  {
-    slug: "material-efficiency-generative-design",
-    headline:
-      "Material Efficiency by Generative Structural Design with Embodied-Carbon as a First-Class Objective",
-    abstract:
-      "Multi-objective optimization combining structural compliance, cost, and embodied-carbon. Demonstrates Pareto fronts for common mid-rise typologies in the Philippine context.",
-    keywords: [
-      "material efficiency",
-      "embodied carbon",
-      "generative design",
-      "structural engineering",
-    ],
-    datePublished: "2026-02-10",
-  },
-  {
-    slug: "privacy-preserving-on-device-llm-fem-loop",
-    headline:
-      "A Privacy-Preserving On-Device Loop: Local LLM Interpretation → FEM Solve → LLM Review for Structural Briefs",
-    abstract:
-      "A closed loop that keeps every prompt on the engineer's own machine. A locally-hosted reasoning LLM (DeepSeek-R1 on Ollama, loopback only) canonicalises a plain-English structural brief; the deterministic PyNite finite-element kernel solves it; the same local LLM then reviews the authoritative numeric result and writes recommendations and a conclusion. No prompt, model, or result ever leaves the device. We characterise latency, the <think>-trace scrubbing pipeline, the loopback/API-key security gates, and a deterministic fallback that guarantees the system never fails closed.",
-    keywords: [
-      "privacy-preserving AI",
-      "on-device inference",
-      "DeepSeek-R1",
-      "retrieval-augmented engineering",
-      "PyNite",
-      "human-in-the-loop",
-    ],
-    datePublished: "2026-04-05",
-  },
-  {
-    slug: "physics-informed-surrogates-doctoral",
-    headline:
-      "Physics-Informed Neural Surrogates for Real-Time RC/Steel Frame Analysis under NSCP 2015 / ASCE 7 (Doctoral Programme)",
-    abstract:
-      "Doctoral research direction extending the MSc thesis: a unified surrogate trained on parametric PyNite/ETABS solves with an explicit physics-residual loss against the governing stiffness equations, so sub-second predictions remain code-consistent rather than merely statistically plausible. Targets uncertainty-quantified member envelopes, storey drift, and base reactions, with an audit trail back to a verifying FEM solve.",
-    keywords: [
-      "physics-informed neural networks",
-      "surrogate modeling",
-      "uncertainty quantification",
-      "Information Technology",
-      "scientific machine learning",
-      "ETABS",
-    ],
-    datePublished: "2026-05-20",
-  },
-];
-
-const researchLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "CollectionPage",
-      "@id": `${SITE_URL}/research#page`,
-      url: `${SITE_URL}/research`,
-      name: "Research - Balmores Lab",
-      mainEntity: { "@id": `${SITE_URL}/#person` },
-      isPartOf: { "@id": `${SITE_URL}/#website` },
-    },
-    ...articles.map((a) => ({
-      "@type": "ScholarlyArticle",
-      "@id": `${SITE_URL}/research#${a.slug}`,
-      headline: a.headline,
-      abstract: a.abstract,
-      keywords: a.keywords.join(", "),
-      datePublished: a.datePublished,
-      author: { "@id": `${SITE_URL}/#person` },
-      publisher: { "@id": `${SITE_URL}/#organization` },
-      isPartOf: { "@id": `${SITE_URL}/research#page` },
-      mainEntityOfPage: `${SITE_URL}/research`,
-      url: `${SITE_URL}/research`,
-      inLanguage: "en",
-    })),
-  ],
 };
 
 const S = {
@@ -132,7 +47,7 @@ const S = {
     fontFamily:
       'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   } as React.CSSProperties,
-  container: { maxWidth: 940, margin: "0 auto", padding: "56px 28px 80px" } as React.CSSProperties,
+  container: { maxWidth: 940, margin: "0 auto", padding: "40px 28px 80px" } as React.CSSProperties,
   h1: { fontSize: 40, margin: "0 0 8px", letterSpacing: "-0.02em", fontWeight: 700 } as React.CSSProperties,
   sub: { color: "#a5b4fc", margin: 0, fontSize: 18 } as React.CSSProperties,
   lede: { color: "#cbd5e1", fontSize: 16, lineHeight: 1.6, marginTop: 14, maxWidth: 720 } as React.CSSProperties,
@@ -163,31 +78,81 @@ const S = {
     borderRadius: 999,
     color: "#c7d2fe",
   } as React.CSSProperties,
+  link: { color: "#93c5fd", textDecoration: "underline", textUnderlineOffset: 3 } as React.CSSProperties,
 };
 
 export default function ResearchPage() {
+  const crumbs = breadcrumbLd([
+    { name: "Home", path: "/" },
+    { name: "Research", path: "/research" },
+  ]);
+
   return (
     <main style={S.page}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(researchLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "CollectionPage",
+                "@id": `${SITE_URL}/research#page`,
+                url: `${SITE_URL}/research`,
+                name: "Research - Balmores Lab",
+                mainEntity: { "@id": `${SITE_URL}/#person` },
+                isPartOf: { "@id": `${SITE_URL}/#website` },
+                author: { "@id": `${SITE_URL}/#person` },
+              },
+              ...RESEARCH_ARTICLES.map((a) => ({
+                "@type": "ScholarlyArticle",
+                "@id": `${SITE_URL}/research/${a.slug}#article`,
+                headline: a.headline,
+                url: `${SITE_URL}/research/${a.slug}`,
+              })),
+            ],
+          }),
+        }}
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({ "@context": "https://schema.org", ...sandraPersonLd() }),
+        }}
+      />
+
+      <SiteNav current="/research" />
 
       <article style={S.container}>
         <h1 style={S.h1}>Research</h1>
-        <p style={S.sub}>AI-driven structural engineering - Balmores Lab</p>
+        <p style={S.sub}>AI-driven structural engineering — Balmores Lab</p>
         <p style={S.lede}>
           Directed by{" "}
-          <Link href="/about" style={{ color: "#93c5fd" }}>
-            Louie Doniego Balmores
+          <Link href="/about" style={S.link}>
+            {PERSON_NAME}
           </Link>
-          . Focus areas: AI models for structural integrity, computational
-          design, and material efficiency. The goal is to convert traditional
-          structural analysis into automated, intelligent workflows.
+          , {JOB_TITLE}, in collaboration with{" "}
+          <strong>{SANDRA_AGCAOILI.name}</strong>, AI Researcher and research
+          partner (PhD in Artificial Intelligence, University of the Philippines
+          Diliman · based in Singapore). Focus areas: AI models for structural
+          integrity, computational design, and material efficiency — validated
+          against PyNite and ETABS, not black-box guesses.
+        </p>
+        <p style={{ ...S.lede, marginTop: 12 }}>
+          See also:{" "}
+          <Link href="/about" style={S.link}>official profile</Link>
+          {" · "}
+          <Link href="/cv" style={S.link}>curriculum vitae</Link>
+          {" · "}
+          <Link href="/" style={S.link}>Balmores Strux AI demo</Link>
         </p>
 
+        <h2 style={S.h2}>Research Team</h2>
+        <ResearchPartnerCard />
+
         <h2 style={S.h2}>Working Papers</h2>
-        {articles.map((a) => (
+        {RESEARCH_ARTICLES.map((a) => (
           <section
             key={a.slug}
             id={a.slug}
@@ -196,14 +161,22 @@ export default function ResearchPage() {
             itemType="https://schema.org/ScholarlyArticle"
           >
             <h3 style={S.headline} itemProp="headline">
-              {a.headline}
+              <Link href={`/research/${a.slug}`} style={{ color: "inherit", textDecoration: "none" }}>
+                {a.headline}
+              </Link>
             </h3>
             <div style={S.meta}>
               by{" "}
               <span itemProp="author" itemScope itemType="https://schema.org/Person">
-                <span itemProp="name">Louie Doniego Balmores</span>
+                <Link href="/about" itemProp="name" style={S.link}>
+                  {PERSON_NAME}
+                </Link>
               </span>
-              {" - "}
+              {" & "}
+              <span itemProp="author" itemScope itemType="https://schema.org/Person">
+                <span itemProp="name">{SANDRA_AGCAOILI.name}</span>
+              </span>
+              {" · "}
               <time itemProp="datePublished" dateTime={a.datePublished}>
                 {new Date(a.datePublished).toLocaleDateString("en-US", {
                   year: "numeric",
@@ -211,10 +184,13 @@ export default function ResearchPage() {
                   day: "numeric",
                 })}
               </time>
-              {" - Balmores Lab"}
+              {" · "}
+              <Link href={`/research/${a.slug}`} style={S.link}>
+                Read full abstract →
+              </Link>
             </div>
             <p style={S.abstract} itemProp="abstract">
-              {a.abstract}
+              {a.abstract.length > 280 ? `${a.abstract.slice(0, 280)}…` : a.abstract}
             </p>
             <div style={S.keywords}>
               {a.keywords.map((k) => (
@@ -225,6 +201,7 @@ export default function ResearchPage() {
             </div>
             <meta itemProp="inLanguage" content="en" />
             <meta itemProp="publisher" content="Balmores Lab" />
+            <link itemProp="url" href={`${SITE_URL}/research/${a.slug}`} />
           </section>
         ))}
 
@@ -239,7 +216,7 @@ export default function ResearchPage() {
           <ol style={{ color: "#cbd5e1", lineHeight: 1.7, fontSize: 15, paddingLeft: 20, margin: "12px 0 0" }}>
             <li>
               <strong>Interpret.</strong> A locally-hosted reasoning LLM
-              (DeepSeek-R1 via Ollama, loopback&nbsp;only) canonicalises a
+              (DeepSeek-R1 via Ollama, loopback only) canonicalises a
               plain-English or shorthand structural brief into a strict,
               parseable form.
             </li>
@@ -289,7 +266,7 @@ export default function ResearchPage() {
 
         <h2 style={S.h2}>Cite this work</h2>
         <div style={{ ...S.article, fontFamily: "ui-monospace, monospace", fontSize: 13, color: "#cbd5e1" }}>
-          Balmores, L. D. (2026). <em>Balmores Lab research programme in
+          Balmores, L. D., &amp; Agcaoili, S. (2026). <em>Balmores Lab research programme in
           AI-driven structural engineering.</em> Balmores Lab.
           Available at: https://www.balmoreslab.com/research
         </div>
