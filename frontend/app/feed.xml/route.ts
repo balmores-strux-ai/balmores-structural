@@ -14,6 +14,7 @@ const staticItems = [
     summary:
       "Official profile. Registered Civil Engineer (PRC Philippines, Nov 2013, Seq. 350). 10+ years high-performance structural design. Founder, Balmores Lab.",
     published: "2026-05-29T00:00:00Z",
+    authors: [{ name: "Louie Doniego Balmores", uri: `${SITE_URL}/about` }],
   },
   {
     id: SANDRA_PROFILE_URL,
@@ -21,6 +22,7 @@ const staticItems = [
     link: SANDRA_PROFILE_URL,
     summary: SANDRA_AGCAOILI.bio,
     published: "2026-05-29T00:00:00Z",
+    authors: [{ name: SANDRA_AGCAOILI.name, uri: SANDRA_PROFILE_URL }],
   },
   {
     id: `${SITE_URL}/cv`,
@@ -29,6 +31,7 @@ const staticItems = [
     summary:
       "Public CV. Credentials, education, experience, skills, selected projects, and research publications.",
     published: "2026-05-29T00:00:00Z",
+    authors: [{ name: "Louie Doniego Balmores", uri: `${SITE_URL}/about` }],
   },
   {
     id: `${SITE_URL}/research`,
@@ -37,6 +40,10 @@ const staticItems = [
     summary:
       "AI for structural integrity, computational design, and material efficiency. Working papers on neural surrogates, NL-to-FEM, and physics-informed ML.",
     published: "2026-05-29T00:00:00Z",
+    authors: [
+      { name: "Louie Doniego Balmores", uri: `${SITE_URL}/about` },
+      { name: SANDRA_AGCAOILI.name, uri: SANDRA_PROFILE_URL },
+    ],
   },
   {
     id: `${SITE_URL}/`,
@@ -45,6 +52,7 @@ const staticItems = [
     summary:
       "Official site of Louie Doniego Balmores. Balmores Strux AI playground — PyNite 3D FEM from a design brief.",
     published: "2026-05-29T00:00:00Z",
+    authors: [{ name: "Louie Doniego Balmores", uri: `${SITE_URL}/about` }],
   },
 ];
 
@@ -54,6 +62,10 @@ const articleItems = RESEARCH_ARTICLES.map((a) => ({
   link: `${SITE_URL}/research/${a.slug}`,
   summary: a.abstract,
   published: `${a.datePublished}T00:00:00Z`,
+  authors: [
+    { name: "Louie Doniego Balmores", uri: `${SITE_URL}/about` },
+    { name: SANDRA_AGCAOILI.name, uri: SANDRA_PROFILE_URL },
+  ],
 }));
 
 const items = [...staticItems, ...articleItems];
@@ -78,10 +90,15 @@ export function GET() {
     <link href="${xml(it.link)}" rel="alternate" type="text/html"/>
     <published>${xml(it.published)}</published>
     <updated>${xml(it.published)}</updated>
+    ${it.authors
+      .map(
+        (author) => `
     <author>
-      <name>Louie Doniego Balmores</name>
-      <uri>${SITE_URL}/about</uri>
-    </author>
+      <name>${xml(author.name)}</name>
+      <uri>${xml(author.uri)}</uri>
+    </author>`,
+      )
+      .join("")}
     <summary>${xml(it.summary)}</summary>
   </entry>`,
     )
@@ -90,7 +107,7 @@ export function GET() {
   const body = `<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>Balmores Lab</title>
-  <subtitle>Louie Doniego Balmores - Structural Engineer &amp; AI Researcher</subtitle>
+  <subtitle>Louie Doniego Balmores &amp; Sandra Agcaoili — Balmores Lab</subtitle>
   <link href="${SITE_URL}/feed.xml" rel="self"/>
   <link href="${SITE_URL}/" rel="alternate" type="text/html"/>
   <id>${SITE_URL}/</id>

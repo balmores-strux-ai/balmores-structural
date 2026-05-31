@@ -28,6 +28,8 @@
 - Location: Based in Singapore
 - Canonical profile: https://www.balmoreslab.com/about/sandra-agcaoili
 - Machine-readable JSON-LD: https://www.balmoreslab.com/sandra-agcaoili-schema.json
+- FOAF/RDF: https://www.balmoreslab.com/sandra-agcaoili.foaf.rdf
+- WebFinger: https://www.balmoreslab.com/.well-known/webfinger?resource=acct:sandra@balmoreslab.com
 
 ## Verified profiles (sameAs)
 

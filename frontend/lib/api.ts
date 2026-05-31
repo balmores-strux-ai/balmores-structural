@@ -66,21 +66,28 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+const FEA_TRANSIENT_STATUSES = [429, 502, 503, 504];
+
 async function fetchWithRetry(
   url: string,
   init: RequestInit,
-  opts?: { retries?: number; retryOn?: number[] },
+  opts?: { retries?: number; retryOn?: number[]; baseDelayMs?: number },
 ): Promise<Response> {
   const retries = opts?.retries ?? 2;
-  const retryOn = opts?.retryOn ?? [429, 502, 503, 504];
+  const retryOn = opts?.retryOn ?? FEA_TRANSIENT_STATUSES;
+  const baseDelayMs = opts?.baseDelayMs ?? 400;
   let last: Response | null = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const res = await fetch(url, init);
     last = res;
     if (res.ok || !retryOn.includes(res.status) || attempt === retries) return res;
-    await sleep(300 * 2 ** attempt);
+    await sleep(baseDelayMs * 2 ** attempt);
   }
   return last!;
+}
+
+function isTransientHttpStatus(status: number): boolean {
+  return FEA_TRANSIENT_STATUSES.includes(status);
 }
 
 export async function sendChat(payload: Record<string, unknown>, opts?: { signal?: AbortSignal }) {
@@ -363,7 +370,7 @@ export type FeaPromptResponse = {
 
 export async function analyzeFeaPrompt(
   message: string,
-  opts?: { run_p_delta?: boolean },
+  opts?: { run_p_delta?: boolean; signal?: AbortSignal },
 ): Promise<FeaPromptResponse> {
   const res = await fetchWithRetry(
     `${API_URL}/fea/analyze-prompt`,
@@ -374,8 +381,9 @@ export async function analyzeFeaPrompt(
         message,
         run_p_delta: opts?.run_p_delta !== false,
       }),
+      signal: opts?.signal,
     },
-    { retries: 1 },
+    { retries: 4, baseDelayMs: 600 },
   );
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as FeaPromptResponse;
@@ -582,19 +590,23 @@ export async function analyzeFeaPromptStream(
 
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/fea/analyze-prompt/stream`, {
-      method: "POST",
-      headers: jsonHeaders(),
-      body,
-      signal: opts.signal,
-    });
-  } catch (e) {
-    return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
+    res = await fetchWithRetry(
+      `${API_URL}/fea/analyze-prompt/stream`,
+      {
+        method: "POST",
+        headers: jsonHeaders(),
+        body,
+        signal: opts.signal,
+      },
+      { retries: 3, baseDelayMs: 600 },
+    );
+  } catch {
+    return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta, signal: opts.signal });
   }
 
   if (!res.ok || !res.body) {
-    if (res.status === 404 || res.status === 405) {
-      return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
+    if (res.status === 404 || res.status === 405 || isTransientHttpStatus(res.status)) {
+      return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta, signal: opts.signal });
     }
     throw new Error(await parseError(res));
   }
@@ -647,10 +659,45 @@ export async function runFeaAnalysisResilient(
     onProgress?: (ev: FeaProgressEvent) => void;
   },
 ): Promise<FeaPromptResponse> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await analyzeFeaPromptStream(message, opts);
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message.toLowerCase() : "";
+      const transient =
+        msg.includes("request failed (429)") ||
+        msg.includes("(502)") ||
+        msg.includes("(503)") ||
+        msg.includes("(504)") ||
+        msg.includes("failed to fetch") ||
+        msg.includes("networkerror");
+      if (!transient || attempt === 2) break;
+      await sleep(800 * 2 ** attempt);
+    }
+  }
   try {
-    return await analyzeFeaPromptStream(message, opts);
+    return await analyzeFeaPrompt(message, {
+      run_p_delta: opts.run_p_delta,
+      signal: opts.signal,
+    });
+  } catch (e) {
+    if (lastErr instanceof Error) throw lastErr;
+    throw e;
+  }
+}
+
+/** Wake the cloud backend (Render cold start) before the first user solve. */
+export async function warmBackend(): Promise<void> {
+  try {
+    await fetchWithRetry(
+      `${API_URL}/health`,
+      { headers: authHeaders(), cache: "no-store" },
+      { retries: 2, baseDelayMs: 500 },
+    );
   } catch {
-    return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta });
+    /* non-fatal — solve path retries independently */
   }
 }
 

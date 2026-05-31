@@ -3,9 +3,12 @@ import { type NextRequest } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const UPSTREAM_RETRY_STATUSES = new Set([429, 502, 503, 504]);
+const UPSTREAM_RETRIES = 3;
+const UPSTREAM_TIMEOUT_MS = 300_000;
+
 function parseBackendEnv(): { proxyUrl: string; apiKey: string } {
   const rawProxy = process.env.BACKEND_PROXY_URL?.trim() || "";
-  // Be forgiving if both values were accidentally pasted into BACKEND_PROXY_URL.
   const embeddedUrl = rawProxy.match(/https?:\/\/[^\s]+/)?.[0];
   const embeddedKey = rawProxy.match(/BACKEND_API_KEY\s*=\s*([^\s]+)/)?.[1];
 
@@ -34,6 +37,29 @@ function proxyHeaders(req: NextRequest): Headers {
   return headers;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchUpstream(
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  let last: Response | null = null;
+  for (let attempt = 0; attempt <= UPSTREAM_RETRIES; attempt++) {
+    const upstream = await fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+    last = upstream;
+    if (upstream.ok || !UPSTREAM_RETRY_STATUSES.has(upstream.status) || attempt === UPSTREAM_RETRIES) {
+      return upstream;
+    }
+    await sleep(500 * 2 ** attempt);
+  }
+  return last!;
+}
+
 async function proxy(
   req: NextRequest,
   context: { params: { path?: string[] } },
@@ -42,7 +68,7 @@ async function proxy(
   const url = upstreamUrl(context.params.path ?? [], req.nextUrl.search);
   const body = method === "GET" || method === "HEAD" ? undefined : await req.arrayBuffer();
 
-  const upstream = await fetch(url, {
+  const upstream = await fetchUpstream(url, {
     method,
     headers: proxyHeaders(req),
     body,

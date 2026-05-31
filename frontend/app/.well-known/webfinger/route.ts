@@ -1,18 +1,16 @@
 import { NextRequest } from "next/server";
 
-// WebFinger (RFC 7033) — Fediverse / Mastodon / ActivityPub use this to
-// resolve an identity string like acct:louie@balmoreslab.com. Even if
-// you don't run an ActivityPub actor, returning a correct WebFinger
-// response makes the domain discoverable to Mastodon clients and is
-// increasingly ingested by AI crawlers for identity resolution.
+import { SITE_URL } from "@/lib/seo";
+import { SANDRA_AGCAOILI, SANDRA_PROFILE_URL } from "@/lib/research-team";
+
 export const runtime = "edge";
 
-const SITE_URL = "https://www.balmoreslab.com";
+const LOUIE_RESOURCE = "acct:louie@balmoreslab.com";
+const SANDRA_RESOURCE = "acct:sandra@balmoreslab.com";
 
-export function GET(req: NextRequest) {
-  const resource = req.nextUrl.searchParams.get("resource") ?? "";
-  const profile = {
-    subject: resource || "acct:louie@balmoreslab.com",
+function louieProfile(resource: string) {
+  return {
+    subject: resource || LOUIE_RESOURCE,
     aliases: [
       SITE_URL,
       `${SITE_URL}/about`,
@@ -29,8 +27,49 @@ export function GET(req: NextRequest) {
       { rel: "http://webfinger.net/rel/avatar", type: "image/png", href: `${SITE_URL}/opengraph-image` },
       { rel: "canonical", href: `${SITE_URL}/#person` },
       { rel: "describedby", type: "application/ld+json", href: `${SITE_URL}/seo-schema.json` },
+      { rel: "describedby", type: "application/rdf+xml", href: `${SITE_URL}/foaf.rdf` },
     ],
   };
+}
+
+function sandraProfile(resource: string) {
+  return {
+    subject: resource || SANDRA_RESOURCE,
+    aliases: [SANDRA_PROFILE_URL, `${SITE_URL}/research`, `${SITE_URL}/about`],
+    properties: {
+      "http://schema.org/name": SANDRA_AGCAOILI.name,
+      "http://schema.org/jobTitle": SANDRA_AGCAOILI.jobTitle,
+      "http://schema.org/url": SANDRA_PROFILE_URL,
+    },
+    links: [
+      {
+        rel: "http://webfinger.net/rel/profile-page",
+        type: "text/html",
+        href: SANDRA_PROFILE_URL,
+      },
+      {
+        rel: "http://webfinger.net/rel/avatar",
+        type: "image/png",
+        href: `${SANDRA_PROFILE_URL}/opengraph-image`,
+      },
+      { rel: "canonical", href: `${SANDRA_PROFILE_URL}#person` },
+      {
+        rel: "describedby",
+        type: "application/ld+json",
+        href: `${SITE_URL}/sandra-agcaoili-schema.json`,
+      },
+      { rel: "describedby", type: "application/rdf+xml", href: `${SITE_URL}/sandra-agcaoili.foaf.rdf` },
+    ],
+  };
+}
+
+export function GET(req: NextRequest) {
+  const resource = (req.nextUrl.searchParams.get("resource") ?? "").trim().toLowerCase();
+  const profile =
+    resource.includes("sandra") || resource.includes("sandra@balmoreslab.com")
+      ? sandraProfile(resource || SANDRA_RESOURCE)
+      : louieProfile(resource || LOUIE_RESOURCE);
+
   return new Response(JSON.stringify(profile, null, 2), {
     headers: {
       "content-type": "application/jrd+json; charset=utf-8",

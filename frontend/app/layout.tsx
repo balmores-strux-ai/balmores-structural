@@ -10,6 +10,7 @@ import {
   SITE_NAME,
   SITE_URL,
 } from "@/lib/seo";
+import { getSandraExtraSameAs, SANDRA_AGCAOILI, SANDRA_PROFILE_URL } from "@/lib/research-team";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -19,7 +20,10 @@ export const metadata: Metadata = {
   },
   description: DEFAULT_DESCRIPTION,
   applicationName: SITE_NAME,
-  authors: [{ name: PERSON_NAME, url: SITE_URL }],
+  authors: [
+    { name: PERSON_NAME, url: `${SITE_URL}/about` },
+    { name: SANDRA_AGCAOILI.name, url: SANDRA_PROFILE_URL },
+  ],
   creator: PERSON_NAME,
   publisher: PERSON_NAME,
   generator: "Next.js",
@@ -118,17 +122,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {getExtraSameAs().map((href) => (
           <link key={href} rel="me" href={href} />
         ))}
+        {getSandraExtraSameAs().map((href) => (
+          <link key={`sandra-${href}`} rel="me author" href={href} />
+        ))}
         <link rel="author" href={`${SITE_URL}/about`} />
+        <link rel="author" href={SANDRA_PROFILE_URL} />
         <link rel="publisher" href={SITE_URL} />
 
         {/* Dublin Core metadata - indexed by some academic / semantic crawlers. */}
-        <meta name="DC.creator" content={PERSON_NAME} />
+        <meta name="DC.creator" content={`${PERSON_NAME}; ${SANDRA_AGCAOILI.name}`} />
         <meta name="DC.publisher" content={SITE_NAME} />
         <meta name="DC.subject" content="Structural Engineering, Artificial Intelligence, Computational Design" />
         <meta name="DC.identifier" content={SITE_URL} />
 
         {/* Plain author meta - still read by Google for attribution heuristics. */}
-        <meta name="author" content={PERSON_NAME} />
+        <meta name="author" content={`${PERSON_NAME}, ${SANDRA_AGCAOILI.name}`} />
         <meta name="copyright" content={`(c) ${new Date().getFullYear()} ${PERSON_NAME}`} />
 
         {/* Hint Google Knowledge Graph about the canonical identity URL. */}
@@ -146,6 +154,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="alternate" type="application/ld+json" href="/sandra-agcaoili-schema.json" title="Sandra Agcaoili profile" />
         <link rel="alternate" type="application/atom+xml" title="Balmores Lab feed" href="/feed.xml" />
         <link rel="alternate" type="application/rdf+xml" title="FOAF profile" href="/foaf.rdf" />
+        <link
+          rel="alternate"
+          type="application/rdf+xml"
+          title="Sandra Agcaoili FOAF profile"
+          href="/sandra-agcaoili.foaf.rdf"
+        />
 
         {/* Pre-warm connections to the profile platforms referenced in sameAs,
             so bots that follow links don't stall on DNS/TLS handshakes. */}

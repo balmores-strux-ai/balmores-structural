@@ -82,6 +82,8 @@
 
     <owl:sameAs rdf:resource="https://worldchess.com/profile/422673"/>
 
+    <foaf:knows rdf:resource="https://www.balmoreslab.com/about/sandra-agcaoili#person"/>
+
     <rdfs:seeAlso rdf:resource="https://www.balmoreslab.com/seo-schema.json"/>
 
     <rdfs:seeAlso rdf:resource="https://www.balmoreslab.com/about"/>

@@ -3,8 +3,8 @@ import Link from "next/link";
 import ProfileBadges from "@/components/ProfileBadges";
 import ResearchPartnerCard from "@/components/ResearchPartnerCard";
 import SiteNav from "@/components/SiteNav";
-import { RESEARCH_ARTICLES } from "@/lib/research-articles";
-import { SANDRA_AGCAOILI } from "@/lib/research-team";
+import { RESEARCH_ARTICLES, buildResearchGraph } from "@/lib/research-articles";
+import { SANDRA_AGCAOILI, SANDRA_PROFILE_URL } from "@/lib/research-team";
 import { breadcrumbLd, JOB_TITLE, PERSON_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -23,19 +23,19 @@ export const metadata: Metadata = {
   ],
   authors: [
     { name: PERSON_NAME, url: `${SITE_URL}/about` },
-    { name: SANDRA_AGCAOILI.name },
+    { name: SANDRA_AGCAOILI.name, url: SANDRA_PROFILE_URL },
   ],
   openGraph: {
     type: "website",
     url: `${SITE_URL}/research`,
-    title: "Research - Balmores Lab | Louie Doniego Balmores",
+    title: "Research - Balmores Lab | Louie Doniego Balmores & Sandra Agcaoili",
     description:
-      "AI-driven structural optimization, NL-to-FEM pipelines, and physics-informed surrogates.",
+      "AI-driven structural optimization, NL-to-FEM pipelines, and physics-informed surrogates by Balmores Lab.",
   },
   twitter: {
     title: "Research - Balmores Lab",
     description:
-      "AI-driven structural engineering research by Louie Doniego Balmores.",
+      "AI-driven structural engineering research by Louie Doniego Balmores and Sandra Agcaoili.",
   },
 };
 
@@ -91,28 +91,7 @@ export default function ResearchPage() {
     <main style={S.page}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@graph": [
-              {
-                "@type": "CollectionPage",
-                "@id": `${SITE_URL}/research#page`,
-                url: `${SITE_URL}/research`,
-                name: "Research - Balmores Lab",
-                mainEntity: { "@id": `${SITE_URL}/#person` },
-                isPartOf: { "@id": `${SITE_URL}/#website` },
-                author: { "@id": `${SITE_URL}/#person` },
-              },
-              ...RESEARCH_ARTICLES.map((a) => ({
-                "@type": "ScholarlyArticle",
-                "@id": `${SITE_URL}/research/${a.slug}#article`,
-                headline: a.headline,
-                url: `${SITE_URL}/research/${a.slug}`,
-              })),
-            ],
-          }),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildResearchGraph()) }}
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
 
@@ -126,7 +105,7 @@ export default function ResearchPage() {
           <Link href="/about" style={S.link}>
             {PERSON_NAME}
           </Link>
-          , {JOB_TITLE}          , in collaboration with{" "}
+          , {JOB_TITLE}, in collaboration with{" "}
           <Link href={SANDRA_AGCAOILI.profilePath} style={S.link}>
             <strong>{SANDRA_AGCAOILI.name}</strong>
           </Link>

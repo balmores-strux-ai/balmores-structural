@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteNav from "@/components/SiteNav";
+import SandraProfileBadges from "@/components/SandraProfileBadges";
 import { RESEARCH_ARTICLES } from "@/lib/research-articles";
 import {
   buildSandraFaqLd,
@@ -129,7 +130,7 @@ export default function SandraAgcaoiliProfilePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildSandraFaqLd()) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
 
-      <SiteNav current="/about" />
+      <SiteNav current="/about/sandra-agcaoili" />
 
       <article
         style={S.container}
@@ -162,6 +163,9 @@ export default function SandraAgcaoiliProfilePage() {
             <span style={S.badge}>AAP Member</span>
             <span style={S.badge}>Based in Singapore</span>
             <span style={S.badge}>Research Partner</span>
+          </div>
+          <div style={{ marginTop: 18 }}>
+            <SandraProfileBadges align="left" />
           </div>
         </header>
 

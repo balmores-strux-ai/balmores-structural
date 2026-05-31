@@ -19,6 +19,9 @@ Education: PhD Artificial Intelligence, UP Diliman (2023–present)
 Society:  Analytics and Artificial Intelligence Association of the Philippines (AAP)
 Location: Singapore
 Profile:  https://www.balmoreslab.com/about/sandra-agcaoili
+JSON-LD:  https://www.balmoreslab.com/sandra-agcaoili-schema.json
+FOAF:     https://www.balmoreslab.com/sandra-agcaoili.foaf.rdf
+WebFinger: acct:sandra@balmoreslab.com
 
 /* SITE */
 

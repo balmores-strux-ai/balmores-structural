@@ -22,6 +22,12 @@ export const metadata: Metadata = {
     username: "louiedbalmores",
     gender: "male",
   } as Metadata["openGraph"],
+  twitter: {
+    card: "summary_large_image",
+    title: "About Louie Doniego Balmores",
+    description:
+      "Registered Civil Engineer (PRC Philippines, 2013) · AI-driven structural optimization at Balmores Lab.",
+  },
 };
 
 const aboutPageLd = {
@@ -324,10 +330,16 @@ const S = {
 };
 
 export default function AboutPage() {
+  const crumbs = breadcrumbLd([
+    { name: "Home", path: "/" },
+    { name: "About", path: "/about" },
+  ]);
+
   return (
     <main style={S.page} itemScope itemType="https://schema.org/ProfilePage">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
 
       <SiteNav current="/about" />
 

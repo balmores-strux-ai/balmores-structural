@@ -17,6 +17,7 @@ import {
   getLlmHealth,
   runFeaAnalysisResilient,
   summarizeFeaWithLlm,
+  warmBackend,
   type FeaProgressEvent,
   type FeaPromptResponse,
   type LlmHealth,
@@ -315,6 +316,7 @@ export default function HomePage() {
         if (!cancelled) setLlmHealth(h);
       })
       .catch(() => {});
+    void warmBackend();
     return () => {
       cancelled = true;
     };

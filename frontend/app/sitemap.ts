@@ -25,6 +25,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/sandra-agcaoili-schema.json`, lastModified, changeFrequency: "monthly", priority: 0.55 },
     { url: `${SITE_URL}/humans.txt`, lastModified, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/llms.txt`, lastModified, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${SITE_URL}/.well-known/webfinger`, lastModified, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/foaf.rdf`, lastModified, changeFrequency: "yearly", priority: 0.35 },
+    { url: `${SITE_URL}/sandra-agcaoili.foaf.rdf`, lastModified, changeFrequency: "yearly", priority: 0.35 },
+    { url: `${SITE_URL}/.well-known/webfinger?resource=acct:sandra@balmoreslab.com`, lastModified, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

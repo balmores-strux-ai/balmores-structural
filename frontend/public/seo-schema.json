@@ -10,8 +10,12 @@
   "familyName": "Balmores",
   "jobTitle": "Structural Engineer & AI Researcher",
   "url": "https://www.balmoreslab.com",
-  "mainEntityOfPage": "https://www.balmoreslab.com/about",
-  "image": "https://www.balmoreslab.com/opengraph-image",
+  "mainEntityOfPage": { "@id": "https://www.balmoreslab.com/about#profilepage" },
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://www.balmoreslab.com/opengraph-image",
+    "caption": "Louie Doniego Balmores - Structural Engineer & AI Researcher"
+  },
   "description": "Licensed Civil Engineer (Professional Regulation Commission, Philippines) with over 10 years of experience in high-performance structural design, currently pioneering research in Artificial Intelligence for structural engineering — AI-driven structural optimization, computational design, and material efficiency at Balmores Lab.",
   "gender": "Male",
   "birthDate": "1991-06-26",
@@ -57,6 +61,13 @@
     "name": "Balmores Lab",
     "url": "https://www.balmoreslab.com"
   },
+  "founder": { "@id": "https://www.balmoreslab.com/#organization" },
+  "colleague": { "@id": "https://www.balmoreslab.com/about/sandra-agcaoili#person" },
+  "alumniOf": [
+    { "@type": "EducationalOrganization", "name": "Master of Science in Computer Science (in progress)" },
+    { "@type": "EducationalOrganization", "name": "Doctor of Information Technology (in progress)" },
+    { "@type": "EducationalOrganization", "name": "Bachelor of Science in Civil Engineering" }
+  ],
   "knowsLanguage": ["English", "Filipino"],
   "knowsAbout": [
     "Structural Engineering",
@@ -73,7 +84,8 @@
     "Seismic Design",
     "Generative Design",
     "Parametric Structural Modeling",
-    "Physics-Informed Neural Networks"
+    "Physics-Informed Neural Networks",
+    "Natural Language Processing for Engineering"
   ],
   "hasOccupation": [
     {

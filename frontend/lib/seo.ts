@@ -282,3 +282,13 @@ export function buildRootStructuredData() {
     ],
   };
 }
+
+/** Standalone Person JSON-LD — keep public/seo-schema.json in sync via `npm run sync:schema`. */
+export function buildLouiePersonSchemaJson() {
+  const graph = buildRootStructuredData()["@graph"] as { "@id"?: string }[];
+  const person = graph.find((node) => node["@id"] === PERSON_ID);
+  return {
+    "@context": "https://schema.org",
+    ...(person ?? {}),
+  };
+}

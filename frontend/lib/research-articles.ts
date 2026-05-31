@@ -112,6 +112,7 @@ export function buildResearchGraph() {
         url: `${SITE_URL}/research`,
         name: "Research - Balmores Lab",
         mainEntity: { "@id": PERSON_ID },
+        author: ARTICLE_AUTHORS,
         isPartOf: { "@id": `${SITE_URL}/#website` },
       },
       ...RESEARCH_ARTICLES.map((a) => ({

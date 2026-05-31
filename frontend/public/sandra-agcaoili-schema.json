@@ -8,10 +8,15 @@
   "familyName": "Agcaoili",
   "jobTitle": "AI Researcher",
   "url": "https://www.balmoreslab.com/about/sandra-agcaoili",
-  "mainEntityOfPage": "https://www.balmoreslab.com/about/sandra-agcaoili",
-  "image": "https://www.balmoreslab.com/about/sandra-agcaoili/opengraph-image",
-  "description": "Sandra Agcaoili is a Filipino AI researcher and research partner at Balmores Lab. She is pursuing a PhD in Artificial Intelligence at the University of the Philippines Diliman (September 2023 – present), is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), and is based in Singapore.",
+  "mainEntityOfPage": { "@id": "https://www.balmoreslab.com/about/sandra-agcaoili#profilepage" },
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://www.balmoreslab.com/about/sandra-agcaoili/opengraph-image",
+    "caption": "Sandra Agcaoili - AI Researcher"
+  },
+  "description": "Sandra Agcaoili is a Filipino AI researcher and research partner at Balmores Lab. She is pursuing a Doctor of Philosophy (PhD) in Artificial Intelligence at the University of the Philippines Diliman (September 2023 – present) and is an active member of the Analytics and Artificial Intelligence Association of the Philippines (AAP). Based in Singapore, she collaborates with Louie Doniego Balmores on AI-driven structural engineering — neural surrogates, privacy-preserving on-device inference, physics-informed models, and evaluation frameworks that connect classical finite-element workflows with modern deep learning.",
   "nationality": { "@type": "Country", "name": "Philippines" },
+  "knowsLanguage": ["English", "Filipino"],
   "homeLocation": {
     "@type": "Place",
     "name": "Singapore",
@@ -26,7 +31,8 @@
     "@type": "EducationalOrganization",
     "name": "University of the Philippines Diliman",
     "alternateName": "UP Diliman",
-    "url": "https://upd.edu.ph"
+    "url": "https://upd.edu.ph",
+    "department": "Doctor of Philosophy (PhD) in Artificial Intelligence"
   },
   "worksFor": {
     "@type": "Organization",
@@ -34,6 +40,7 @@
     "name": "Balmores Lab",
     "url": "https://www.balmoreslab.com"
   },
+  "colleague": { "@id": "https://www.balmoreslab.com/#person" },
   "memberOf": {
     "@type": "Organization",
     "name": "Analytics and Artificial Intelligence Association of the Philippines",
@@ -58,13 +65,16 @@
     "AI for Engineering Applications",
     "Structural AI Research",
     "Physics-Informed Neural Networks",
-    "Privacy-Preserving Machine Learning"
+    "Privacy-Preserving Machine Learning",
+    "Natural Language Processing",
+    "Computational Design"
   ],
   "hasOccupation": {
     "@type": "Occupation",
     "name": "AI Researcher",
-    "skills": "Deep learning, neural surrogate models, AI pipeline evaluation, privacy-preserving on-device inference"
+    "skills": "Deep learning, neural surrogate models, AI pipeline evaluation, privacy-preserving on-device inference, analytics for engineering applications"
   },
+  "subjectOf": { "@id": "https://www.balmoreslab.com/about/sandra-agcaoili#profilepage" },
   "sameAs": [
     "https://www.balmoreslab.com/about/sandra-agcaoili",
     "https://www.balmoreslab.com/research",

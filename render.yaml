@@ -40,6 +40,9 @@ services:
         value: "240"
       - key: LLM_RATE_REFILL_PER_SEC
         value: "10"
+      # Explicit PyNite vendored path — repo root is one level above backend/
+      - key: BALMORES_PYNITE_ROOT
+        value: "/opt/render/project/src/structural_analysis_pynite"
     # CPU torch: use --extra-index-url so torch deps (jinja2, etc.) resolve from PyPI (avoids pip metadata errors).
     buildCommand: pip install --no-cache-dir torch==2.2.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu && pip install --no-cache-dir -r requirements-render.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
