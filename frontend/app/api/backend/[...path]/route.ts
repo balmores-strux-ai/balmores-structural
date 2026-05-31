@@ -3,8 +3,8 @@ import { type NextRequest } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const UPSTREAM_RETRY_STATUSES = new Set([429, 502, 503, 504]);
-const UPSTREAM_RETRIES = 3;
+const UPSTREAM_RETRY_STATUSES = new Set([502, 503, 504]);
+const UPSTREAM_RETRIES = 2;
 const UPSTREAM_TIMEOUT_MS = 300_000;
 
 function parseBackendEnv(): { proxyUrl: string; apiKey: string } {
@@ -55,7 +55,7 @@ async function fetchUpstream(
     if (upstream.ok || !UPSTREAM_RETRY_STATUSES.has(upstream.status) || attempt === UPSTREAM_RETRIES) {
       return upstream;
     }
-    await sleep(500 * 2 ** attempt);
+    await sleep(1200 * 2 ** attempt);
   }
   return last!;
 }

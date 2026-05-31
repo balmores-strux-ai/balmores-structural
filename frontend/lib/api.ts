@@ -368,6 +368,19 @@ export type FeaPromptResponse = {
   pynite_path?: string;
 };
 
+function isTransientErrorMessage(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes("request failed (429)") ||
+    lower.includes("(502)") ||
+    lower.includes("(503)") ||
+    lower.includes("(504)") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror")
+  );
+}
+
+/** Authoritative PyNite solve — one JSON round-trip (preferred on public hosting). */
 export async function analyzeFeaPrompt(
   message: string,
   opts?: { run_p_delta?: boolean; signal?: AbortSignal },
@@ -383,7 +396,7 @@ export async function analyzeFeaPrompt(
       }),
       signal: opts?.signal,
     },
-    { retries: 4, baseDelayMs: 600 },
+    { retries: 2, baseDelayMs: 1500 },
   );
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as FeaPromptResponse;
@@ -588,18 +601,16 @@ export async function analyzeFeaPromptStream(
     run_p_delta: opts.run_p_delta !== false,
   });
 
+  // Single attempt — retrying a long-lived stream through the Render proxy
+  // multiplies 429s. Fall back to the JSON endpoint instead.
   let res: Response;
   try {
-    res = await fetchWithRetry(
-      `${API_URL}/fea/analyze-prompt/stream`,
-      {
-        method: "POST",
-        headers: jsonHeaders(),
-        body,
-        signal: opts.signal,
-      },
-      { retries: 3, baseDelayMs: 600 },
-    );
+    res = await fetch(`${API_URL}/fea/analyze-prompt/stream`, {
+      method: "POST",
+      headers: jsonHeaders(),
+      body,
+      signal: opts.signal,
+    });
   } catch {
     return analyzeFeaPrompt(message, { run_p_delta: opts.run_p_delta, signal: opts.signal });
   }
@@ -650,7 +661,11 @@ export async function analyzeFeaPromptStream(
   }
 }
 
-/** Run PyNite with streaming progress; always falls back to the JSON endpoint. */
+/**
+ * Run PyNite for a chat prompt. Tries the progress stream once for UX, then
+ * uses the JSON endpoint (authoritative) with limited retries so Render free
+ * tier never sees a retry storm.
+ */
 export async function runFeaAnalysisResilient(
   message: string,
   opts: {
@@ -659,33 +674,28 @@ export async function runFeaAnalysisResilient(
     onProgress?: (ev: FeaProgressEvent) => void;
   },
 ): Promise<FeaPromptResponse> {
+  try {
+    return await analyzeFeaPromptStream(message, opts);
+  } catch {
+    /* stream unavailable or throttled — JSON path below */
+  }
+
   let lastErr: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      return await analyzeFeaPromptStream(message, opts);
+      return await analyzeFeaPrompt(message, {
+        run_p_delta: opts.run_p_delta,
+        signal: opts.signal,
+      });
     } catch (e) {
       lastErr = e;
-      const msg = e instanceof Error ? e.message.toLowerCase() : "";
-      const transient =
-        msg.includes("request failed (429)") ||
-        msg.includes("(502)") ||
-        msg.includes("(503)") ||
-        msg.includes("(504)") ||
-        msg.includes("failed to fetch") ||
-        msg.includes("networkerror");
-      if (!transient || attempt === 2) break;
-      await sleep(800 * 2 ** attempt);
+      const msg = e instanceof Error ? e.message : "";
+      if (!isTransientErrorMessage(msg) || attempt === 2) break;
+      await sleep(1500 * 2 ** attempt);
     }
   }
-  try {
-    return await analyzeFeaPrompt(message, {
-      run_p_delta: opts.run_p_delta,
-      signal: opts.signal,
-    });
-  } catch (e) {
-    if (lastErr instanceof Error) throw lastErr;
-    throw e;
-  }
+  if (lastErr instanceof Error) throw lastErr;
+  throw new Error("PyNite analysis failed");
 }
 
 /** Wake the cloud backend (Render cold start) before the first user solve. */

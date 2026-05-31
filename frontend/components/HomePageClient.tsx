@@ -383,18 +383,8 @@ export default function HomePage() {
         );
       }
 
-      // Re-probe the local DeepSeek-R1 bridge so the badge reflects reality,
-      // but never block the solve on it — PyNite always runs.
-      let llmOnline = llmHealth?.ok ?? false;
-      try {
-        const fresh = await getLlmHealth();
-        if (fresh) {
-          setLlmHealth(fresh);
-          llmOnline = fresh.ok;
-        }
-      } catch {
-        /* PyNite-only path below */
-      }
+      // PyNite always runs; optional LLM summary uses the badge state from page load.
+      const llmOnline = llmHealth?.ok ?? false;
 
       const res = await runFeaAnalysisResilient(text, {
         run_p_delta: pDelta,
