@@ -89,7 +89,7 @@ export default function ResearchArticlePage({ params }: Props) {
 
       <SiteNav current="/research" />
 
-      <article style={S.container} itemScope itemType="https://schema.org/ScholarlyArticle">
+      <article style={S.container} className="site-page-shell" itemScope itemType="https://schema.org/ScholarlyArticle">
         <p style={{ margin: "0 0 20px", fontSize: 14 }}>
           <Link href="/research" style={S.link}>
             ← All research

@@ -97,7 +97,7 @@ export default function ResearchPage() {
 
       <SiteNav current="/research" />
 
-      <article style={S.container}>
+      <article style={S.container} className="site-page-shell">
         <h1 style={S.h1}>Research</h1>
         <p style={S.sub}>AI-driven structural engineering — Balmores Lab</p>
         <p style={S.lede}>

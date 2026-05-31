@@ -177,6 +177,7 @@ export default function ProfileBadges({
           target="orcid.widget"
           rel="me noopener noreferrer"
           itemProp="sameAs"
+          className="orcid-pill"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -205,7 +206,12 @@ export default function ProfileBadges({
           <span style={{ color: "#a5b4fc", fontWeight: 600, letterSpacing: "0.02em" }}>
             ORCID
           </span>
-          <span style={{ color: "#cbd5e1" }}>{ORCID_URL}</span>
+          <span className="orcid-url-full" style={{ color: "#cbd5e1" }}>
+            {ORCID_URL}
+          </span>
+          <span className="orcid-url-short" style={{ color: "#cbd5e1" }}>
+            {ORCID_ID}
+          </span>
         </a>
       ) : null}
 

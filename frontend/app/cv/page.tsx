@@ -184,7 +184,7 @@ export default function CVPage() {
 
       <article
         style={S.container}
-        className="h-card"
+        className="site-page-shell h-card"
         itemScope
         itemType="https://schema.org/Person"
         itemID={`${SITE_URL}/#person`}

@@ -345,6 +345,7 @@ export default function AboutPage() {
 
       <article
         style={S.container}
+        className="site-page-shell"
         itemScope
         itemType="https://schema.org/Person"
         itemID={`${SITE_URL}/#person`}

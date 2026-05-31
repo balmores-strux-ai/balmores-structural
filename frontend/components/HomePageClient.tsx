@@ -269,6 +269,7 @@ export default function HomePage() {
     frameMoment: true,
     frameShear: true,
   });
+  const [mobilePane, setMobilePane] = useState<"chat" | "report">("chat");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -391,6 +392,9 @@ export default function HomePage() {
         onProgress: (ev) => setProgressEvent(ev),
       });
       setResult(res);
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        setMobilePane("report");
+      }
 
       let assistantBody = `${res.input_summary}\n\n${res.summary_markdown}`;
       const elapsedSeconds =
@@ -511,7 +515,7 @@ export default function HomePage() {
           title="BALMORES STRUCTURAL"
           subtitle="Natural-language Finite Element Analysis (FEA)"
         />
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div className="topbar-controls" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           {result ? (
             <span className="analysis-type-badge" title="Detected from your message">
               {analysisLabel(result.analysis_type)}
@@ -519,7 +523,7 @@ export default function HomePage() {
           ) : null}
           {llmHealth ? (
             <span
-              className="analysis-type-badge"
+              className="analysis-type-badge topbar-badge-secondary"
               title={
                 llmHealth.ok
                   ? `Local LLM ready: ${llmHealth.model} on ${llmHealth.endpoint} — loopback only, prompts never leave your PC.`
@@ -560,7 +564,28 @@ export default function HomePage() {
         </div>
       </header>
 
-      <div className="layout layout-fea-2">
+      <div className="mobile-fea-tabs" role="tablist" aria-label="Chat and report">
+        <button
+          type="button"
+          role="tab"
+          className="mobile-fea-tab"
+          aria-selected={mobilePane === "chat"}
+          onClick={() => setMobilePane("chat")}
+        >
+          Chat
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className="mobile-fea-tab"
+          aria-selected={mobilePane === "report"}
+          onClick={() => setMobilePane("report")}
+        >
+          Report{result ? " · ready" : ""}
+        </button>
+      </div>
+
+      <div className={`layout layout-fea-2 mobile-tab-${mobilePane}`}>
         <section className="panel panel-chat panel-fea-chatonly panel-chat-gpt" aria-label="Design chat">
           <div className="panel-header">
             <strong>Chat</strong>

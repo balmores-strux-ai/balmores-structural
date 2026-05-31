@@ -134,6 +134,7 @@ export default function SandraAgcaoiliProfilePage() {
 
       <article
         style={S.container}
+        className="site-page-shell"
         itemScope
         itemType="https://schema.org/Person"
         itemID={SANDRA_AGCAOILI.id}
