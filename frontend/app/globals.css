@@ -1793,6 +1793,49 @@ select:focus, .field:focus {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 10px;
 }
+
+.beam-diag-scroll-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.beam-diag-scroll-hint {
+  display: none;
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.beam-diag-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.55) rgba(255, 255, 255, 0.06);
+}
+
+.beam-diag-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.beam-diag-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+.beam-diag-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+  border: 2px solid rgba(12, 15, 20, 0.85);
+}
+
+.beam-diag-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
 .beam-diag-card {
   background: rgba(13, 18, 28, 0.7);
   border: 1px solid var(--line);
@@ -2769,6 +2812,38 @@ select:focus, .field:focus {
   .profile-badges__link {
     width: 44px !important;
     height: 44px !important;
+  }
+
+  .beam-diag-scroll-hint {
+    display: block;
+  }
+
+  .beam-diag-scroll .beam-diag-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 12px;
+    width: max-content;
+    min-width: 100%;
+    padding-bottom: 2px;
+  }
+
+  .beam-diag-scroll .beam-diag-card {
+    flex: 0 0 min(88vw, 300px);
+    width: min(88vw, 300px);
+    scroll-snap-align: start;
+  }
+
+  .beam-diag-scroll {
+    scroll-snap-type: x mandatory;
+    padding-bottom: 4px;
+  }
+
+  .report-section .table-wrap,
+  .panel-fea-report .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
 }
 

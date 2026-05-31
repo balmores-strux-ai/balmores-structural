@@ -16,6 +16,26 @@ export const PERSON_NAME = "Louie Doniego Balmores";
 export const JOB_TITLE = "Structural Engineer & AI Researcher";
 export const PERSON_SLUG = "louie-doniego-balmores";
 
+/** Name variants people search on Google — keep in sync across JSON-LD, FAQ, and copy. */
+export const PERSON_ALIASES = [
+  "Louie Balmores",
+  "Luis Balmores",
+  "Louie D. Balmores",
+  "Engr. Louie Balmores",
+  "Doniego Balmores",
+  "Balmores",
+  "Louie Doniego Balmores structural engineer",
+  "Louie Balmores structural engineer",
+] as const;
+
+export const ORG_ALIASES = [
+  "Balmores Strux AI",
+  "Balmores Structural",
+  "Balmores Laboratory",
+  "Balmores Lab Louie Balmores",
+  "Balmores",
+] as const;
+
 export const PERSON_ID = `${SITE_URL}/#person`;
 export const ORG_ID = `${SITE_URL}/#organization`;
 export const SITE_ID = `${SITE_URL}/#website`;
@@ -27,7 +47,7 @@ export const WIKIDATA_ID = "Q139544451";
 export const WIKIDATA_URL = `https://www.wikidata.org/wiki/${WIKIDATA_ID}`;
 
 export const DEFAULT_DESCRIPTION =
-  "Louie Doniego Balmores is a licensed Civil Engineer (PRC Philippines, 2013) with over 10 years of structural engineering experience and an AI researcher pioneering AI-driven structural optimization at Balmores Lab (balmoreslab.com).";
+  "Louie Doniego Balmores (Louie Balmores, Luis Balmores, Balmores) is a licensed Civil Engineer (PRC Philippines, 2013) with over 10 years of structural engineering experience and an AI researcher pioneering AI-driven structural optimization at Balmores Lab (balmoreslab.com).";
 
 export const SHORT_DESCRIPTION =
   "Licensed Civil Engineer (PRC Philippines) with 10+ years of structural design experience, researching AI-driven structural optimization at Balmores Lab.";
@@ -121,7 +141,7 @@ export function buildRootStructuredData() {
         givenName: "Louie",
         additionalName: "Doniego",
         familyName: "Balmores",
-        alternateName: ["Louie Balmores", "Engr. Louie Balmores", "Louie D. Balmores"],
+        alternateName: [...PERSON_ALIASES],
         honorificSuffix: "P.Eng (Candidate), PE (Candidate)",
         jobTitle: JOB_TITLE,
         description: DEFAULT_DESCRIPTION,
@@ -242,7 +262,7 @@ export function buildRootStructuredData() {
         "@type": "Organization",
         "@id": ORG_ID,
         name: SITE_NAME,
-        alternateName: ["Balmores Strux AI", "Balmores Structural", "Balmores Laboratory"],
+        alternateName: [...ORG_ALIASES],
         url: SITE_URL,
         logo: `${SITE_URL}/logo.svg`,
         founder: { "@id": PERSON_ID },
@@ -264,6 +284,7 @@ export function buildRootStructuredData() {
         "@id": SITE_ID,
         url: SITE_URL,
         name: SITE_NAME,
+        alternateName: ["balmoreslab.com", "Balmores", "Louie Balmores", "Louie Doniego Balmores"],
         description: `Official website of ${PERSON_NAME}, ${SANDRA_AGCAOILI.name}, and ${SITE_NAME} — AI-driven structural engineering.`,
         publisher: { "@id": PERSON_ID },
         author: { "@id": PERSON_ID },

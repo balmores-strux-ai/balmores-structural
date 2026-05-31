@@ -3,7 +3,16 @@
   "@type": "Person",
   "@id": "https://www.balmoreslab.com/#person",
   "name": "Louie Doniego Balmores",
-  "alternateName": ["Louie Balmores", "Engr. Louie Balmores", "Louie D. Balmores"],
+  "alternateName": [
+    "Louie Balmores",
+    "Luis Balmores",
+    "Louie D. Balmores",
+    "Engr. Louie Balmores",
+    "Doniego Balmores",
+    "Balmores",
+    "Louie Doniego Balmores structural engineer",
+    "Louie Balmores structural engineer"
+  ],
   "honorificSuffix": "P.Eng (Candidate), PE (Candidate)",
   "givenName": "Louie",
   "additionalName": "Doniego",

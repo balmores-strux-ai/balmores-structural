@@ -31,7 +31,11 @@ export const metadata: Metadata = {
   keywords: [
     "Louie Balmores",
     "Louie Doniego Balmores",
-    "Sandra Agcaoili",
+    "Luis Balmores",
+    "Balmores",
+    "Doniego Balmores",
+    "Balmores Lab",
+    "Balmores structural engineer",
     "Sandra Agcaoili AI researcher",
     "Balmores Structural",
     "Balmores Lab",

@@ -2,12 +2,13 @@
 # Proposal: https://llmstxt.org/
 
 > Official site of Louie Doniego Balmores — Structural Engineer & AI
-> Researcher. Balmores Lab develops AI models for structural integrity,
+> Researcher. Also indexed as Louie Balmores, Luis Balmores, and Balmores.
+> Balmores Lab develops AI models for structural integrity,
 > computational design, and material efficiency.
 
 ## Identity
 
-- Canonical person: Louie Doniego Balmores (aka "Louie Balmores")
+- Canonical person: Louie Doniego Balmores (aka Louie Balmores, Luis Balmores, Balmores)
 - Role: Structural Engineer & AI Researcher; Founder, Balmores Lab
 - License: Registered Civil Engineer — Professional Regulation Commission
   of the Philippines, November 2013 examination, Sequence No. 350.

@@ -9,7 +9,7 @@ import { SANDRA_AGCAOILI } from "@/lib/research-team";
 export const metadata: Metadata = {
   title: "About Louie Doniego Balmores - Structural Engineer & AI Researcher",
   description:
-    "Louie Doniego Balmores, P.Eng (Candidate), PE (Candidate) - Registered Civil Engineer (PRC Philippines, Nov 2013, Sequence No. 350) with 10+ years in high-performance building design and active AI research in structural optimization.",
+    "Louie Doniego Balmores (Louie Balmores, Luis Balmores, Balmores), P.Eng (Candidate), PE (Candidate) - Registered Civil Engineer (PRC Philippines, Nov 2013, Sequence No. 350) with 10+ years in high-performance building design and active AI research in structural optimization.",
   alternates: { canonical: "/about" },
   openGraph: {
     type: "profile",
@@ -94,6 +94,24 @@ const faqLd = {
   "@type": "FAQPage",
   "@id": `${SITE_URL}/about#faq`,
   mainEntity: [
+    {
+      "@type": "Question",
+      name: "Is Luis Balmores the same person as Louie Balmores?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Yes. Luis Balmores is a common alternate spelling people use when searching for Louie Doniego Balmores (Louie Balmores) — the Filipino structural engineer, AI researcher, and founder of Balmores Lab at balmoreslab.com. The canonical name is Louie Doniego Balmores.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Who is Balmores the structural engineer?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Balmores refers to Louie Doniego Balmores (Louie Balmores), a Registered Civil Engineer (PRC Philippines, November 2013, Sequence No. 350) and AI researcher. He founded Balmores Lab and develops PyNite-based structural AI tools at https://www.balmoreslab.com.",
+      },
+    },
     {
       "@type": "Question",
       name: "Who is Louie Balmores?",
@@ -386,6 +404,9 @@ export default function AboutPage() {
           <p style={S.title} itemProp="jobTitle">
             Structural Engineer &amp; AI Researcher
           </p>
+          <p className="name-aliases small-muted" style={{ margin: "0 0 12px", fontSize: 14 }}>
+            Also known as: Louie Balmores · Luis Balmores · Balmores
+          </p>
           <p style={S.lede} itemProp="description">
             Over <strong>10 years</strong> of structural engineering experience in
             high-performance building design, currently pursuing a{" "}
@@ -409,7 +430,8 @@ export default function AboutPage() {
           <h2 id="summary-h" style={S.h2}>Professional Summary</h2>
           <p style={S.p}>
             <strong>Louie Doniego Balmores</strong> (also known as{" "}
-            <strong>Louie Balmores</strong>) is a Filipino{" "}
+            <strong>Louie Balmores</strong>, <strong>Luis Balmores</strong>, or{" "}
+            <strong>Balmores</strong>) is a Filipino{" "}
             <strong>structural engineer</strong> and <strong>AI researcher</strong>{" "}
             based in Toronto, Ontario, Canada. He holds a{" "}
             <strong>Registered Civil Engineer</strong> license from the Professional
@@ -831,6 +853,32 @@ export default function AboutPage() {
             structured-data spam. */}
         <section style={S.section} aria-labelledby="faq-h">
           <h2 id="faq-h" style={S.h2}>Frequently Asked Questions</h2>
+
+          <details style={{ ...S.card, marginBottom: 12 }}>
+            <summary style={{ ...S.h3, cursor: "pointer" }}>
+              Is Luis Balmores the same as Louie Balmores?
+            </summary>
+            <p style={{ ...S.p, marginTop: 12 }}>
+              Yes. <strong>Luis Balmores</strong> is a common alternate spelling
+              people use when searching for <strong>Louie Doniego Balmores</strong>{" "}
+              (<strong>Louie Balmores</strong>) — the Filipino structural engineer,
+              AI researcher, and founder of Balmores Lab. The canonical name is Louie
+              Doniego Balmores.
+            </p>
+          </details>
+
+          <details style={{ ...S.card, marginBottom: 12 }}>
+            <summary style={{ ...S.h3, cursor: "pointer" }}>
+              Who is Balmores the structural engineer?
+            </summary>
+            <p style={{ ...S.p, marginTop: 12 }}>
+              <strong>Balmores</strong> refers to <strong>Louie Doniego Balmores</strong>{" "}
+              (<strong>Louie Balmores</strong>), a Registered Civil Engineer (PRC
+              Philippines, November 2013, Sequence No. 350) and AI researcher. He
+              founded Balmores Lab and develops PyNite-based structural AI tools at{" "}
+              <a href={SITE_URL} style={S.extLink}>balmoreslab.com</a>.
+            </p>
+          </details>
 
           <details style={{ ...S.card, marginBottom: 12 }}>
             <summary style={{ ...S.h3, cursor: "pointer" }}>Who is Louie Balmores?</summary>

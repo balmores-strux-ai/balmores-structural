@@ -105,6 +105,19 @@ const DEFAULT_VIS: DiagramVisibility = {
   frameShear: true,
 };
 
+function DiagGrid({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="beam-diag-scroll-wrap">
+      <p className="beam-diag-scroll-hint">
+        Scroll sideways → to view shear, moment &amp; deflection diagrams
+      </p>
+      <div className="beam-diag-scroll" tabIndex={0} aria-label="Diagram carousel — scroll horizontally">
+        <div className="beam-diag-grid">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function BeamDiagrams({
   diagrams,
   visibility = DEFAULT_VIS,
@@ -127,7 +140,7 @@ export default function BeamDiagrams({
         <span className="small-muted">PyNite member arrays · ULS combo</span>
       </div>
       {hasBeam ? (
-        <div className="beam-diag-grid">
+        <DiagGrid>
           {v.beamShear ? (
             <Chart
               title="Shear V (kN)"
@@ -155,10 +168,10 @@ export default function BeamDiagrams({
               stroke="rgba(96, 165, 250, 0.95)"
             />
           ) : null}
-        </div>
+        </DiagGrid>
       ) : null}
       {hasFrame && diagrams.moment_per_level_kNm ? (
-        <div className="beam-diag-grid">
+        <DiagGrid>
           {v.frameMoment
             ? Object.entries(diagrams.moment_per_level_kNm).map(([k, pair]) => (
                 <Chart
@@ -183,7 +196,7 @@ export default function BeamDiagrams({
                 />
               ))
             : null}
-        </div>
+        </DiagGrid>
       ) : null}
     </div>
   );
