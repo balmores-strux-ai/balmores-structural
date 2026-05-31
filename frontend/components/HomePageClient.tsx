@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import BalmoresLogo from "@/components/BalmoresLogo";
 import AnalysisProgress from "@/components/AnalysisProgress";
 import AssistantMarkdown from "@/components/AssistantMarkdown";
 import BeamDiagrams, { type DiagramVisibility } from "@/components/BeamDiagrams";
@@ -515,13 +516,11 @@ export default function HomePage() {
   return (
     <div className="page page-fea-chat">
       <header className="topbar">
-        <div className="brand">
-          <div className="brand-badge" aria-hidden />
-          <div>
-            <div className="brand-title">{PROJECT_TITLE}</div>
-            <div className="small-muted">Natural-language Finite Element Analysis (FEA)</div>
-          </div>
-        </div>
+        <BalmoresLogo
+          variant="header"
+          title="BALMORES STRUCTURAL"
+          subtitle="Natural-language Finite Element Analysis (FEA)"
+        />
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           {result ? (
             <span className="analysis-type-badge" title="Detected from your message">

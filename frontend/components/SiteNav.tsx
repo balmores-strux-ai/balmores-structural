@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BalmoresLogo from "@/components/BalmoresLogo";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -25,11 +26,12 @@ const navStyle: React.CSSProperties = {
   zIndex: 10,
 };
 
-const brandStyle: React.CSSProperties = {
-  fontWeight: 700,
-  letterSpacing: "0.08em",
-  fontSize: 14,
-  color: "#cbd5e1",
+const navLinksWrap: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  justifyContent: "flex-end",
+  gap: 4,
 };
 
 const linkStyle: React.CSSProperties = {
@@ -42,10 +44,8 @@ const linkStyle: React.CSSProperties = {
 export default function SiteNav({ current }: SiteNavProps) {
   return (
     <nav style={navStyle} aria-label="Primary">
-      <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-        <span style={brandStyle}>BALMORES - LAB</span>
-      </Link>
-      <div>
+      <BalmoresLogo variant="nav" />
+      <div style={navLinksWrap}>
         {NAV_LINKS.map(({ href, label }) => (
           <Link
             key={href}

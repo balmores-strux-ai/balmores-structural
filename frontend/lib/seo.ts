@@ -244,7 +244,7 @@ export function buildRootStructuredData() {
         name: SITE_NAME,
         alternateName: ["Balmores Strux AI", "Balmores Structural", "Balmores Laboratory"],
         url: SITE_URL,
-        logo: `${SITE_URL}/opengraph-image`,
+        logo: `${SITE_URL}/logo.svg`,
         founder: { "@id": PERSON_ID },
         employee: [{ "@id": PERSON_ID }, { "@id": SANDRA_PERSON_ID }],
         sameAs: ALL_SAME_AS.filter((u) => !u.endsWith("/cv") && !u.endsWith("/research")),

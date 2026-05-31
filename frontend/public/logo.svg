@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Balmores Lab">
+  <defs>
+    <linearGradient id="bl-gold" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f0d78a"/>
+      <stop offset="42%" stop-color="#c9a24a"/>
+      <stop offset="100%" stop-color="#8f6b28"/>
+    </linearGradient>
+    <linearGradient id="bl-shine" x1="14" y1="10" x2="28" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="24" cy="24" r="23" fill="url(#bl-gold)"/>
+  <circle cx="24" cy="24" r="23" fill="url(#bl-shine)"/>
+  <circle cx="24" cy="24" r="21.5" fill="none" stroke="#5c4520" stroke-opacity="0.35" stroke-width="0.75"/>
+  <!-- Structural truss / peak mark -->
+  <path
+    d="M15.5 31.5 L24 13.5 L32.5 31.5"
+    fill="none"
+    stroke="#141820"
+    stroke-width="2.35"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M17.25 27.75 H30.75"
+    fill="none"
+    stroke="#141820"
+    stroke-width="2.35"
+    stroke-linecap="round"
+  />
+  <path
+    d="M19 24 H29"
+    fill="none"
+    stroke="#141820"
+    stroke-width="2.35"
+    stroke-linecap="round"
+  />
+  <path
+    d="M24 13.5 V31.5"
+    fill="none"
+    stroke="#141820"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-opacity="0.55"
+  />
+</svg>
