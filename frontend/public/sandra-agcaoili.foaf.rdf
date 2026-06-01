@@ -21,6 +21,20 @@
     <owl:sameAs rdf:resource="https://www.balmoreslab.com/about/sandra-agcaoili"/>
     <owl:sameAs rdf:resource="https://www.balmoreslab.com/research"/>
     <owl:sameAs rdf:resource="https://upd.edu.ph"/>
+    <owl:sameAs rdf:resource="https://www.linkedin.com/in/sandra-agcaoili-a059a2152/"/>
+    <owl:sameAs rdf:resource="https://orcid.org/0009-0006-4000-0031"/>
+    <foaf:account>
+      <foaf:OnlineAccount>
+        <foaf:accountServiceHomepage rdf:resource="https://www.linkedin.com/"/>
+        <foaf:accountName>sandra-agcaoili-a059a2152</foaf:accountName>
+      </foaf:OnlineAccount>
+    </foaf:account>
+    <foaf:account>
+      <foaf:OnlineAccount>
+        <foaf:accountServiceHomepage rdf:resource="https://orcid.org/"/>
+        <foaf:accountName>0009-0006-4000-0031</foaf:accountName>
+      </foaf:OnlineAccount>
+    </foaf:account>
     <rdfs:seeAlso rdf:resource="https://www.balmoreslab.com/sandra-agcaoili-schema.json"/>
     <schema:description>Sandra Agcaoili is a Filipino AI researcher and Research Partner at Balmores Lab (balmoreslab.com), doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman, member of AAP, based in Singapore.</schema:description>
   </foaf:Person>

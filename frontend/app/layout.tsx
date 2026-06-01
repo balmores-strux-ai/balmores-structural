@@ -10,7 +10,13 @@ import {
   SITE_NAME,
   SITE_URL,
 } from "@/lib/seo";
-import { getSandraExtraSameAs, SANDRA_AGCAOILI, SANDRA_PROFILE_URL } from "@/lib/research-team";
+import {
+  getSandraExtraSameAs,
+  SANDRA_AGCAOILI,
+  SANDRA_LINKEDIN_URL,
+  SANDRA_ORCID_URL,
+  SANDRA_PROFILE_URL,
+} from "@/lib/research-team";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -135,6 +141,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="me" href="https://www.wikidata.org/wiki/Q139544451" />
         <link rel="me" href="https://github.com/balmores-strux-ai/balmores-structural" />
         <link rel="me" href="https://worldchess.com/profile/422673" />
+        <link rel="me author" href={SANDRA_LINKEDIN_URL} />
+        <link rel="me author" href={SANDRA_ORCID_URL} />
         {getExtraSameAs().map((href) => (
           <link key={href} rel="me" href={href} />
         ))}

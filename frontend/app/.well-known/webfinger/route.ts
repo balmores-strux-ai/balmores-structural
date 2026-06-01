@@ -1,7 +1,12 @@
 import { NextRequest } from "next/server";
 
 import { SITE_URL } from "@/lib/seo";
-import { SANDRA_AGCAOILI, SANDRA_PROFILE_URL } from "@/lib/research-team";
+import {
+  SANDRA_AGCAOILI,
+  SANDRA_LINKEDIN_URL,
+  SANDRA_ORCID_URL,
+  SANDRA_PROFILE_URL,
+} from "@/lib/research-team";
 
 export const runtime = "edge";
 
@@ -35,7 +40,14 @@ function louieProfile(resource: string) {
 function sandraProfile(resource: string) {
   return {
     subject: resource || SANDRA_RESOURCE,
-    aliases: [SITE_URL, SANDRA_PROFILE_URL, `${SITE_URL}/research`, `${SITE_URL}/about`],
+    aliases: [
+      SITE_URL,
+      SANDRA_PROFILE_URL,
+      `${SITE_URL}/research`,
+      `${SITE_URL}/about`,
+      SANDRA_LINKEDIN_URL,
+      SANDRA_ORCID_URL,
+    ],
     properties: {
       "http://schema.org/name": SANDRA_AGCAOILI.name,
       "http://schema.org/alternateName": "Sandra Agcaili; Sandra Agcaoli; Sandra A. Agcaoili",

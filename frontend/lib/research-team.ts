@@ -39,6 +39,11 @@ export function getSandraAlternateNames(): string[] {
   return Array.from(new Set([...SANDRA_ALIASES, ...SANDRA_TYPOS]));
 }
 
+export const SANDRA_ORCID_ID = "0009-0006-4000-0031";
+export const SANDRA_ORCID_URL = `https://orcid.org/${SANDRA_ORCID_ID}`;
+export const SANDRA_LINKEDIN_URL =
+  "https://www.linkedin.com/in/sandra-agcaoili-a059a2152/";
+
 /** Canonical long-form biography (meta, JSON-LD, profile pages). */
 export const SANDRA_BIO =
   "Sandra Agcaoili is a Filipino artificial-intelligence researcher and Research Partner at Balmores Lab (balmoreslab.com). She is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman (September 2023–present), with research centred on machine learning, analytics, and trustworthy AI for engineering applications. A member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), she is based in Singapore and works with Louie Doniego Balmores on neural surrogate models, physics-informed deep learning, privacy-preserving on-device inference, and reproducible evaluation frameworks that connect open-source finite-element analysis (PyNite) with production structural workflows.";
@@ -118,6 +123,9 @@ export const SANDRA_AGCAOILI = {
   shortBio: SANDRA_SHORT_BIO,
   collaborationFocus:
     "Leads co-development of neural surrogate architectures, reproducible evaluation protocols, and privacy-aware AI pipelines for Balmores Lab’s natural-language-to-FEM and structural-optimization programme, in collaboration with Louie Doniego Balmores.",
+  linkedinUrl: SANDRA_LINKEDIN_URL,
+  orcidId: SANDRA_ORCID_ID,
+  orcidUrl: SANDRA_ORCID_URL,
   researchAreas: [
     "Neural surrogate models for structural FEM",
     "Privacy-preserving on-device AI for engineering",
@@ -139,7 +147,7 @@ export function formatSandraSocieties(
 
 export function getSandraExtraSameAs(): string[] {
   const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
-  const urls: string[] = [];
+  const urls: string[] = [SANDRA_LINKEDIN_URL, SANDRA_ORCID_URL];
   const push = (u: string | undefined) => {
     if (u) urls.push(u);
   };
@@ -151,7 +159,7 @@ export function getSandraExtraSameAs(): string[] {
   if (orcid && /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(orcid)) {
     urls.push(`https://orcid.org/${orcid}`);
   }
-  return urls;
+  return Array.from(new Set(urls));
 }
 
 export function getSandraSameAs(): string[] {
@@ -187,6 +195,12 @@ export function buildSandraPersonNode() {
         "@type": "PropertyValue",
         propertyID: "balmoreslab-profile",
         value: SANDRA_PROFILE_URL,
+      },
+      {
+        "@type": "PropertyValue",
+        propertyID: "ORCID",
+        value: SANDRA_ORCID_ID,
+        url: SANDRA_ORCID_URL,
       },
     ],
     image: {

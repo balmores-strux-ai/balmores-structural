@@ -9,6 +9,7 @@ import {
   RESEARCH_ARTICLES,
 } from "@/lib/research-articles";
 import { breadcrumbLd, PERSON_NAME, SITE_URL } from "@/lib/seo";
+import SandraIdentityLinks from "@/components/SandraIdentityLinks";
 import { SANDRA_AGCAOILI } from "@/lib/research-team";
 
 type Props = { params: { slug: string } };
@@ -112,6 +113,7 @@ export default function ResearchArticlePage({ params }: Props) {
               <span itemProp="name">{SANDRA_AGCAOILI.name}</span>
             </span>
           </Link>
+          <SandraIdentityLinks compact inline style={{ marginLeft: 6 }} />
           {" · "}
           <time itemProp="datePublished" dateTime={article.datePublished}>
             {new Date(article.datePublished).toLocaleDateString("en-US", {

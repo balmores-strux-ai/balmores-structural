@@ -23,6 +23,12 @@
       "@type": "PropertyValue",
       "propertyID": "balmoreslab-profile",
       "value": "https://www.balmoreslab.com/about/sandra-agcaoili"
+    },
+    {
+      "@type": "PropertyValue",
+      "propertyID": "ORCID",
+      "value": "0009-0006-4000-0031",
+      "url": "https://orcid.org/0009-0006-4000-0031"
     }
   ],
   "givenName": "Sandra",
@@ -103,6 +109,8 @@
     "https://www.balmoreslab.com/about",
     "https://www.balmoreslab.com/sandra-agcaoili-schema.json",
     "https://www.balmoreslab.com/sandra-agcaoili.foaf.rdf",
-    "https://upd.edu.ph"
+    "https://upd.edu.ph",
+    "https://www.linkedin.com/in/sandra-agcaoili-a059a2152/",
+    "https://orcid.org/0009-0006-4000-0031"
   ]
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SandraIdentityLinks from "@/components/SandraIdentityLinks";
 import { formatSandraSocieties, SANDRA_AGCAOILI } from "@/lib/research-team";
 
 const cardStyle: React.CSSProperties = {
@@ -66,7 +67,8 @@ export default function ResearchPartnerCard({ compact = false }: ResearchPartner
           <span itemProp="name">{p.name}</span>
         </Link>
       </h3>
-      <p style={{ margin: "0 0 12px", color: "#a5b4fc", fontSize: compact ? 15 : 17 }} itemProp="jobTitle">
+      <SandraIdentityLinks compact={compact} />
+      <p style={{ margin: "8px 0 12px", color: "#a5b4fc", fontSize: compact ? 15 : 17 }} itemProp="jobTitle">
         {p.jobTitle}
       </p>
 

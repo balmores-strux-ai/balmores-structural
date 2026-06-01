@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteNav from "@/components/SiteNav";
+import SandraIdentityLinks from "@/components/SandraIdentityLinks";
 import SandraProfileBadges from "@/components/SandraProfileBadges";
 import { RESEARCH_ARTICLES } from "@/lib/research-articles";
 import {
@@ -158,6 +159,7 @@ export default function SandraAgcaoiliProfilePage() {
           <h1 style={S.h1}>
             <span itemProp="name">{SANDRA_AGCAOILI.name}</span>
           </h1>
+          <SandraIdentityLinks />
           <p style={S.title} itemProp="jobTitle">
             {SANDRA_AGCAOILI.jobTitle} · {SANDRA_AGCAOILI.role}
           </p>
@@ -213,6 +215,34 @@ export default function SandraAgcaoiliProfilePage() {
               <div style={S.kvVal}>
                 <a href={SANDRA_PROFILE_URL} style={S.link}>
                   balmoreslab.com/about/sandra-agcaoili
+                </a>
+              </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>LinkedIn</div>
+              <div style={S.kvVal}>
+                <a
+                  href={SANDRA_AGCAOILI.linkedinUrl}
+                  style={S.link}
+                  target="_blank"
+                  rel="me noopener noreferrer"
+                  itemProp="sameAs"
+                >
+                  linkedin.com/in/sandra-agcaoili-a059a2152
+                </a>
+              </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>ORCID</div>
+              <div style={S.kvVal}>
+                <a
+                  href={SANDRA_AGCAOILI.orcidUrl}
+                  style={S.link}
+                  target="_blank"
+                  rel="me noopener noreferrer"
+                  itemProp="sameAs"
+                >
+                  {SANDRA_AGCAOILI.orcidId}
                 </a>
               </div>
             </div>

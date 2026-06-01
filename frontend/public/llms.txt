@@ -35,6 +35,8 @@
 - Machine-readable JSON-LD: https://www.balmoreslab.com/sandra-agcaoili-schema.json
 - FOAF/RDF: https://www.balmoreslab.com/sandra-agcaoili.foaf.rdf
 - WebFinger: https://www.balmoreslab.com/.well-known/webfinger?resource=acct:sandra@balmoreslab.com
+- LinkedIn: https://www.linkedin.com/in/sandra-agcaoili-a059a2152/
+- ORCID: https://orcid.org/0009-0006-4000-0031
 
 ## Verified profiles (sameAs)
 
