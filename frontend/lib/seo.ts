@@ -77,8 +77,6 @@ export const SITE_LOGO_IMAGE = {
 
 export const ORCID_ID = "0009-0008-5479-4033";
 export const ORCID_URL = `https://orcid.org/${ORCID_ID}`;
-export const WIKIDATA_ID = "Q139544451";
-export const WIKIDATA_URL = `https://www.wikidata.org/wiki/${WIKIDATA_ID}`;
 
 export const DEFAULT_DESCRIPTION =
   "Louie Doniego Balmores (Louie Balmores, Luis Balmores, Balmores) is a licensed Civil Engineer (PRC Philippines, 2013) with over 10 years of structural engineering experience and an AI researcher pioneering AI-driven structural optimization at Balmores Lab (balmoreslab.com).";
@@ -93,7 +91,6 @@ export const BASE_SAME_AS = [
   "https://twitter.com/louiedbalmores",
   ORCID_URL,
   "https://about.me/louiebalmoresdesign/",
-  WIKIDATA_URL,
   "https://github.com/balmores-strux-ai/balmores-structural",
   "https://worldchess.com/profile/422673",
   "https://prc.gov.ph",
@@ -102,7 +99,7 @@ export const BASE_SAME_AS = [
   `${SITE_URL}/research`,
 ];
 
-/** Optional sameAs from Render env vars — Wikidata/ORCID also hardcoded above. */
+/** Optional sameAs from Render env vars — ORCID also hardcoded above. */
 export function getExtraSameAs(): string[] {
   const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
   const urls: string[] = [];
@@ -118,8 +115,6 @@ export function getExtraSameAs(): string[] {
   push(env.NEXT_PUBLIC_YOUTUBE_URL);
   push(env.NEXT_PUBLIC_DEVTO_URL);
   push(env.NEXT_PUBLIC_STACKOVERFLOW_URL);
-  const wikidata = env.NEXT_PUBLIC_WIKIDATA_ID;
-  if (wikidata && /^Q\d+$/.test(wikidata)) urls.push(`https://www.wikidata.org/wiki/${wikidata}`);
   const orcid = env.NEXT_PUBLIC_ORCID_ID;
   if (orcid && /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(orcid)) urls.push(`https://orcid.org/${orcid}`);
   return urls;

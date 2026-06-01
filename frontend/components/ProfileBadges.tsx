@@ -57,16 +57,6 @@ const Ico = {
       />
     </svg>
   ),
-  wikidata: (
-    <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="14">
-      <rect x="1" y="6" width="2" height="12" fill="currentColor" />
-      <rect x="5" y="6" width="2" height="12" fill="currentColor" />
-      <rect x="9" y="6" width="2" height="12" fill="currentColor" />
-      <rect x="13" y="6" width="2" height="12" fill="currentColor" />
-      <rect x="17" y="6" width="2" height="12" fill="currentColor" />
-      <rect x="21" y="6" width="2" height="12" fill="currentColor" />
-    </svg>
-  ),
   prc: (
     <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
       <path
@@ -121,13 +111,6 @@ const PROFILES: Profile[] = [
     hoverColor: "#d4d4d4",
     svg: Ico.chess,
     hidden: true,
-  },
-  {
-    id: "wikidata",
-    label: "Wikidata",
-    href: "https://www.wikidata.org/wiki/Q139544451",
-    hoverColor: "#c0c6cc",
-    svg: Ico.wikidata,
   },
   {
     id: "prc",

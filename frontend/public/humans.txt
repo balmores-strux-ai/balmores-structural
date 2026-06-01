@@ -8,7 +8,6 @@ CV:       https://www.balmoreslab.com/cv
 Research: https://www.balmoreslab.com/research
 LinkedIn: https://www.linkedin.com/in/louiebalmores/
 ORCID:    https://orcid.org/0009-0008-5479-4033
-Wikidata: https://www.wikidata.org/wiki/Q139544451
 GitHub:   https://github.com/balmores-strux-ai/balmores-structural
 X:        @louiedbalmores
 From:     Tuguegarao City, Philippines — based in Toronto, Ontario, Canada

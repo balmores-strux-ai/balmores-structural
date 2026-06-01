@@ -147,7 +147,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="me" href="https://x.com/louiedbalmores" />
         <link rel="me" href="https://about.me/louiebalmoresdesign/" />
         <link rel="me" href="https://orcid.org/0009-0008-5479-4033" />
-        <link rel="me" href="https://www.wikidata.org/wiki/Q139544451" />
         <link rel="me" href="https://github.com/balmores-strux-ai/balmores-structural" />
         <link rel="me" href="https://worldchess.com/profile/422673" />
         <link rel="me author" href={SANDRA_LINKEDIN_URL} />
@@ -200,7 +199,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="//x.com" />
         <link rel="dns-prefetch" href="//prc.gov.ph" />
         <link rel="dns-prefetch" href="//orcid.org" />
-        <link rel="dns-prefetch" href="//www.wikidata.org" />
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </head>
