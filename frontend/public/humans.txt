@@ -20,6 +20,7 @@ Location: Singapore
 Profile:  https://www.balmoreslab.com/about/sandra-agcaoili
 LinkedIn: https://www.linkedin.com/in/sandra-agcaoili-a059a2152/
 ORCID:    https://orcid.org/0009-0006-4000-0031
+ResearchGate: https://www.researchgate.net/institution/University-of-the-Philippines-System/members/327
 JSON-LD:  https://www.balmoreslab.com/sandra-agcaoili-schema.json
 FOAF:     https://www.balmoreslab.com/sandra-agcaoili.foaf.rdf
 WebFinger: acct:sandra@balmoreslab.com

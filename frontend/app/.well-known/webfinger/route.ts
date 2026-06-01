@@ -6,6 +6,7 @@ import {
   SANDRA_LINKEDIN_URL,
   SANDRA_ORCID_URL,
   SANDRA_PROFILE_URL,
+  SANDRA_RESEARCHGATE_URL,
 } from "@/lib/research-team";
 
 export const runtime = "edge";
@@ -47,6 +48,7 @@ function sandraProfile(resource: string) {
       `${SITE_URL}/about`,
       SANDRA_LINKEDIN_URL,
       SANDRA_ORCID_URL,
+      SANDRA_RESEARCHGATE_URL,
     ],
     properties: {
       "http://schema.org/name": SANDRA_AGCAOILI.name,

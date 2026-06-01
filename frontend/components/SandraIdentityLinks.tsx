@@ -3,6 +3,7 @@ import {
   SANDRA_LINKEDIN_URL,
   SANDRA_ORCID_ID,
   SANDRA_ORCID_URL,
+  SANDRA_RESEARCHGATE_URL,
 } from "@/lib/research-team";
 
 type SandraIdentityLinksProps = {
@@ -53,6 +54,16 @@ export default function SandraIdentityLinks({
         style={linkStyle}
       >
         ORCID
+      </a>
+      {" · "}
+      <a
+        href={SANDRA_RESEARCHGATE_URL}
+        target="_blank"
+        rel="me noopener noreferrer"
+        itemProp="sameAs"
+        style={linkStyle}
+      >
+        ResearchGate
       </a>
       {!compact && !inline ? (
         <span style={{ color: "#64748b" }}> ({SANDRA_ORCID_ID})</span>

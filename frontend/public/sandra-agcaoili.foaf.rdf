@@ -23,6 +23,7 @@
     <owl:sameAs rdf:resource="https://upd.edu.ph"/>
     <owl:sameAs rdf:resource="https://www.linkedin.com/in/sandra-agcaoili-a059a2152/"/>
     <owl:sameAs rdf:resource="https://orcid.org/0009-0006-4000-0031"/>
+    <owl:sameAs rdf:resource="https://www.researchgate.net/institution/University-of-the-Philippines-System/members/327"/>
     <foaf:account>
       <foaf:OnlineAccount>
         <foaf:accountServiceHomepage rdf:resource="https://www.linkedin.com/"/>
@@ -33,6 +34,12 @@
       <foaf:OnlineAccount>
         <foaf:accountServiceHomepage rdf:resource="https://orcid.org/"/>
         <foaf:accountName>0009-0006-4000-0031</foaf:accountName>
+      </foaf:OnlineAccount>
+    </foaf:account>
+    <foaf:account>
+      <foaf:OnlineAccount>
+        <foaf:accountServiceHomepage rdf:resource="https://www.researchgate.net/"/>
+        <foaf:accountName>327</foaf:accountName>
       </foaf:OnlineAccount>
     </foaf:account>
     <rdfs:seeAlso rdf:resource="https://www.balmoreslab.com/sandra-agcaoili-schema.json"/>

@@ -16,6 +16,7 @@ import {
   SANDRA_LINKEDIN_URL,
   SANDRA_ORCID_URL,
   SANDRA_PROFILE_URL,
+  SANDRA_RESEARCHGATE_URL,
 } from "@/lib/research-team";
 
 export const metadata: Metadata = {
@@ -151,6 +152,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="me" href="https://worldchess.com/profile/422673" />
         <link rel="me author" href={SANDRA_LINKEDIN_URL} />
         <link rel="me author" href={SANDRA_ORCID_URL} />
+        <link rel="me author" href={SANDRA_RESEARCHGATE_URL} />
         {getExtraSameAs().map((href) => (
           <link key={href} rel="me" href={href} />
         ))}
@@ -199,6 +201,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="//x.com" />
         <link rel="dns-prefetch" href="//prc.gov.ph" />
         <link rel="dns-prefetch" href="//orcid.org" />
+        <link rel="dns-prefetch" href="//www.researchgate.net" />
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </head>

@@ -43,6 +43,8 @@ export const SANDRA_ORCID_ID = "0009-0006-4000-0031";
 export const SANDRA_ORCID_URL = `https://orcid.org/${SANDRA_ORCID_ID}`;
 export const SANDRA_LINKEDIN_URL =
   "https://www.linkedin.com/in/sandra-agcaoili-a059a2152/";
+export const SANDRA_RESEARCHGATE_URL =
+  "https://www.researchgate.net/institution/University-of-the-Philippines-System/members/327";
 
 /** Canonical long-form biography (meta, JSON-LD, profile pages). */
 export const SANDRA_BIO =
@@ -126,6 +128,7 @@ export const SANDRA_AGCAOILI = {
   linkedinUrl: SANDRA_LINKEDIN_URL,
   orcidId: SANDRA_ORCID_ID,
   orcidUrl: SANDRA_ORCID_URL,
+  researchgateUrl: SANDRA_RESEARCHGATE_URL,
   researchAreas: [
     "Neural surrogate models for structural FEM",
     "Privacy-preserving on-device AI for engineering",
@@ -147,7 +150,11 @@ export function formatSandraSocieties(
 
 export function getSandraExtraSameAs(): string[] {
   const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
-  const urls: string[] = [SANDRA_LINKEDIN_URL, SANDRA_ORCID_URL];
+  const urls: string[] = [
+    SANDRA_LINKEDIN_URL,
+    SANDRA_ORCID_URL,
+    SANDRA_RESEARCHGATE_URL,
+  ];
   const push = (u: string | undefined) => {
     if (u) urls.push(u);
   };

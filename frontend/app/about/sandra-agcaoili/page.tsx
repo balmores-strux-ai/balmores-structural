@@ -246,6 +246,20 @@ export default function SandraAgcaoiliProfilePage() {
                 </a>
               </div>
             </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>ResearchGate</div>
+              <div style={S.kvVal}>
+                <a
+                  href={SANDRA_AGCAOILI.researchgateUrl}
+                  style={S.link}
+                  target="_blank"
+                  rel="me noopener noreferrer"
+                  itemProp="sameAs"
+                >
+                  UP System · member profile
+                </a>
+              </div>
+            </div>
           </div>
         </section>
 
