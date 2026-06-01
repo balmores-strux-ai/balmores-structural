@@ -31,3 +31,8 @@ jobs:
         run: |
           curl -fsSL --max-time 180 -o /dev/null -w "backend:%{http_code}\n" \
             "https://balmores-structural-backend.onrender.com/health" || true
+
+      - name: Wake Sandra Agcaoili profile (Knowledge Graph)
+        run: |
+          curl -fsSL --max-time 180 -o /dev/null -w "sandra:%{http_code}\n" \
+            "https://www.balmoreslab.com/about/sandra-agcaoili" || true

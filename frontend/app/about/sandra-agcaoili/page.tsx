@@ -10,6 +10,7 @@ import {
   SANDRA_FAQ,
   SANDRA_PROFILE_PATH,
   SANDRA_PROFILE_URL,
+  SANDRA_PERSON_ID,
 } from "@/lib/research-team";
 import { breadcrumbLd, PERSON_NAME, SITE_URL } from "@/lib/seo";
 
@@ -19,12 +20,16 @@ export const metadata: Metadata = {
   alternates: { canonical: SANDRA_PROFILE_PATH },
   keywords: [
     "Sandra Agcaoili",
+    "Sandra Agcaili",
+    "Sandra Agcaoli",
     "Sandra Agcaoili AI researcher",
-    "Sandra Agcaoili UP Diliman",
     "Sandra Agcaoili Balmores Lab",
+    "Sandra Agcaoili balmoreslab.com",
+    "Sandra Agcaoili UP Diliman",
     "AI researcher Singapore",
     "PhD Artificial Intelligence Philippines",
     "Analytics and Artificial Intelligence Association of the Philippines",
+    "Balmores Lab Sandra Agcaoili",
   ],
   authors: [{ name: SANDRA_AGCAOILI.name, url: SANDRA_PROFILE_URL }],
   openGraph: {
@@ -137,7 +142,7 @@ export default function SandraAgcaoiliProfilePage() {
         className="site-page-shell"
         itemScope
         itemType="https://schema.org/Person"
-        itemID={SANDRA_AGCAOILI.id}
+        itemID={SANDRA_PERSON_ID}
       >
         <meta itemProp="url" content={SANDRA_PROFILE_URL} />
         <meta itemProp="givenName" content={SANDRA_AGCAOILI.givenName} />
@@ -155,6 +160,11 @@ export default function SandraAgcaoiliProfilePage() {
           </h1>
           <p style={S.title} itemProp="jobTitle">
             {SANDRA_AGCAOILI.jobTitle} · {SANDRA_AGCAOILI.role}
+          </p>
+          <p className="name-aliases small-muted" style={{ margin: "0 0 12px", fontSize: 14 }}>
+            Canonical name: <strong>Sandra Agcaoili</strong> · connected to{" "}
+            <a href={SITE_URL} style={S.link}>balmoreslab.com</a>
+            · common searches: Sandra Agcaili, Sandra Agcaoli
           </p>
           <p style={S.lede} itemProp="description">
             {SANDRA_AGCAOILI.bio}

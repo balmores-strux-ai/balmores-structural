@@ -35,11 +35,13 @@ function louieProfile(resource: string) {
 function sandraProfile(resource: string) {
   return {
     subject: resource || SANDRA_RESOURCE,
-    aliases: [SANDRA_PROFILE_URL, `${SITE_URL}/research`, `${SITE_URL}/about`],
+    aliases: [SITE_URL, SANDRA_PROFILE_URL, `${SITE_URL}/research`, `${SITE_URL}/about`],
     properties: {
       "http://schema.org/name": SANDRA_AGCAOILI.name,
+      "http://schema.org/alternateName": "Sandra Agcaili; Sandra Agcaoli; Sandra A. Agcaoili",
       "http://schema.org/jobTitle": SANDRA_AGCAOILI.jobTitle,
       "http://schema.org/url": SANDRA_PROFILE_URL,
+      "http://schema.org/worksFor": SITE_URL,
     },
     links: [
       {

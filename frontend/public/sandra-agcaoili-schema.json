@@ -3,7 +3,28 @@
   "@type": "Person",
   "@id": "https://www.balmoreslab.com/about/sandra-agcaoili#person",
   "name": "Sandra Agcaoili",
-  "alternateName": ["Sandra A. Agcaoili"],
+  "alternateName": [
+    "Sandra A. Agcaoili",
+    "Sandra Agcaoili AI researcher",
+    "Sandra Agcaoili Balmores Lab",
+    "Sandra Agcaoili UP Diliman",
+    "Sandra Agcaoili Singapore",
+    "Sandra Agcaili",
+    "Sandra Agcaoli",
+    "Sandra Agcaoilli",
+    "Sandra Agcaoilii",
+    "Sandra Agcaolli",
+    "Sandra Agcaoili Balmores",
+    "Sandra Agcaili Balmores Lab",
+    "Sandra Agcaoli AI researcher"
+  ],
+  "identifier": [
+    {
+      "@type": "PropertyValue",
+      "propertyID": "balmoreslab-profile",
+      "value": "https://www.balmoreslab.com/about/sandra-agcaoili"
+    }
+  ],
   "givenName": "Sandra",
   "familyName": "Agcaoili",
   "jobTitle": "AI Researcher",
@@ -76,9 +97,12 @@
   },
   "subjectOf": { "@id": "https://www.balmoreslab.com/about/sandra-agcaoili#profilepage" },
   "sameAs": [
+    "https://www.balmoreslab.com",
     "https://www.balmoreslab.com/about/sandra-agcaoili",
     "https://www.balmoreslab.com/research",
     "https://www.balmoreslab.com/about",
+    "https://www.balmoreslab.com/sandra-agcaoili-schema.json",
+    "https://www.balmoreslab.com/sandra-agcaoili.foaf.rdf",
     "https://upd.edu.ph"
   ]
 }

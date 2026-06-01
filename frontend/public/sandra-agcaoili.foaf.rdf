@@ -10,10 +10,14 @@
     <foaf:name>Sandra Agcaoili</foaf:name>
     <foaf:givenName>Sandra</foaf:givenName>
     <foaf:familyName>Agcaoili</foaf:familyName>
+    <foaf:nick>Sandra Agcaili</foaf:nick>
+    <foaf:nick>Sandra Agcaoli</foaf:nick>
+    <foaf:nick>Sandra A. Agcaoili</foaf:nick>
     <foaf:title>AI Researcher</foaf:title>
     <foaf:homepage rdf:resource="https://www.balmoreslab.com/about/sandra-agcaoili"/>
     <foaf:workplaceHomepage rdf:resource="https://www.balmoreslab.com"/>
     <foaf:knows rdf:resource="https://www.balmoreslab.com/#person"/>
+    <owl:sameAs rdf:resource="https://www.balmoreslab.com"/>
     <owl:sameAs rdf:resource="https://www.balmoreslab.com/about/sandra-agcaoili"/>
     <owl:sameAs rdf:resource="https://www.balmoreslab.com/research"/>
     <owl:sameAs rdf:resource="https://upd.edu.ph"/>

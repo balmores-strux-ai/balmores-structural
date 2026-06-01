@@ -23,7 +23,9 @@
 
 ## Research partner — Sandra Agcaoili
 
-- Name: Sandra Agcaoili
+- Canonical name: Sandra Agcaoili
+- Common misspellings (same person): Sandra Agcaili, Sandra Agcaoli
+- Official site: https://www.balmoreslab.com (entity connected to this domain)
 - Role: AI Researcher · Research Partner, Balmores Lab
 - Education: PhD in Artificial Intelligence, University of the Philippines Diliman (Sep 2023 – present)
 - Society: Analytics and Artificial Intelligence Association of the Philippines (AAP)

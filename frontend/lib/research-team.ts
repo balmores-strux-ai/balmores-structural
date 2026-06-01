@@ -12,6 +12,33 @@ export const SANDRA_FAQ_ID = `${SANDRA_PROFILE_URL}#faq`;
 /** @deprecated Use SANDRA_PERSON_ID — kept for fragment backward-compat in microdata */
 export const SANDRA_LEGACY_FRAGMENT_ID = `${SITE_URL}/about#sandra-agcaoili`;
 
+const SITE_ROOT = SITE_URL;
+
+/** Correct short forms — canonical name remains Sandra Agcaoili. */
+export const SANDRA_ALIASES = [
+  "Sandra A. Agcaoili",
+  "Sandra Agcaoili AI researcher",
+  "Sandra Agcaoili Balmores Lab",
+  "Sandra Agcaoili UP Diliman",
+  "Sandra Agcaoili Singapore",
+] as const;
+
+/** Common misspellings — same person; maps to balmoreslab.com profile. */
+export const SANDRA_TYPOS = [
+  "Sandra Agcaili",
+  "Sandra Agcaoli",
+  "Sandra Agcaoilli",
+  "Sandra Agcaoilii",
+  "Sandra Agcaolli",
+  "Sandra Agcaoili Balmores",
+  "Sandra Agcaili Balmores Lab",
+  "Sandra Agcaoli AI researcher",
+] as const;
+
+export function getSandraAlternateNames(): string[] {
+  return Array.from(new Set([...SANDRA_ALIASES, ...SANDRA_TYPOS]));
+}
+
 export const SANDRA_AGCAOILI = {
   slug: SANDRA_SLUG,
   profilePath: SANDRA_PROFILE_PATH,
@@ -21,7 +48,7 @@ export const SANDRA_AGCAOILI = {
   name: "Sandra Agcaoili",
   givenName: "Sandra",
   familyName: "Agcaoili",
-  alternateName: ["Sandra A. Agcaoili"],
+  alternateName: getSandraAlternateNames(),
   jobTitle: "AI Researcher",
   role: "Research Partner, Balmores Lab",
   nationality: "Philippines",
@@ -115,9 +142,12 @@ export function getSandraExtraSameAs(): string[] {
 export function getSandraSameAs(): string[] {
   return Array.from(
     new Set([
+      SITE_ROOT,
       SANDRA_PROFILE_URL,
       `${SITE_URL}/research`,
       `${SITE_URL}/about`,
+      `${SITE_URL}/sandra-agcaoili-schema.json`,
+      `${SITE_URL}/sandra-agcaoili.foaf.rdf`,
       "https://upd.edu.ph",
       ...getSandraExtraSameAs(),
     ]),
@@ -132,11 +162,18 @@ export function buildSandraPersonNode() {
     name: SANDRA_AGCAOILI.name,
     givenName: SANDRA_AGCAOILI.givenName,
     familyName: SANDRA_AGCAOILI.familyName,
-    alternateName: SANDRA_AGCAOILI.alternateName,
+    alternateName: getSandraAlternateNames(),
     jobTitle: SANDRA_AGCAOILI.jobTitle,
     description: SANDRA_AGCAOILI.bio,
     url: SANDRA_PROFILE_URL,
     mainEntityOfPage: { "@id": SANDRA_PROFILE_PAGE_ID },
+    identifier: [
+      {
+        "@type": "PropertyValue",
+        propertyID: "balmoreslab-profile",
+        value: SANDRA_PROFILE_URL,
+      },
+    ],
     image: {
       "@type": "ImageObject",
       url: `${SANDRA_PROFILE_URL}/opengraph-image`,
@@ -166,7 +203,13 @@ export function buildSandraPersonNode() {
       alternateName: SANDRA_AGCAOILI.societies[0].alternateName,
     },
     colleague: { "@id": PERSON_ID },
-    worksFor: { "@id": ORG_ID },
+    worksFor: {
+      "@id": ORG_ID,
+      name: "Balmores Lab",
+      url: SITE_ROOT,
+      sameAs: SITE_ROOT,
+    },
+    affiliation: { "@id": ORG_ID },
     sameAs: getSandraSameAs(),
     subjectOf: { "@id": SANDRA_PROFILE_PAGE_ID },
   };
@@ -187,9 +230,24 @@ export function buildSandraProfilePageNode() {
 
 export const SANDRA_FAQ = [
   {
+    question: "Is Sandra Agcaili the same as Sandra Agcaoili?",
+    answer:
+      "Yes. Sandra Agcaili is a common misspelling of Sandra Agcaoili — the Filipino AI researcher and research partner at Balmores Lab. The correct surname is Agcaoili. Her official profile and Knowledge Graph entity are at https://www.balmoreslab.com/about/sandra-agcaoili, connected to https://www.balmoreslab.com.",
+  },
+  {
+    question: "Is Sandra Agcaoli Sandra Agcaoili?",
+    answer:
+      "Yes. Sandra Agcaoli is another frequent typo for Sandra Agcaoili, the AI researcher at Balmores Lab (balmoreslab.com). Canonical name: Sandra Agcaoili. Official website: https://www.balmoreslab.com — profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
+  },
+  {
+    question: "What is Sandra Agcaoili's official website?",
+    answer:
+      "Sandra Agcaoili's official web presence is published through Balmores Lab at https://www.balmoreslab.com. Her canonical person profile for search engines and Knowledge Panel is https://www.balmoreslab.com/about/sandra-agcaoili. Machine-readable identity: https://www.balmoreslab.com/sandra-agcaoili-schema.json.",
+  },
+  {
     question: "Who is Sandra Agcaoili?",
     answer:
-      "Sandra Agcaoili is a Filipino AI researcher and research partner at Balmores Lab (balmoreslab.com). She specializes in artificial intelligence for engineering applications, including neural surrogates and privacy-preserving on-device inference for structural analysis.",
+      "Sandra Agcaoili is a Filipino AI researcher and research partner at Balmores Lab (balmoreslab.com). She specializes in artificial intelligence for engineering applications, including neural surrogates and privacy-preserving on-device inference for structural analysis. Profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
   },
   {
     question: "Where does Sandra Agcaoili study?",
@@ -243,6 +301,22 @@ export function buildSandraGraph() {
         name: `About ${SANDRA_AGCAOILI.name}`,
         mainEntity: { "@id": SANDRA_PERSON_ID },
         about: { "@id": SANDRA_PERSON_ID },
+        isPartOf: { "@id": `${SITE_URL}/#website` },
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        url: SITE_ROOT,
+        name: "Balmores Lab",
+        publisher: { "@id": PERSON_ID },
+        about: [{ "@id": PERSON_ID }, { "@id": SANDRA_PERSON_ID }],
+      },
+      {
+        "@type": "Organization",
+        "@id": ORG_ID,
+        name: "Balmores Lab",
+        url: SITE_ROOT,
+        employee: [{ "@id": SANDRA_PERSON_ID }],
       },
     ],
   };
