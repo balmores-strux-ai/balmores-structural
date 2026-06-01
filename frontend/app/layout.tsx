@@ -18,6 +18,7 @@ import {
   SANDRA_PROFILE_URL,
   SANDRA_RESEARCHGATE_URL,
   SANDRA_ROCKETREACH_URL,
+  SANDRA_CONTACTOUT_URL,
 } from "@/lib/research-team";
 
 export const metadata: Metadata = {
@@ -155,6 +156,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="me author" href={SANDRA_ORCID_URL} />
         <link rel="me author" href={SANDRA_RESEARCHGATE_URL} />
         <link rel="me author" href={SANDRA_ROCKETREACH_URL} />
+        <link rel="me author" href={SANDRA_CONTACTOUT_URL} />
         {getExtraSameAs().map((href) => (
           <link key={href} rel="me" href={href} />
         ))}

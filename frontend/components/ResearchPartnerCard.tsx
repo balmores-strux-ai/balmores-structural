@@ -73,6 +73,7 @@ export default function ResearchPartnerCard({ compact = false }: ResearchPartner
       </p>
 
       <div style={{ marginBottom: compact ? 10 : 14 }}>
+        <span style={badgeStyle}>Licensed Agriculturist · PRC</span>
         <span style={badgeStyle}>Singapore</span>
         <span style={badgeStyle}>UP · BS Agriculture</span>
         <span style={badgeStyle}>UP Diliman · PhD AI</span>

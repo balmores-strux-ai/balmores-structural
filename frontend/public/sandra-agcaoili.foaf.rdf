@@ -44,7 +44,9 @@
     </foaf:account>
     <rdfs:seeAlso rdf:resource="https://www.balmoreslab.com/sandra-agcaoili-schema.json"/>
     <owl:sameAs rdf:resource="https://rocketreach.co/sandra-agcaoili-email_72113673"/>
-    <schema:description>Sandra Agcaoili is based in Singapore, holds a BS in Agriculture from the University of the Philippines (2005–2009), is a PhD candidate in Artificial Intelligence at UP Diliman (2023–present), and is Research Partner at Balmores Lab. Previous roles include animal nutrition positions at Zagro Singapore, Alpha Multitrade (Feedconcept), and Glenwood Technologies International.</schema:description>
+    <owl:sameAs rdf:resource="https://contactout.com/sandra-agcaoili-10976"/>
+    <owl:sameAs rdf:resource="https://prc.gov.ph"/>
+    <schema:description>Sandra Agcaoili is a Filipino Licensed Agriculturist registered with the Professional Regulation Commission (PRC) of the Philippines, based in Singapore, with a BS in Agriculture (UP, 2005–2009) and a PhD in Artificial Intelligence in progress at UP Diliman (2023–present). She is Research Partner at Balmores Lab and previously held animal-nutrition roles at Zagro Singapore, Alpha Multitrade (Feedconcept), and Glenwood Technologies International.</schema:description>
   </foaf:Person>
 
 </rdf:RDF>

@@ -21,6 +21,8 @@ export const SANDRA_ALIASES = [
   "Sandra Agcaoili Balmores Lab",
   "Sandra Agcaoili UP Diliman",
   "Sandra Agcaoili Singapore",
+  "Sandra Agcaoili Licensed Agriculturist",
+  "Sandra Agcaoili PRC",
 ] as const;
 
 /** Common misspellings — same person; maps to balmoreslab.com profile. */
@@ -47,6 +49,29 @@ export const SANDRA_RESEARCHGATE_URL =
   "https://www.researchgate.net/profile/Sandra-Agcaoili";
 export const SANDRA_ROCKETREACH_URL =
   "https://rocketreach.co/sandra-agcaoili-email_72113673";
+export const SANDRA_CONTACTOUT_URL =
+  "https://contactout.com/sandra-agcaoili-10976";
+export const SANDRA_PRC_URL = "https://prc.gov.ph";
+
+export const SANDRA_PRC_LICENSE = {
+  title: "Licensed Agriculturist",
+  credentialCategory: "Professional License",
+  issuer: "Professional Regulation Commission (PRC)",
+  issuerUrl: SANDRA_PRC_URL,
+  country: "Philippines",
+  description:
+    "Registered professional license to practise as an agriculturist in the Republic of the Philippines, under the Professional Regulation Commission (PRC).",
+} as const;
+
+export const SANDRA_SKILLS = [
+  "Animal Nutrition",
+  "Feed Formulation",
+  "Technical Sales Support",
+  "Product Development",
+  "Artificial Intelligence",
+  "Machine Learning",
+  "Analytics",
+] as const;
 
 export type SandraEducationEntry = {
   degree: string;
@@ -120,14 +145,14 @@ export const SANDRA_WORK_HISTORY: readonly SandraWorkEntry[] = [
 ];
 
 export const SANDRA_CAREER_SUMMARY =
-  "Sandra Agcaoili is based in Singapore. She holds a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009) and is pursuing a Doctor of Philosophy in Artificial Intelligence at the University of the Philippines Diliman (2023–present). Before her work in AI and structural engineering research at Balmores Lab, she built professional experience in animal nutrition across Singapore — including Technical Specialist (Animal Nutrition) at Zagro Singapore Pte Ltd, Animal Nutritionist at Alpha Multitrade (Feedconcept), and Technical Services Associate at Glenwood Technologies International, Inc.";
+  "Sandra Agcaoili is a Filipino Licensed Agriculturist registered with the Professional Regulation Commission (PRC) of the Philippines and is based in Singapore. She earned a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009) and is pursuing a Doctor of Philosophy in Artificial Intelligence at the University of the Philippines Diliman (2023–present). Her earlier career spans animal nutrition and technical sales in Singapore — Technical Specialist (Animal Nutrition) at Zagro Singapore Pte Ltd (2014–2018), Animal Nutritionist at Alpha Multitrade (Feedconcept) (2012–2014), and Technical Services Associate at Glenwood Technologies International, Inc. (2010–2011).";
 
 /** Canonical long-form biography (meta, JSON-LD, profile pages). */
 export const SANDRA_BIO =
-  `${SANDRA_CAREER_SUMMARY} As Research Partner at Balmores Lab (balmoreslab.com), she collaborates with Louie Doniego Balmores on machine learning, analytics, and trustworthy AI for engineering — including neural surrogate models, physics-informed deep learning, privacy-preserving on-device inference, and reproducible evaluation frameworks that connect open-source finite-element analysis (PyNite) with production structural workflows. She is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP).`;
+  `${SANDRA_CAREER_SUMMARY} She is Research Partner at Balmores Lab (balmoreslab.com), where she collaborates with Louie Doniego Balmores on machine learning, analytics, and trustworthy AI for engineering — including neural surrogate models, physics-informed deep learning, privacy-preserving on-device inference, and reproducible evaluation frameworks that connect open-source finite-element analysis (PyNite) with production structural workflows. She is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP). Official profile: ${SANDRA_PROFILE_URL}.`;
 
 export const SANDRA_SHORT_BIO =
-  "AI Researcher · Singapore · PhD AI (UP Diliman) · BS Agriculture (UP) · Research Partner, Balmores Lab · AAP Member";
+  "AI Researcher · Licensed Agriculturist (PRC Philippines) · Singapore · PhD AI (UP Diliman) · BS Agriculture (UP) · Research Partner, Balmores Lab";
 
 export const SANDRA_AGCAOILI = {
   slug: SANDRA_SLUG,
@@ -140,6 +165,7 @@ export const SANDRA_AGCAOILI = {
   familyName: "Agcaoili",
   alternateName: getSandraAlternateNames(),
   jobTitle: "AI Researcher",
+  professionalTitle: "Licensed Agriculturist (PRC Philippines)",
   role: "Research Partner, Balmores Lab",
   nationality: "Philippines",
   location: "Singapore",
@@ -193,8 +219,15 @@ export const SANDRA_AGCAOILI = {
     "Computational Design",
     "Animal Nutrition",
     "Agriculture",
+    "Licensed Agriculturist",
+    "Professional Regulation Commission",
+    "Feed Formulation",
+    "Technical Sales Support",
+    "Product Development",
     "Singapore",
   ],
+  prcLicense: SANDRA_PRC_LICENSE,
+  skills: SANDRA_SKILLS,
   careerSummary: SANDRA_CAREER_SUMMARY,
   education: SANDRA_EDUCATION,
   workHistory: SANDRA_WORK_HISTORY,
@@ -212,6 +245,7 @@ export const SANDRA_AGCAOILI = {
   orcidUrl: SANDRA_ORCID_URL,
   researchgateUrl: SANDRA_RESEARCHGATE_URL,
   rocketreachUrl: SANDRA_ROCKETREACH_URL,
+  contactoutUrl: SANDRA_CONTACTOUT_URL,
   researchAreas: [
     "Neural surrogate models for structural FEM",
     "Privacy-preserving on-device AI for engineering",
@@ -249,6 +283,7 @@ export function getSandraExtraSameAs(): string[] {
     SANDRA_ORCID_URL,
     SANDRA_RESEARCHGATE_URL,
     SANDRA_ROCKETREACH_URL,
+    SANDRA_CONTACTOUT_URL,
   ];
   const push = (u: string | undefined) => {
     if (u) urls.push(u);
@@ -274,13 +309,43 @@ export function getSandraSameAs(): string[] {
       `${SITE_URL}/sandra-agcaoili-schema.json`,
       `${SITE_URL}/sandra-agcaoili.foaf.rdf`,
       "https://upd.edu.ph",
+      SANDRA_PRC_URL,
       ...getSandraExtraSameAs(),
     ]),
   );
 }
 
+export function buildSandraHasCredentials() {
+  const prc = {
+    "@type": "EducationalOccupationalCredential" as const,
+    credentialCategory: SANDRA_PRC_LICENSE.credentialCategory,
+    name: SANDRA_PRC_LICENSE.title,
+    recognizedBy: {
+      "@type": "GovernmentOrganization" as const,
+      name: SANDRA_PRC_LICENSE.issuer,
+      url: SANDRA_PRC_LICENSE.issuerUrl,
+      address: {
+        "@type": "PostalAddress" as const,
+        addressCountry: "PH",
+      },
+    },
+  };
+  const degrees = SANDRA_EDUCATION.map((edu) => ({
+    "@type": "EducationalOccupationalCredential" as const,
+    credentialCategory: edu.status === "In progress" ? "Doctoral degree (in progress)" : "Bachelor's degree",
+    name: `${edu.degree} (${edu.field})`,
+    dateCreated: edu.startYear.toString(),
+    ...(edu.endYear ? { validUntil: edu.endYear.toString() } : {}),
+    recognizedBy: {
+      "@type": "EducationalOrganization" as const,
+      name: edu.institution,
+      url: edu.institutionUrl,
+    },
+  }));
+  return [prc, ...degrees];
+}
+
 export function buildSandraPersonNode() {
-  const today = new Date().toISOString().split("T")[0];
   return {
     "@type": "Person",
     "@id": SANDRA_PERSON_ID,
@@ -288,8 +353,9 @@ export function buildSandraPersonNode() {
     givenName: SANDRA_AGCAOILI.givenName,
     familyName: SANDRA_AGCAOILI.familyName,
     alternateName: getSandraAlternateNames(),
-    jobTitle: SANDRA_AGCAOILI.jobTitle,
+    jobTitle: [SANDRA_AGCAOILI.jobTitle, SANDRA_AGCAOILI.professionalTitle],
     description: SANDRA_AGCAOILI.bio,
+    honorificCredential: SANDRA_PRC_LICENSE.title,
     url: SANDRA_PROFILE_URL,
     mainEntityOfPage: { "@id": SANDRA_PROFILE_PAGE_ID },
     identifier: [
@@ -337,18 +403,7 @@ export function buildSandraPersonNode() {
         },
       })),
     ],
-    hasCredential: SANDRA_EDUCATION.map((edu) => ({
-      "@type": "EducationalOccupationalCredential",
-      credentialCategory: edu.status === "In progress" ? "Doctoral degree (in progress)" : "Bachelor's degree",
-      name: `${edu.degree} (${edu.field})`,
-      dateCreated: edu.startYear.toString(),
-      ...(edu.endYear ? { validUntil: edu.endYear.toString() } : {}),
-      recognizedBy: {
-        "@type": "EducationalOrganization",
-        name: edu.institution,
-        url: edu.institutionUrl,
-      },
-    })),
+    hasCredential: buildSandraHasCredentials(),
     memberOf: {
       "@type": "Organization",
       name: SANDRA_AGCAOILI.societies[0].name,
@@ -388,7 +443,12 @@ export const SANDRA_FAQ = [
   },
   {
     question: "Who is Sandra Agcaoili?",
-    answer: `${SANDRA_BIO} Official profile: https://www.balmoreslab.com/about/sandra-agcaoili.`,
+    answer: `${SANDRA_BIO}`,
+  },
+  {
+    question: "Is Sandra Agcaoili a licensed agriculturist?",
+    answer:
+      "Yes. Sandra Agcaoili is a Licensed Agriculturist in the Philippines, registered with the Professional Regulation Commission (PRC) at https://prc.gov.ph. This credential complements her Bachelor of Science in Agriculture (University of the Philippines, 2005–2009) and her doctoral research in Artificial Intelligence at UP Diliman. Official profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
   },
   {
     question: "Where is Sandra Agcaoili located?",
@@ -418,7 +478,7 @@ export const SANDRA_FAQ = [
   {
     question: "What organizations is Sandra Agcaoili affiliated with?",
     answer:
-      "She is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP) and a doctoral researcher at the University of the Philippines Diliman. Her official profile is published at https://www.balmoreslab.com/about/sandra-agcaoili.",
+      "She is a Licensed Agriculturist under the Professional Regulation Commission (PRC) of the Philippines, a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), a doctoral researcher at the University of the Philippines Diliman, and Research Partner at Balmores Lab. Profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
   },
   {
     question: "What does Sandra Agcaoili research?",

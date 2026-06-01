@@ -36,6 +36,9 @@ export const metadata: Metadata = {
     "Sandra Agcaoili University of the Philippines",
     "Sandra Agcaoili Zagro",
     "Sandra Agcaoili agriculture",
+    "Sandra Agcaoili licensed agriculturist",
+    "Sandra Agcaoili PRC",
+    "Licensed Agriculturist Philippines",
   ],
   authors: [{ name: SANDRA_AGCAOILI.name, url: SANDRA_PROFILE_URL }],
   openGraph: {
@@ -166,7 +169,7 @@ export default function SandraAgcaoiliProfilePage() {
           </h1>
           <SandraIdentityLinks />
           <p style={S.title} itemProp="jobTitle">
-            {SANDRA_AGCAOILI.jobTitle} · {SANDRA_AGCAOILI.role}
+            {SANDRA_AGCAOILI.jobTitle} · {SANDRA_AGCAOILI.professionalTitle} · {SANDRA_AGCAOILI.role}
           </p>
           <p className="name-aliases small-muted" style={{ margin: "0 0 12px", fontSize: 14 }}>
             Canonical name: <strong>Sandra Agcaoili</strong> · connected to{" "}
@@ -176,6 +179,7 @@ export default function SandraAgcaoiliProfilePage() {
             {SANDRA_AGCAOILI.bio}
           </p>
           <div>
+            <span style={S.badge}>Licensed Agriculturist · PRC</span>
             <span style={S.badge}>Singapore</span>
             <span style={S.badge}>UP · BS Agriculture</span>
             <span style={S.badge}>UP Diliman · PhD AI</span>
@@ -196,7 +200,28 @@ export default function SandraAgcaoiliProfilePage() {
             </div>
             <div style={S.kvRow}>
               <div style={S.kvKey}>Profession</div>
-              <div style={S.kvVal}>AI Researcher</div>
+              <div style={S.kvVal}>
+                {SANDRA_AGCAOILI.jobTitle} · {SANDRA_AGCAOILI.professionalTitle}
+              </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Professional License</div>
+              <div style={S.kvVal} itemProp="hasCredential" itemScope itemType="https://schema.org/EducationalOccupationalCredential">
+                <span itemProp="name">{SANDRA_AGCAOILI.prcLicense.title}</span>
+                {" — "}
+                <a
+                  href={SANDRA_AGCAOILI.prcLicense.issuerUrl}
+                  style={S.link}
+                  target="_blank"
+                  rel="noopener external"
+                  itemProp="recognizedBy"
+                  itemScope
+                  itemType="https://schema.org/GovernmentOrganization"
+                >
+                  <span itemProp="name">{SANDRA_AGCAOILI.prcLicense.issuer}</span>
+                </a>
+                , {SANDRA_AGCAOILI.prcLicense.country}
+              </div>
             </div>
             <div style={S.kvRow}>
               <div style={S.kvKey}>Nationality</div>
@@ -280,6 +305,51 @@ export default function SandraAgcaoiliProfilePage() {
                 </a>
               </div>
             </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>ContactOut</div>
+              <div style={S.kvVal}>
+                <a
+                  href={SANDRA_AGCAOILI.contactoutUrl}
+                  style={S.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  itemProp="sameAs"
+                >
+                  contactout.com/sandra-agcaoili-10976
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section style={S.section} aria-labelledby="credentials-h">
+          <h2 id="credentials-h" style={S.h2}>Licenses &amp; Credentials</h2>
+          <div style={S.card} itemProp="hasCredential" itemScope itemType="https://schema.org/EducationalOccupationalCredential">
+            <div style={{ color: "#7dd3fc", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+              Professional license
+            </div>
+            <h3 style={S.h3}>
+              <span itemProp="name">{SANDRA_AGCAOILI.prcLicense.title}</span>
+            </h3>
+            <p style={S.p}>{SANDRA_AGCAOILI.prcLicense.description}</p>
+            <p style={S.p}>
+              Issued by{" "}
+              <a href={SANDRA_AGCAOILI.prcLicense.issuerUrl} style={S.link} target="_blank" rel="noopener external">
+                {SANDRA_AGCAOILI.prcLicense.issuer}
+              </a>{" "}
+              (PRC), Republic of the Philippines.
+            </p>
+          </div>
+        </section>
+
+        <section style={S.section} aria-labelledby="skills-h">
+          <h2 id="skills-h" style={S.h2}>Core Competencies</h2>
+          <div style={{ marginTop: 8 }}>
+            {SANDRA_AGCAOILI.skills.map((skill) => (
+              <span key={skill} style={S.chip} itemProp="knowsAbout">
+                {skill}
+              </span>
+            ))}
           </div>
         </section>
 

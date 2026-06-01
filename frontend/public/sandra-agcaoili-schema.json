@@ -9,6 +9,8 @@
     "Sandra Agcaoili Balmores Lab",
     "Sandra Agcaoili UP Diliman",
     "Sandra Agcaoili Singapore",
+    "Sandra Agcaoili Licensed Agriculturist",
+    "Sandra Agcaoili PRC",
     "Sandra Agcaili",
     "Sandra Agcaoli",
     "Sandra Agcaoilli",
@@ -33,7 +35,8 @@
   ],
   "givenName": "Sandra",
   "familyName": "Agcaoili",
-  "jobTitle": "AI Researcher",
+  "jobTitle": ["AI Researcher", "Licensed Agriculturist (PRC Philippines)"],
+  "honorificCredential": "Licensed Agriculturist",
   "url": "https://www.balmoreslab.com/about/sandra-agcaoili",
   "mainEntityOfPage": { "@id": "https://www.balmoreslab.com/about/sandra-agcaoili#profilepage" },
   "image": {
@@ -41,7 +44,7 @@
     "url": "https://www.balmoreslab.com/about/sandra-agcaoili/opengraph-image",
     "caption": "Sandra Agcaoili - AI Researcher"
   },
-  "description": "Sandra Agcaoili is based in Singapore. She holds a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009) and is pursuing a Doctor of Philosophy in Artificial Intelligence at the University of the Philippines Diliman (2023–present). Before her work in AI and structural engineering research at Balmores Lab, she built professional experience in animal nutrition across Singapore — including Technical Specialist (Animal Nutrition) at Zagro Singapore Pte Ltd, Animal Nutritionist at Alpha Multitrade (Feedconcept), and Technical Services Associate at Glenwood Technologies International, Inc. As Research Partner at Balmores Lab (balmoreslab.com), she collaborates with Louie Doniego Balmores on machine learning, analytics, and trustworthy AI for engineering. She is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP).",
+  "description": "Sandra Agcaoili is a Filipino Licensed Agriculturist registered with the Professional Regulation Commission (PRC) of the Philippines and is based in Singapore. She earned a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009) and is pursuing a Doctor of Philosophy in Artificial Intelligence at the University of the Philippines Diliman (2023–present). She is Research Partner at Balmores Lab (balmoreslab.com), collaborating with Louie Doniego Balmores on AI for structural engineering. Previous roles include animal nutrition positions at Zagro Singapore Pte Ltd, Alpha Multitrade (Feedconcept), and Glenwood Technologies International, Inc. Member, Analytics and Artificial Intelligence Association of the Philippines (AAP).",
   "nationality": { "@type": "Country", "name": "Philippines" },
   "knowsLanguage": ["English", "Filipino"],
   "homeLocation": {
@@ -83,6 +86,17 @@
   "hasCredential": [
     {
       "@type": "EducationalOccupationalCredential",
+      "credentialCategory": "Professional License",
+      "name": "Licensed Agriculturist",
+      "recognizedBy": {
+        "@type": "GovernmentOrganization",
+        "name": "Professional Regulation Commission (PRC)",
+        "url": "https://prc.gov.ph",
+        "address": { "@type": "PostalAddress", "addressCountry": "PH" }
+      }
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
       "credentialCategory": "Doctoral degree (in progress)",
       "name": "Doctor of Philosophy (PhD) (Artificial Intelligence)",
       "dateCreated": "2023",
@@ -117,6 +131,11 @@
     "Computational Design",
     "Animal Nutrition",
     "Agriculture",
+    "Licensed Agriculturist",
+    "Professional Regulation Commission",
+    "Feed Formulation",
+    "Technical Sales Support",
+    "Product Development",
     "Singapore"
   ],
   "hasOccupation": [
@@ -158,6 +177,8 @@
     "https://www.linkedin.com/in/sandra-agcaoili-a059a2152/",
     "https://orcid.org/0009-0006-4000-0031",
     "https://www.researchgate.net/profile/Sandra-Agcaoili",
-    "https://rocketreach.co/sandra-agcaoili-email_72113673"
+    "https://rocketreach.co/sandra-agcaoili-email_72113673",
+    "https://contactout.com/sandra-agcaoili-10976",
+    "https://prc.gov.ph"
   ]
 }

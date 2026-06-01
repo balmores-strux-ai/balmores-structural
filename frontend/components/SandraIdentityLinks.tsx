@@ -5,6 +5,7 @@ import {
   SANDRA_ORCID_URL,
   SANDRA_RESEARCHGATE_URL,
   SANDRA_ROCKETREACH_URL,
+  SANDRA_CONTACTOUT_URL,
 } from "@/lib/research-team";
 
 type SandraIdentityLinksProps = {
@@ -75,6 +76,16 @@ export default function SandraIdentityLinks({
         style={linkStyle}
       >
         RocketReach
+      </a>
+      {" · "}
+      <a
+        href={SANDRA_CONTACTOUT_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        itemProp="sameAs"
+        style={linkStyle}
+      >
+        ContactOut
       </a>
       {!compact && !inline ? (
         <span style={{ color: "#64748b" }}> ({SANDRA_ORCID_ID})</span>
