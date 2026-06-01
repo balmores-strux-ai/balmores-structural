@@ -256,7 +256,7 @@ export default function SandraAgcaoiliProfilePage() {
                   rel="me noopener noreferrer"
                   itemProp="sameAs"
                 >
-                  UP System · member profile
+                  researchgate.net/profile/Sandra-Agcaoili
                 </a>
               </div>
             </div>

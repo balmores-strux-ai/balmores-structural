@@ -39,7 +39,7 @@
 - WebFinger: https://www.balmoreslab.com/.well-known/webfinger?resource=acct:sandra@balmoreslab.com
 - LinkedIn: https://www.linkedin.com/in/sandra-agcaoili-a059a2152/
 - ORCID: https://orcid.org/0009-0006-4000-0031
-- ResearchGate: https://www.researchgate.net/institution/University-of-the-Philippines-System/members/327
+- ResearchGate: https://www.researchgate.net/profile/Sandra-Agcaoili
 
 ## Verified profiles (sameAs)
 

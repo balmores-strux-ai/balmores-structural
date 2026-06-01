@@ -44,7 +44,7 @@ export const SANDRA_ORCID_URL = `https://orcid.org/${SANDRA_ORCID_ID}`;
 export const SANDRA_LINKEDIN_URL =
   "https://www.linkedin.com/in/sandra-agcaoili-a059a2152/";
 export const SANDRA_RESEARCHGATE_URL =
-  "https://www.researchgate.net/institution/University-of-the-Philippines-System/members/327";
+  "https://www.researchgate.net/profile/Sandra-Agcaoili";
 
 /** Canonical long-form biography (meta, JSON-LD, profile pages). */
 export const SANDRA_BIO =
