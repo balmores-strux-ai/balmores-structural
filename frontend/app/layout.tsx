@@ -109,11 +109,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      { url: "/icon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/logo.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico" },
     ],
-    shortcut: "/logo.svg",
-    apple: "/logo.svg",
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
@@ -132,6 +135,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        {/* Favicon — Google Search uses a crawlable 48×48+ icon (PNG/ICO), not SVG alone. */}
+        <link rel="icon" href="/favicon.ico" sizes="48x48" type="image/x-icon" />
+        <link rel="icon" href="/icon-48.png" type="image/png" sizes="48x48" />
+        <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+
         {/* IndieWeb / rel=me links: some crawlers and verification services use
             these to build identity graphs across platforms. */}
         <link rel="me" href="https://www.linkedin.com/in/louiebalmores/" />

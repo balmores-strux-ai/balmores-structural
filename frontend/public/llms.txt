@@ -16,6 +16,8 @@
 - Candidate credentials: P.Eng (Professional Engineers Ontario);
   PE (NCEES USA).
 - Canonical URL: https://www.balmoreslab.com
+- Site logo (favicon): https://www.balmoreslab.com/favicon.ico
+- Site logo (PNG): https://www.balmoreslab.com/icon-192.png
 - Profile: https://www.balmoreslab.com/about
 - CV: https://www.balmoreslab.com/cv
 - Research: https://www.balmoreslab.com/research

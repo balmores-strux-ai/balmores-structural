@@ -61,6 +61,20 @@ export const ORG_ID = `${SITE_URL}/#organization`;
 export const SITE_ID = `${SITE_URL}/#website`;
 export const PROFILE_PAGE_ID = `${SITE_URL}/about#profilepage`;
 
+/** Raster logo for Google Search favicon + Organization schema (multiples of 48px). */
+export const SITE_FAVICON_URL = `${SITE_URL}/favicon.ico`;
+export const SITE_LOGO_PNG_URL = `${SITE_URL}/icon-192.png`;
+export const SITE_LOGO_SVG_URL = `${SITE_URL}/logo.svg`;
+
+export const SITE_LOGO_IMAGE = {
+  "@type": "ImageObject" as const,
+  url: SITE_LOGO_PNG_URL,
+  contentUrl: SITE_LOGO_PNG_URL,
+  width: 192,
+  height: 192,
+  caption: `${SITE_NAME} logo`,
+};
+
 export const ORCID_ID = "0009-0008-5479-4033";
 export const ORCID_URL = `https://orcid.org/${ORCID_ID}`;
 export const WIKIDATA_ID = "Q139544451";
@@ -284,7 +298,8 @@ export function buildRootStructuredData() {
         name: SITE_NAME,
         alternateName: [...ORG_ALIASES],
         url: SITE_URL,
-        logo: `${SITE_URL}/logo.svg`,
+        logo: SITE_LOGO_IMAGE,
+        image: SITE_LOGO_IMAGE,
         founder: { "@id": PERSON_ID },
         employee: [{ "@id": PERSON_ID }, { "@id": SANDRA_PERSON_ID }],
         sameAs: ALL_SAME_AS.filter((u) => !u.endsWith("/cv") && !u.endsWith("/research")),
@@ -314,6 +329,7 @@ export function buildRootStructuredData() {
           "Sandra Agcaoli",
         ],
         description: `Official website of ${PERSON_NAME}, ${SANDRA_AGCAOILI.name}, and ${SITE_NAME} — AI-driven structural engineering.`,
+        image: SITE_LOGO_IMAGE,
         publisher: { "@id": PERSON_ID },
         author: [{ "@id": PERSON_ID }, { "@id": SANDRA_PERSON_ID }],
         about: [{ "@id": PERSON_ID }, { "@id": SANDRA_PERSON_ID }],
