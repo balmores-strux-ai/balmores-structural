@@ -7,6 +7,7 @@ import {
   SANDRA_ORCID_URL,
   SANDRA_PROFILE_URL,
   SANDRA_RESEARCHGATE_URL,
+  SANDRA_ROCKETREACH_URL,
 } from "@/lib/research-team";
 
 type SandraProfileBadgesProps = {
@@ -32,6 +33,12 @@ const BADGES = [
     id: "researchgate",
     label: "ResearchGate",
     href: SANDRA_RESEARCHGATE_URL,
+    external: true,
+  },
+  {
+    id: "rocketreach",
+    label: "RocketReach",
+    href: SANDRA_ROCKETREACH_URL,
     external: true,
   },
   {

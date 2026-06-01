@@ -17,6 +17,7 @@ import {
   SANDRA_ORCID_URL,
   SANDRA_PROFILE_URL,
   SANDRA_RESEARCHGATE_URL,
+  SANDRA_ROCKETREACH_URL,
 } from "@/lib/research-team";
 
 export const metadata: Metadata = {

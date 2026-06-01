@@ -31,6 +31,11 @@ export const metadata: Metadata = {
     "PhD Artificial Intelligence Philippines",
     "Analytics and Artificial Intelligence Association of the Philippines",
     "Balmores Lab Sandra Agcaoili",
+    "Sandra Agcaoili Singapore",
+    "Sandra Agcaoili animal nutrition",
+    "Sandra Agcaoili University of the Philippines",
+    "Sandra Agcaoili Zagro",
+    "Sandra Agcaoili agriculture",
   ],
   authors: [{ name: SANDRA_AGCAOILI.name, url: SANDRA_PROFILE_URL }],
   openGraph: {
@@ -171,9 +176,10 @@ export default function SandraAgcaoiliProfilePage() {
             {SANDRA_AGCAOILI.bio}
           </p>
           <div>
+            <span style={S.badge}>Singapore</span>
+            <span style={S.badge}>UP · BS Agriculture</span>
             <span style={S.badge}>UP Diliman · PhD AI</span>
             <span style={S.badge}>AAP Member</span>
-            <span style={S.badge}>Based in Singapore</span>
             <span style={S.badge}>Research Partner</span>
           </div>
           <div style={{ marginTop: 18 }}>
@@ -260,46 +266,108 @@ export default function SandraAgcaoiliProfilePage() {
                 </a>
               </div>
             </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>RocketReach</div>
+              <div style={S.kvVal}>
+                <a
+                  href={SANDRA_AGCAOILI.rocketreachUrl}
+                  style={S.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  itemProp="sameAs"
+                >
+                  rocketreach.co/sandra-agcaoili
+                </a>
+              </div>
+            </div>
           </div>
+        </section>
+
+        <section style={S.section} aria-labelledby="summary-h">
+          <h2 id="summary-h" style={S.h2}>Career Summary</h2>
+          <p style={S.p}>{SANDRA_AGCAOILI.careerSummary}</p>
+        </section>
+
+        <section style={S.section} aria-labelledby="experience-h">
+          <h2 id="experience-h" style={S.h2}>Professional Experience</h2>
+          {SANDRA_AGCAOILI.workHistory.map((role) => (
+            <div
+              key={`${role.organization}-${role.title}`}
+              style={S.card}
+              itemProp="hasOccupation"
+              itemScope
+              itemType="https://schema.org/Occupation"
+            >
+              <div style={{ color: "#7dd3fc", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                {role.current ? "Current role" : "Previous role"}
+              </div>
+              <h3 style={S.h3}>
+                <span itemProp="name">{role.title}</span>
+              </h3>
+              <p style={S.p}>
+                <span itemProp="occupationLocation" itemScope itemType="https://schema.org/Place">
+                  <span itemProp="name">{role.location}</span>
+                </span>
+                {" · "}
+                <span itemProp="worksFor" itemScope itemType="https://schema.org/Organization">
+                  <span itemProp="name">{role.organization}</span>
+                </span>
+              </p>
+              <div style={S.kvRow}>
+                <div style={S.kvKey}>Period</div>
+                <div style={S.kvVal}>
+                  {role.current
+                    ? "Present — Research Partner, Balmores Lab"
+                    : `${role.startYear} – ${role.endYear}`}
+                </div>
+              </div>
+            </div>
+          ))}
         </section>
 
         <section style={S.section} aria-labelledby="education-h">
           <h2 id="education-h" style={S.h2}>Education</h2>
-          <div
-            style={S.card}
-            itemProp="alumniOf"
-            itemScope
-            itemType="https://schema.org/EducationalOrganization"
-          >
-            <div style={{ color: "#7dd3fc", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-              Doctor of Philosophy · in progress
-            </div>
-            <h3 style={S.h3}>
-              <span itemProp="name">PhD in Artificial Intelligence</span>
-            </h3>
-            <p style={S.p}>
-              <a href="https://upd.edu.ph" style={S.link} rel="noopener external" target="_blank" itemProp="url">
-                University of the Philippines Diliman
-              </a>
-              {" "}(UP Diliman)
-            </p>
-            <div style={S.kvRow}>
-              <div style={S.kvKey}>Programme</div>
-              <div style={S.kvVal}>{SANDRA_AGCAOILI.credential.name}</div>
-            </div>
-            <div style={S.kvRow}>
-              <div style={S.kvKey}>Started</div>
-              <div style={S.kvVal}>
-                <time dateTime="2023-09">September 2023</time> – Present
+          {SANDRA_AGCAOILI.education.map((edu) => (
+            <div
+              key={`${edu.institution}-${edu.degree}`}
+              style={S.card}
+              itemProp="alumniOf"
+              itemScope
+              itemType="https://schema.org/EducationalOrganization"
+            >
+              <div style={{ color: "#7dd3fc", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                {edu.status}
               </div>
-            </div>
-            <div style={S.kvRow}>
-              <div style={S.kvKey}>Activities &amp; Societies</div>
-              <div style={S.kvVal}>
-                Analytics and Artificial Intelligence Association of the Philippines (AAP)
+              <h3 style={S.h3}>
+                <span itemProp="name">
+                  {edu.degree} — {edu.field}
+                </span>
+              </h3>
+              <p style={S.p}>
+                {edu.institutionUrl ? (
+                  <a href={edu.institutionUrl} style={S.link} rel="noopener external" target="_blank" itemProp="url">
+                    {edu.institution}
+                  </a>
+                ) : (
+                  <span itemProp="name">{edu.institution}</span>
+                )}
+              </p>
+              <div style={S.kvRow}>
+                <div style={S.kvKey}>Years</div>
+                <div style={S.kvVal}>
+                  {edu.endYear ? `${edu.startYear} – ${edu.endYear}` : `${edu.startYear} – Present`}
+                </div>
               </div>
+              {edu.status === "In progress" ? (
+                <div style={S.kvRow}>
+                  <div style={S.kvKey}>Activities &amp; Societies</div>
+                  <div style={S.kvVal}>
+                    Analytics and Artificial Intelligence Association of the Philippines (AAP)
+                  </div>
+                </div>
+              ) : null}
             </div>
-          </div>
+          ))}
         </section>
 
         <section style={S.section} aria-labelledby="research-h">

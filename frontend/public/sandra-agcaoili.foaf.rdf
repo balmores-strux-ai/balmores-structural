@@ -43,7 +43,8 @@
       </foaf:OnlineAccount>
     </foaf:account>
     <rdfs:seeAlso rdf:resource="https://www.balmoreslab.com/sandra-agcaoili-schema.json"/>
-    <schema:description>Sandra Agcaoili is a Filipino AI researcher and Research Partner at Balmores Lab (balmoreslab.com), doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman, member of AAP, based in Singapore.</schema:description>
+    <owl:sameAs rdf:resource="https://rocketreach.co/sandra-agcaoili-email_72113673"/>
+    <schema:description>Sandra Agcaoili is based in Singapore, holds a BS in Agriculture from the University of the Philippines (2005–2009), is a PhD candidate in Artificial Intelligence at UP Diliman (2023–present), and is Research Partner at Balmores Lab. Previous roles include animal nutrition positions at Zagro Singapore, Alpha Multitrade (Feedconcept), and Glenwood Technologies International.</schema:description>
   </foaf:Person>
 
 </rdf:RDF>

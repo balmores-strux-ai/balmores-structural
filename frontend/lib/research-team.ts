@@ -45,13 +45,89 @@ export const SANDRA_LINKEDIN_URL =
   "https://www.linkedin.com/in/sandra-agcaoili-a059a2152/";
 export const SANDRA_RESEARCHGATE_URL =
   "https://www.researchgate.net/profile/Sandra-Agcaoili";
+export const SANDRA_ROCKETREACH_URL =
+  "https://rocketreach.co/sandra-agcaoili-email_72113673";
+
+export type SandraEducationEntry = {
+  degree: string;
+  field: string;
+  institution: string;
+  institutionUrl?: string;
+  startYear: number;
+  endYear: number | null;
+  status: string;
+};
+
+export type SandraWorkEntry = {
+  title: string;
+  organization: string;
+  startYear: number | null;
+  endYear: number | null;
+  location: string;
+  current?: boolean;
+};
+
+export const SANDRA_EDUCATION: readonly SandraEducationEntry[] = [
+  {
+    degree: "Doctor of Philosophy (PhD)",
+    field: "Artificial Intelligence",
+    institution: "University of the Philippines Diliman",
+    institutionUrl: "https://upd.edu.ph",
+    startYear: 2023,
+    endYear: null,
+    status: "In progress",
+  },
+  {
+    degree: "Bachelor of Science (BS)",
+    field: "Agriculture",
+    institution: "University of the Philippines",
+    startYear: 2005,
+    endYear: 2009,
+    status: "Completed",
+  },
+];
+
+export const SANDRA_WORK_HISTORY: readonly SandraWorkEntry[] = [
+  {
+    title: "Research Partner",
+    organization: "Balmores Lab",
+    startYear: null,
+    endYear: null,
+    location: "Singapore",
+    current: true,
+  },
+  {
+    title: "Technical Specialist (Animal Nutrition)",
+    organization: "Zagro Singapore Pte Ltd",
+    startYear: 2014,
+    endYear: 2018,
+    location: "Singapore",
+  },
+  {
+    title: "Animal Nutritionist",
+    organization: "Alpha Multitrade (Feedconcept)",
+    startYear: 2012,
+    endYear: 2014,
+    location: "Singapore",
+  },
+  {
+    title: "Technical Services Associate",
+    organization: "Glenwood Technologies International, Inc.",
+    startYear: 2010,
+    endYear: 2011,
+    location: "Singapore",
+  },
+];
+
+export const SANDRA_CAREER_SUMMARY =
+  "Sandra Agcaoili is based in Singapore. She holds a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009) and is pursuing a Doctor of Philosophy in Artificial Intelligence at the University of the Philippines Diliman (2023–present). Before her work in AI and structural engineering research at Balmores Lab, she built professional experience in animal nutrition across Singapore — including Technical Specialist (Animal Nutrition) at Zagro Singapore Pte Ltd, Animal Nutritionist at Alpha Multitrade (Feedconcept), and Technical Services Associate at Glenwood Technologies International, Inc.";
 
 /** Canonical long-form biography (meta, JSON-LD, profile pages). */
 export const SANDRA_BIO =
-  "Sandra Agcaoili is a Filipino artificial-intelligence researcher and Research Partner at Balmores Lab (balmoreslab.com). She is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman (September 2023–present), with research centred on machine learning, analytics, and trustworthy AI for engineering applications. A member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), she is based in Singapore and works with Louie Doniego Balmores on neural surrogate models, physics-informed deep learning, privacy-preserving on-device inference, and reproducible evaluation frameworks that connect open-source finite-element analysis (PyNite) with production structural workflows.";
+  `${SANDRA_CAREER_SUMMARY} As Research Partner at Balmores Lab (balmoreslab.com), she collaborates with Louie Doniego Balmores on machine learning, analytics, and trustworthy AI for engineering — including neural surrogate models, physics-informed deep learning, privacy-preserving on-device inference, and reproducible evaluation frameworks that connect open-source finite-element analysis (PyNite) with production structural workflows. She is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP).`;
 
 export const SANDRA_SHORT_BIO =
-  "AI Researcher · Research Partner, Balmores Lab · PhD candidate (Artificial Intelligence), University of the Philippines Diliman · Member, AAP · Based in Singapore";
+  "AI Researcher · Singapore · PhD AI (UP Diliman) · BS Agriculture (UP) · Research Partner, Balmores Lab · AAP Member";
 
 export const SANDRA_AGCAOILI = {
   slug: SANDRA_SLUG,
@@ -115,7 +191,13 @@ export const SANDRA_AGCAOILI = {
     "Privacy-Preserving Machine Learning",
     "Natural Language Processing",
     "Computational Design",
+    "Animal Nutrition",
+    "Agriculture",
+    "Singapore",
   ],
+  careerSummary: SANDRA_CAREER_SUMMARY,
+  education: SANDRA_EDUCATION,
+  workHistory: SANDRA_WORK_HISTORY,
   hasOccupation: {
     name: "AI Researcher",
     skills:
@@ -129,6 +211,7 @@ export const SANDRA_AGCAOILI = {
   orcidId: SANDRA_ORCID_ID,
   orcidUrl: SANDRA_ORCID_URL,
   researchgateUrl: SANDRA_RESEARCHGATE_URL,
+  rocketreachUrl: SANDRA_ROCKETREACH_URL,
   researchAreas: [
     "Neural surrogate models for structural FEM",
     "Privacy-preserving on-device AI for engineering",
@@ -139,6 +222,17 @@ export const SANDRA_AGCAOILI = {
 };
 
 export type SandraSociety = { name: string; alternateName?: string };
+
+export function formatSandraYearRange(
+  start: number | null,
+  end: number | null,
+  current?: boolean,
+): string {
+  if (current) return "Present";
+  if (start != null && end != null) return `${start} – ${end}`;
+  if (start != null) return `${start} – Present`;
+  return "";
+}
 
 export function formatSandraSocieties(
   societies: readonly SandraSociety[] = SANDRA_AGCAOILI.societies,
@@ -154,6 +248,7 @@ export function getSandraExtraSameAs(): string[] {
     SANDRA_LINKEDIN_URL,
     SANDRA_ORCID_URL,
     SANDRA_RESEARCHGATE_URL,
+    SANDRA_ROCKETREACH_URL,
   ];
   const push = (u: string | undefined) => {
     if (u) urls.push(u);
@@ -218,21 +313,42 @@ export function buildSandraPersonNode() {
     nationality: { "@type": "Country", name: SANDRA_AGCAOILI.nationality },
     homeLocation: SANDRA_AGCAOILI.homeLocation,
     workLocation: SANDRA_AGCAOILI.workLocation,
-    alumniOf: SANDRA_AGCAOILI.alumniOf,
+    alumniOf: SANDRA_EDUCATION.map((edu) => ({
+      "@type": "EducationalOrganization",
+      name: edu.institution,
+      url: edu.institutionUrl,
+      department: `${edu.degree} — ${edu.field}`,
+    })),
     knowsAbout: SANDRA_AGCAOILI.knowsAbout,
     knowsLanguage: ["English", "Filipino"],
-    hasOccupation: {
-      "@type": "Occupation",
-      name: SANDRA_AGCAOILI.hasOccupation.name,
-      skills: SANDRA_AGCAOILI.hasOccupation.skills,
-    },
-    hasCredential: {
+    hasOccupation: [
+      {
+        "@type": "Occupation",
+        name: SANDRA_AGCAOILI.hasOccupation.name,
+        skills: SANDRA_AGCAOILI.hasOccupation.skills,
+        occupationLocation: SANDRA_AGCAOILI.workLocation,
+      },
+      ...SANDRA_WORK_HISTORY.filter((w) => !w.current).map((w) => ({
+        "@type": "Occupation",
+        name: w.title,
+        occupationLocation: {
+          "@type": "Place",
+          name: w.location,
+        },
+      })),
+    ],
+    hasCredential: SANDRA_EDUCATION.map((edu) => ({
       "@type": "EducationalOccupationalCredential",
-      credentialCategory: "Doctoral degree (in progress)",
-      name: SANDRA_AGCAOILI.credential.name,
-      dateCreated: SANDRA_AGCAOILI.credential.startDate,
-      recognizedBy: SANDRA_AGCAOILI.alumniOf,
-    },
+      credentialCategory: edu.status === "In progress" ? "Doctoral degree (in progress)" : "Bachelor's degree",
+      name: `${edu.degree} (${edu.field})`,
+      dateCreated: edu.startYear.toString(),
+      ...(edu.endYear ? { validUntil: edu.endYear.toString() } : {}),
+      recognizedBy: {
+        "@type": "EducationalOrganization",
+        name: edu.institution,
+        url: edu.institutionUrl,
+      },
+    })),
     memberOf: {
       "@type": "Organization",
       name: SANDRA_AGCAOILI.societies[0].name,
@@ -275,9 +391,24 @@ export const SANDRA_FAQ = [
     answer: `${SANDRA_BIO} Official profile: https://www.balmoreslab.com/about/sandra-agcaoili.`,
   },
   {
+    question: "Where is Sandra Agcaoili located?",
+    answer:
+      "Sandra Agcaoili is based in Singapore. Her canonical profile for search engines is published at https://www.balmoreslab.com/about/sandra-agcaoili on https://www.balmoreslab.com.",
+  },
+  {
+    question: "What is Sandra Agcaoili's education?",
+    answer:
+      "Sandra Agcaoili holds a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009) and is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman (2023–present).",
+  },
+  {
     question: "Where does Sandra Agcaoili study?",
     answer:
       "Sandra Agcaoili is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman (UP Diliman), enrolled from September 2023. She conducts collaborative research with Balmores Lab while based in Singapore.",
+  },
+  {
+    question: "What was Sandra Agcaoili's work before AI research?",
+    answer:
+      "In Singapore she worked in animal nutrition: Technical Specialist (Animal Nutrition) at Zagro Singapore Pte Ltd (2014–2018), Animal Nutritionist at Alpha Multitrade (Feedconcept) (2012–2014), and Technical Services Associate at Glenwood Technologies International, Inc. (2010–2011), before her Research Partner role at Balmores Lab.",
   },
   {
     question: "What is Sandra Agcaoili's role at Balmores Lab?",
