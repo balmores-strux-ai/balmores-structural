@@ -154,6 +154,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="me author" href={SANDRA_LINKEDIN_URL} />
         <link rel="me author" href={SANDRA_ORCID_URL} />
         <link rel="me author" href={SANDRA_RESEARCHGATE_URL} />
+        <link rel="me author" href={SANDRA_ROCKETREACH_URL} />
         {getExtraSameAs().map((href) => (
           <link key={href} rel="me" href={href} />
         ))}
