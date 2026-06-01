@@ -4,6 +4,11 @@
 # - DNS: www CNAME → your-service.onrender.com; apex A → 216.24.57.1 (Render). Remove AAAA.
 # - Cloudflare: SSL "Full (strict)" OR proxy off (gray cloud) so Render terminates TLS cleanly.
 # After changing this file, sync the Blueprint in the Render dashboard (or push if auto-sync).
+#
+# Free-tier cold start: visitors may see Render's "SERVICE WAKING UP" page for 30–60s
+# after idle. Mitigations in this repo:
+#   1) .github/workflows/keep-render-awake.yml — pings www + backend every 10 min (enable Actions)
+#   2) Upgrade either service to Render Starter ($7/mo) for always-on — no wake screen
 services:
   - type: web
     name: balmores-structural-backend

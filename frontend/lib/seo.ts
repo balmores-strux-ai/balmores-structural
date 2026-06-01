@@ -16,7 +16,7 @@ export const PERSON_NAME = "Louie Doniego Balmores";
 export const JOB_TITLE = "Structural Engineer & AI Researcher";
 export const PERSON_SLUG = "louie-doniego-balmores";
 
-/** Name variants people search on Google — keep in sync across JSON-LD, FAQ, and copy. */
+/** Correct short names (not typos) — canonical remains PERSON_NAME. */
 export const PERSON_ALIASES = [
   "Louie Balmores",
   "Luis Balmores",
@@ -27,6 +27,26 @@ export const PERSON_ALIASES = [
   "Louie Doniego Balmores structural engineer",
   "Louie Balmores structural engineer",
 ] as const;
+
+/** Common misspellings — still the same person; used in alternateName + FAQ for Knowledge Panel. */
+export const PERSON_TYPOS = [
+  "Lui Balmores",
+  "Loui Balmores",
+  "Lui Doniego Balmores",
+  "Loui Doniego Balmores",
+  "Louee Balmores",
+  "Luie Balmores",
+  "Louie Balmore",
+  "Louie Balmors",
+  "Louie Balmorez",
+  "Louie Doniego Balmorez",
+  "Louie Doniego Balmore",
+] as const;
+
+/** All alternateName values for schema.org (correct + typo spellings). */
+export function getPersonAlternateNames(): string[] {
+  return Array.from(new Set([...PERSON_ALIASES, ...PERSON_TYPOS]));
+}
 
 export const ORG_ALIASES = [
   "Balmores Strux AI",
@@ -141,7 +161,7 @@ export function buildRootStructuredData() {
         givenName: "Louie",
         additionalName: "Doniego",
         familyName: "Balmores",
-        alternateName: [...PERSON_ALIASES],
+        alternateName: getPersonAlternateNames(),
         honorificSuffix: "P.Eng (Candidate), PE (Candidate)",
         jobTitle: JOB_TITLE,
         description: DEFAULT_DESCRIPTION,

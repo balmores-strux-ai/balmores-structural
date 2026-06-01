@@ -1,0 +1,33 @@
+# Render free-tier web services sleep after ~15 minutes without traffic.
+# That shows the "SERVICE WAKING UP" screen before the real site loads.
+# This workflow pings the frontend and backend every 10 minutes so visitors
+# usually hit a warm instance. For 24/7 instant loads, upgrade to Render Starter.
+name: Keep Render awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake www frontend
+        run: |
+          curl -fsSL --max-time 180 -o /dev/null -w "frontend:%{http_code}\n" \
+            "https://www.balmoreslab.com/" || true
+
+      - name: Wake apex (redirect to www)
+        run: |
+          curl -fsSL --max-time 180 -o /dev/null -w "apex:%{http_code}\n" \
+            "https://balmoreslab.com/" || true
+
+      - name: Wake PyNite backend
+        run: |
+          curl -fsSL --max-time 180 -o /dev/null -w "backend:%{http_code}\n" \
+            "https://balmores-structural-backend.onrender.com/health" || true

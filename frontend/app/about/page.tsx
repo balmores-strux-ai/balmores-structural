@@ -96,6 +96,24 @@ const faqLd = {
   mainEntity: [
     {
       "@type": "Question",
+      name: "Is Lui Balmores the same as Louie Balmores?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Yes. Lui Balmores is a frequent misspelling of Louie Doniego Balmores (Louie Balmores) — the same Filipino structural engineer, AI researcher, and founder of Balmores Lab. The correct spelling is Louie; searches for Lui Balmores should still refer to https://www.balmoreslab.com/about.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is Loui Balmores Louie Doniego Balmores?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Yes. Loui Balmores is another common typo for Louie Doniego Balmores (Louie Balmores). He is a Registered Civil Engineer (PRC Philippines, 2013) and the canonical identity for Google Knowledge Panel purposes is Louie Doniego Balmores at balmoreslab.com.",
+      },
+    },
+    {
+      "@type": "Question",
       name: "Is Luis Balmores the same person as Louie Balmores?",
       acceptedAnswer: {
         "@type": "Answer",
@@ -405,7 +423,8 @@ export default function AboutPage() {
             Structural Engineer &amp; AI Researcher
           </p>
           <p className="name-aliases small-muted" style={{ margin: "0 0 12px", fontSize: 14 }}>
-            Also known as: Louie Balmores · Luis Balmores · Balmores
+            Canonical name: <strong>Louie Doniego Balmores</strong> · also Louie Balmores ·
+            common searches: Luis, Lui, or Loui Balmores · Balmores
           </p>
           <p style={S.lede} itemProp="description">
             Over <strong>10 years</strong> of structural engineering experience in
@@ -853,6 +872,30 @@ export default function AboutPage() {
             structured-data spam. */}
         <section style={S.section} aria-labelledby="faq-h">
           <h2 id="faq-h" style={S.h2}>Frequently Asked Questions</h2>
+
+          <details style={{ ...S.card, marginBottom: 12 }}>
+            <summary style={{ ...S.h3, cursor: "pointer" }}>
+              Is Lui Balmores the same as Louie Balmores?
+            </summary>
+            <p style={{ ...S.p, marginTop: 12 }}>
+              Yes. <strong>Lui Balmores</strong> is a frequent misspelling of{" "}
+              <strong>Louie Doniego Balmores</strong> (<strong>Louie Balmores</strong>).
+              The correct first name is Louie; Google and this site treat Lui Balmores as
+              the same structural engineer and AI researcher at Balmores Lab.
+            </p>
+          </details>
+
+          <details style={{ ...S.card, marginBottom: 12 }}>
+            <summary style={{ ...S.h3, cursor: "pointer" }}>
+              Is Loui Balmores Louie Doniego Balmores?
+            </summary>
+            <p style={{ ...S.p, marginTop: 12 }}>
+              Yes. <strong>Loui Balmores</strong> is another common typo for{" "}
+              <strong>Louie Doniego Balmores</strong>. The canonical profile for Knowledge
+              Panel and ORCID is Louie Doniego Balmores at{" "}
+              <a href={SITE_URL} style={S.extLink}>balmoreslab.com</a>.
+            </p>
+          </details>
 
           <details style={{ ...S.card, marginBottom: 12 }}>
             <summary style={{ ...S.h3, cursor: "pointer" }}>
