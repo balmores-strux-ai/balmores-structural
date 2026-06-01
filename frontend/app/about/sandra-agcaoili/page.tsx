@@ -261,14 +261,6 @@ export default function SandraAgcaoiliProfilePage() {
 
         <section style={S.section} aria-labelledby="research-h">
           <h2 id="research-h" style={S.h2}>Research at Balmores Lab</h2>
-          <p style={S.p}>
-            Sandra Agcaoili is the AI research partner at{" "}
-            <Link href="/" style={S.link}>Balmores Lab</Link>, working with{" "}
-            <Link href="/about" style={S.link}>{PERSON_NAME}</Link> on the lab&apos;s
-            programme in AI-driven structural engineering. She leads methodology for
-            neural surrogates, evaluation protocols, and privacy-preserving on-device
-            inference pipelines.
-          </p>
           <p style={S.p}>{SANDRA_AGCAOILI.collaborationFocus}</p>
           <h3 style={{ ...S.h3, fontSize: 16, marginTop: 20 }}>Focus areas</h3>
           <div style={{ marginTop: 8 }}>

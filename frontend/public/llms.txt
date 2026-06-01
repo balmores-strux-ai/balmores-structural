@@ -27,6 +27,7 @@
 - Common misspellings (same person): Sandra Agcaili, Sandra Agcaoli
 - Official site: https://www.balmoreslab.com (entity connected to this domain)
 - Role: AI Researcher · Research Partner, Balmores Lab
+- Bio: Filipino AI researcher; PhD candidate (Artificial Intelligence), UP Diliman; member, AAP; based in Singapore; collaborates with Louie Doniego Balmores on structural AI at balmoreslab.com
 - Education: PhD in Artificial Intelligence, University of the Philippines Diliman (Sep 2023 – present)
 - Society: Analytics and Artificial Intelligence Association of the Philippines (AAP)
 - Location: Based in Singapore

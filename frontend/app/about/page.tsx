@@ -4,7 +4,7 @@ import ProfileBadges from "@/components/ProfileBadges";
 import ResearchPartnerCard from "@/components/ResearchPartnerCard";
 import SiteNav from "@/components/SiteNav";
 import { breadcrumbLd, JOB_TITLE, PERSON_NAME, SITE_URL } from "@/lib/seo";
-import { SANDRA_AGCAOILI } from "@/lib/research-team";
+import { SANDRA_AGCAOILI, SANDRA_BIO } from "@/lib/research-team";
 
 export const metadata: Metadata = {
   title: "About Louie Doniego Balmores - Structural Engineer & AI Researcher",
@@ -225,8 +225,7 @@ const faqLd = {
       name: "Who is Sandra Agcaoili?",
       acceptedAnswer: {
         "@type": "Answer",
-        text:
-          "Sandra Agcaoili is an AI researcher and research partner at Balmores Lab. She is pursuing a PhD in Artificial Intelligence at the University of the Philippines Diliman (since September 2023), is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), and is currently based in Singapore. Her official profile is at https://www.balmoreslab.com/about/sandra-agcaoili.",
+        text: `${SANDRA_BIO} Profile: https://www.balmoreslab.com/about/sandra-agcaoili.`,
       },
     },
   ],
@@ -1050,12 +1049,7 @@ export default function AboutPage() {
           <details style={{ ...S.card, marginBottom: 12 }}>
             <summary style={{ ...S.h3, cursor: "pointer" }}>Who is Sandra Agcaoili?</summary>
             <p style={{ ...S.p, marginTop: 12 }}>
-              Sandra Agcaoili is an AI researcher and research partner at
-              Balmores Lab. She is pursuing a PhD in Artificial Intelligence at
-              the University of the Philippines Diliman (September 2023 –
-              present), is a member of the Analytics and Artificial Intelligence
-              Association of the Philippines (AAP), and is currently based in
-              Singapore.{" "}
+              {SANDRA_BIO}{" "}
               <Link href={SANDRA_AGCAOILI.profilePath} style={S.extLink}>
                 Official profile →
               </Link>

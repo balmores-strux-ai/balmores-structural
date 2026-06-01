@@ -39,6 +39,13 @@ export function getSandraAlternateNames(): string[] {
   return Array.from(new Set([...SANDRA_ALIASES, ...SANDRA_TYPOS]));
 }
 
+/** Canonical long-form biography (meta, JSON-LD, profile pages). */
+export const SANDRA_BIO =
+  "Sandra Agcaoili is a Filipino artificial-intelligence researcher and Research Partner at Balmores Lab (balmoreslab.com). She is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman (September 2023–present), with research centred on machine learning, analytics, and trustworthy AI for engineering applications. A member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), she is based in Singapore and works with Louie Doniego Balmores on neural surrogate models, physics-informed deep learning, privacy-preserving on-device inference, and reproducible evaluation frameworks that connect open-source finite-element analysis (PyNite) with production structural workflows.";
+
+export const SANDRA_SHORT_BIO =
+  "AI Researcher · Research Partner, Balmores Lab · PhD candidate (Artificial Intelligence), University of the Philippines Diliman · Member, AAP · Based in Singapore";
+
 export const SANDRA_AGCAOILI = {
   slug: SANDRA_SLUG,
   profilePath: SANDRA_PROFILE_PATH,
@@ -107,12 +114,10 @@ export const SANDRA_AGCAOILI = {
     skills:
       "Deep learning, neural surrogate models, AI pipeline evaluation, privacy-preserving on-device inference, analytics for engineering applications",
   },
-  bio:
-    "Sandra Agcaoili is a Filipino AI researcher and research partner at Balmores Lab. She is pursuing a Doctor of Philosophy (PhD) in Artificial Intelligence at the University of the Philippines Diliman (September 2023 – present) and is an active member of the Analytics and Artificial Intelligence Association of the Philippines (AAP). Based in Singapore, she collaborates with Louie Doniego Balmores on AI-driven structural engineering — neural surrogates, privacy-preserving on-device inference, physics-informed models, and evaluation frameworks that connect classical finite-element workflows with modern deep learning.",
-  shortBio:
-    "AI Researcher · PhD (Artificial Intelligence), UP Diliman · Research Partner, Balmores Lab · Based in Singapore",
+  bio: SANDRA_BIO,
+  shortBio: SANDRA_SHORT_BIO,
   collaborationFocus:
-    "Co-developing surrogate-model architectures, evaluation protocols, and AI pipeline design for Balmores Lab's structural optimization and natural-language-to-FEM research programme.",
+    "Leads co-development of neural surrogate architectures, reproducible evaluation protocols, and privacy-aware AI pipelines for Balmores Lab’s natural-language-to-FEM and structural-optimization programme, in collaboration with Louie Doniego Balmores.",
   researchAreas: [
     "Neural surrogate models for structural FEM",
     "Privacy-preserving on-device AI for engineering",
@@ -121,6 +126,16 @@ export const SANDRA_AGCAOILI = {
     "Analytics for scientific and structural computing",
   ],
 };
+
+export type SandraSociety = { name: string; alternateName?: string };
+
+export function formatSandraSocieties(
+  societies: readonly SandraSociety[] = SANDRA_AGCAOILI.societies,
+): string {
+  return societies
+    .map((s) => (s.alternateName ? `${s.name} (${s.alternateName})` : s.name))
+    .join(" · ");
+}
 
 export function getSandraExtraSameAs(): string[] {
   const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
@@ -246,18 +261,17 @@ export const SANDRA_FAQ = [
   },
   {
     question: "Who is Sandra Agcaoili?",
-    answer:
-      "Sandra Agcaoili is a Filipino AI researcher and research partner at Balmores Lab (balmoreslab.com). She specializes in artificial intelligence for engineering applications, including neural surrogates and privacy-preserving on-device inference for structural analysis. Profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
+    answer: `${SANDRA_BIO} Official profile: https://www.balmoreslab.com/about/sandra-agcaoili.`,
   },
   {
     question: "Where does Sandra Agcaoili study?",
     answer:
-      "Sandra Agcaoili is pursuing a Doctor of Philosophy (PhD) in Artificial Intelligence at the University of the Philippines Diliman, having started in September 2023. She is currently based in Singapore while conducting collaborative research with Balmores Lab.",
+      "Sandra Agcaoili is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman (UP Diliman), enrolled from September 2023. She conducts collaborative research with Balmores Lab while based in Singapore.",
   },
   {
     question: "What is Sandra Agcaoili's role at Balmores Lab?",
     answer:
-      "She is a research partner at Balmores Lab, co-developing AI pipeline architecture, surrogate-model evaluation protocols, and deep-learning methods for AI-driven structural engineering alongside Louie Doniego Balmores.",
+      "She serves as Research Partner at Balmores Lab, leading methodology for neural surrogates, physics-informed models, privacy-preserving on-device inference, and evaluation frameworks for AI-driven structural engineering, alongside Louie Doniego Balmores.",
   },
   {
     question: "What organizations is Sandra Agcaoili affiliated with?",
@@ -267,7 +281,7 @@ export const SANDRA_FAQ = [
   {
     question: "What does Sandra Agcaoili research?",
     answer:
-      "Her research spans neural surrogate models for finite-element analysis, physics-informed deep learning, privacy-preserving on-device AI for engineering workflows, and analytics for structural computing — applied through the Balmores Lab research programme at balmoreslab.com/research.",
+      "Her work spans neural surrogate models for finite-element analysis, physics-informed deep learning, privacy-preserving on-device AI for engineering workflows, and analytics for structural computing — published through the Balmores Lab programme at https://www.balmoreslab.com/research.",
   },
 ];
 

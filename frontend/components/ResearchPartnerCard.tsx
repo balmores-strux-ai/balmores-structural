@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SANDRA_AGCAOILI } from "@/lib/research-team";
+import { formatSandraSocieties, SANDRA_AGCAOILI } from "@/lib/research-team";
 
 const cardStyle: React.CSSProperties = {
   padding: 20,
@@ -120,7 +120,7 @@ export default function ResearchPartnerCard({ compact = false }: ResearchPartner
             }}
           >
             <div style={{ color: "#94a3b8" }}>Societies</div>
-            <div style={{ color: "#e2e8f0" }}>{p.societies.join(" · ")}</div>
+            <div style={{ color: "#e2e8f0" }}>{formatSandraSocieties(p.societies)}</div>
           </div>
           <div
             style={{
