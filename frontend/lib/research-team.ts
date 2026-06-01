@@ -145,14 +145,13 @@ export const SANDRA_WORK_HISTORY: readonly SandraWorkEntry[] = [
 ];
 
 export const SANDRA_CAREER_SUMMARY =
-  "Sandra Agcaoili is a Filipino Licensed Agriculturist registered with the Professional Regulation Commission (PRC) of the Philippines and is based in Singapore. She earned a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009) and is pursuing a Doctor of Philosophy in Artificial Intelligence at the University of the Philippines Diliman (2023–present). Her earlier career spans animal nutrition and technical sales in Singapore — Technical Specialist (Animal Nutrition) at Zagro Singapore Pte Ltd (2014–2018), Animal Nutritionist at Alpha Multitrade (Feedconcept) (2012–2014), and Technical Services Associate at Glenwood Technologies International, Inc. (2010–2011).";
+  "Sandra Agcaoili is a Filipino artificial-intelligence researcher based in Singapore and Research Partner at Balmores Lab (balmoreslab.com). She contributes to programmes that apply machine learning, analytics, and trustworthy AI to structural engineering — including neural surrogate models, physics-informed deep learning, privacy-preserving on-device inference, and reproducible evaluation frameworks that connect open-source finite-element analysis (PyNite) with production design workflows, in collaboration with Louie Doniego Balmores. She is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman (2023–present) and a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP). Earlier in her career she spent eight years in animal nutrition and technical services in Singapore — as Technical Specialist (Animal Nutrition) at Zagro Singapore Pte Ltd (2014–2018), Animal Nutritionist at Alpha Multitrade (Feedconcept) (2012–2014), and Technical Services Associate at Glenwood Technologies International, Inc. (2010–2011). She holds a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009) and is a Licensed Agriculturist registered with the Professional Regulation Commission (PRC) of the Philippines.";
 
 /** Canonical long-form biography (meta, JSON-LD, profile pages). */
-export const SANDRA_BIO =
-  `${SANDRA_CAREER_SUMMARY} She is Research Partner at Balmores Lab (balmoreslab.com), where she collaborates with Louie Doniego Balmores on machine learning, analytics, and trustworthy AI for engineering — including neural surrogate models, physics-informed deep learning, privacy-preserving on-device inference, and reproducible evaluation frameworks that connect open-source finite-element analysis (PyNite) with production structural workflows. She is a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP). Official profile: ${SANDRA_PROFILE_URL}.`;
+export const SANDRA_BIO = `${SANDRA_CAREER_SUMMARY} Official profile: ${SANDRA_PROFILE_URL}.`;
 
 export const SANDRA_SHORT_BIO =
-  "AI Researcher · Licensed Agriculturist (PRC Philippines) · Singapore · PhD AI (UP Diliman) · BS Agriculture (UP) · Research Partner, Balmores Lab";
+  "AI Researcher · Research Partner, Balmores Lab · PhD AI (UP Diliman) · Singapore · AAP · Licensed Agriculturist (PRC Philippines) · BS Agriculture (UP)";
 
 export const SANDRA_AGCAOILI = {
   slug: SANDRA_SLUG,
@@ -448,7 +447,7 @@ export const SANDRA_FAQ = [
   {
     question: "Is Sandra Agcaoili a licensed agriculturist?",
     answer:
-      "Yes. Sandra Agcaoili is a Licensed Agriculturist in the Philippines, registered with the Professional Regulation Commission (PRC) at https://prc.gov.ph. This credential complements her Bachelor of Science in Agriculture (University of the Philippines, 2005–2009) and her doctoral research in Artificial Intelligence at UP Diliman. Official profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
+      "Yes. Sandra Agcaoili is a Licensed Agriculturist in the Philippines, registered with the Professional Regulation Commission (PRC) at https://prc.gov.ph, with a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009). Her primary professional focus today is artificial-intelligence research — she is Research Partner at Balmores Lab and a PhD candidate in Artificial Intelligence at UP Diliman. Profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
   },
   {
     question: "Where is Sandra Agcaoili located?",
@@ -478,7 +477,7 @@ export const SANDRA_FAQ = [
   {
     question: "What organizations is Sandra Agcaoili affiliated with?",
     answer:
-      "She is a Licensed Agriculturist under the Professional Regulation Commission (PRC) of the Philippines, a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP), a doctoral researcher at the University of the Philippines Diliman, and Research Partner at Balmores Lab. Profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
+      "She is Research Partner at Balmores Lab, a doctoral researcher at the University of the Philippines Diliman, and a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP). She is also a Licensed Agriculturist under the Professional Regulation Commission (PRC) of the Philippines. Profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
   },
   {
     question: "What does Sandra Agcaoili research?",

@@ -169,7 +169,7 @@ export default function SandraAgcaoiliProfilePage() {
           </h1>
           <SandraIdentityLinks />
           <p style={S.title} itemProp="jobTitle">
-            {SANDRA_AGCAOILI.jobTitle} · {SANDRA_AGCAOILI.professionalTitle} · {SANDRA_AGCAOILI.role}
+            {SANDRA_AGCAOILI.jobTitle} · {SANDRA_AGCAOILI.role} · {SANDRA_AGCAOILI.professionalTitle}
           </p>
           <p className="name-aliases small-muted" style={{ margin: "0 0 12px", fontSize: 14 }}>
             Canonical name: <strong>Sandra Agcaoili</strong> · connected to{" "}
@@ -179,12 +179,12 @@ export default function SandraAgcaoiliProfilePage() {
             {SANDRA_AGCAOILI.bio}
           </p>
           <div>
-            <span style={S.badge}>Licensed Agriculturist · PRC</span>
-            <span style={S.badge}>Singapore</span>
-            <span style={S.badge}>UP · BS Agriculture</span>
+            <span style={S.badge}>AI Research · Balmores Lab</span>
             <span style={S.badge}>UP Diliman · PhD AI</span>
             <span style={S.badge}>AAP Member</span>
-            <span style={S.badge}>Research Partner</span>
+            <span style={S.badge}>Singapore</span>
+            <span style={S.badge}>Licensed Agriculturist · PRC</span>
+            <span style={S.badge}>UP · BS Agriculture</span>
           </div>
           <div style={{ marginTop: 18 }}>
             <SandraProfileBadges align="left" />
@@ -201,8 +201,12 @@ export default function SandraAgcaoiliProfilePage() {
             <div style={S.kvRow}>
               <div style={S.kvKey}>Profession</div>
               <div style={S.kvVal}>
-                {SANDRA_AGCAOILI.jobTitle} · {SANDRA_AGCAOILI.professionalTitle}
+                {SANDRA_AGCAOILI.jobTitle} · {SANDRA_AGCAOILI.role}
               </div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Regulated profession</div>
+              <div style={S.kvVal}>{SANDRA_AGCAOILI.professionalTitle}</div>
             </div>
             <div style={S.kvRow}>
               <div style={S.kvKey}>Professional License</div>
