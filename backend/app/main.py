@@ -6,6 +6,7 @@ import json
 import os
 import time
 import uuid
+from contextlib import asynccontextmanager
 from typing import AsyncIterator, Iterator, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -219,7 +220,60 @@ async def _llm_security_check(request: Request) -> None:
             _LLM_BUCKETS[ip] = (tokens - 1.0, now)
 
 
-_FASTAPI_KW: dict = {"title": "BALMORES STRUCTURAL", "version": "0.1.0"}
+def _is_render_host() -> bool:
+    """Render sets RENDER=true on web services."""
+    return os.getenv("RENDER", "").strip().lower() in ("true", "1", "yes")
+
+
+def _should_prewarm_on_startup() -> bool:
+    if os.getenv("SKIP_STARTUP_PREWARM", "").strip().lower() in ("1", "true", "yes", "on"):
+        return False
+    return not _is_render_host()
+
+
+def _health_light() -> bool:
+    """Fast /health for platform probes — skip loading the neural checkpoint."""
+    if os.getenv("HEALTH_LIGHT", "").strip().lower() in ("1", "true", "yes", "on"):
+        return True
+    return _is_render_host()
+
+
+def _run_startup_prewarm() -> None:
+    """Warm imports + a tiny PyNite solve so the first user request is faster (local only)."""
+    try:
+        from .pynite_fea import run_parametric_frame_analysis
+
+        run_parametric_frame_analysis(
+            bays_x=1,
+            bays_y=1,
+            stories=1,
+            span_x_m=4.0,
+            span_y_m=4.0,
+            bottom_story_height_m=3.0,
+            story_height_m=3.0,
+            floor_load_kpa=2.0,
+        )
+    except Exception:
+        pass
+    try:
+        warm_model(timeout=3.0)
+    except Exception:
+        pass
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    # Yield immediately so uvicorn binds $PORT before heavy PyNite/matplotlib work.
+    if _should_prewarm_on_startup():
+        asyncio.create_task(asyncio.to_thread(_run_startup_prewarm))
+    yield
+
+
+_FASTAPI_KW: dict = {
+    "title": "BALMORES STRUCTURAL",
+    "version": "0.1.0",
+    "lifespan": _lifespan,
+}
 if _LLM_PUBLIC_TUNNEL:
     # When the local backend is exposed over the Internet, hide FastAPI's
     # automatic docs / OpenAPI schema so external visitors cannot map the
@@ -362,38 +416,6 @@ app.add_middleware(AccessLogMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=800)
 
 
-@app.on_event("startup")
-def _prewarm() -> None:
-    """Warm imports + a tiny PyNite solve so the first user request is FAST.
-
-    PyNite eagerly imports matplotlib & prettytable at module load (≈1.5–3 s
-    on cold workers), and scipy.sparse pulls a large compiled extension. Doing
-    a 1×1×1 trivial solve here means every real request — including the very
-    first — pays only the analysis time, never the import cost.
-    """
-    try:
-        from .pynite_fea import run_parametric_frame_analysis  # eager import
-
-        run_parametric_frame_analysis(
-            bays_x=1,
-            bays_y=1,
-            stories=1,
-            span_x_m=4.0,
-            span_y_m=4.0,
-            bottom_story_height_m=3.0,
-            story_height_m=3.0,
-            floor_load_kpa=2.0,
-        )
-    except Exception:
-        # Pre-warm is best-effort — never block startup if it fails on Render.
-        pass
-    try:
-        # Best-effort: warm DeepSeek-R1 in Ollama RAM so the first chat is fast.
-        warm_model(timeout=3.0)
-    except Exception:
-        pass
-
-
 @app.exception_handler(HTTPException)
 async def http_error_handler(request: Request, exc: HTTPException) -> JSONResponse:
     rid = getattr(request.state, "request_id", None) or "-"
@@ -425,24 +447,28 @@ def health() -> dict:
     except Exception as e:  # noqa: BLE001
         out["llm"] = {"enabled": False, "ok": False, "reason": str(e)[:200]}
 
-    try:
-        brain = get_brain()
-        pm = brain.physics_training_manifest or {}
-        out["display_metrics_pipeline"] = "surface_metrics_from_brain(pred,features)+sanitize_pred"
-        out["physics_informed"] = bool(pm.get("physics_informed"))
-        out["dataset_rows"] = brain.dataset_rows
-        out["feature_count"] = len(brain.feature_columns)
-        out["target_count"] = len(brain.target_columns)
-        methods = pm.get("methods")
-        if methods:
-            out["brain_physics_methods"] = methods
-        vmae = brain.metrics.get("val_mean_mae_all_targets")
-        if vmae is not None:
-            out["val_mean_mae_all_targets"] = vmae
-        out["brain_status"] = "loaded"
-    except Exception as e:
-        out["brain_status"] = "unavailable"
-        out["brain_error"] = str(e)[:300]
+    if _health_light():
+        out["brain_status"] = "deferred"
+        out["hosting"] = "render" if _is_render_host() else "light_health"
+    else:
+        try:
+            brain = get_brain()
+            pm = brain.physics_training_manifest or {}
+            out["display_metrics_pipeline"] = "surface_metrics_from_brain(pred,features)+sanitize_pred"
+            out["physics_informed"] = bool(pm.get("physics_informed"))
+            out["dataset_rows"] = brain.dataset_rows
+            out["feature_count"] = len(brain.feature_columns)
+            out["target_count"] = len(brain.target_columns)
+            methods = pm.get("methods")
+            if methods:
+                out["brain_physics_methods"] = methods
+            vmae = brain.metrics.get("val_mean_mae_all_targets")
+            if vmae is not None:
+                out["val_mean_mae_all_targets"] = vmae
+            out["brain_status"] = "loaded"
+        except Exception as e:
+            out["brain_status"] = "unavailable"
+            out["brain_error"] = str(e)[:300]
     return out
 
 

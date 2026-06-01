@@ -48,9 +48,16 @@ services:
       # Explicit PyNite vendored path — repo root is one level above backend/
       - key: BALMORES_PYNITE_ROOT
         value: "/opt/render/project/src/structural_analysis_pynite"
+      # Port-scan / health: bind $PORT before PyNite/matplotlib prewarm (see app lifespan).
+      - key: SKIP_STARTUP_PREWARM
+        value: "1"
+      - key: HEALTH_LIGHT
+        value: "1"
+      - key: MPLBACKEND
+        value: "Agg"
     # CPU torch: use --extra-index-url so torch deps (jinja2, etc.) resolve from PyPI (avoids pip metadata errors).
     buildCommand: pip install --no-cache-dir torch==2.2.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu && pip install --no-cache-dir -r requirements-render.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: bash start.sh
     # Optional env (set in dashboard): DATABASE_URL (Render Postgres), ALLOWED_ORIGINS (comma-separated),
     # SENTRY_DSN. See DEPLOY.md and backend/.env.example.
 

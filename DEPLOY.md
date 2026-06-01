@@ -18,6 +18,17 @@ On the **free** plan, Render sleeps web services after ~15 minutes without traff
 1. **GitHub Actions** — workflow `.github/workflows/keep-render-awake.yml` pings `www.balmoreslab.com`, `balmoreslab.com`, and the backend `/health` every 10 minutes. Enable **Actions** on the GitHub repo and ensure the default branch runs workflows.
 2. **Always-on** — upgrade `balmores-structural-frontend` (and optionally the backend) to **Starter** in the Render dashboard for instant loads with no wake screen.
 
+## Render backend: "Port scan timeout" / deploy timed out
+
+If the deploy log shows **"Port scan timeout reached, no open ports detected"** while running `uvicorn`:
+
+1. The service must listen on **`0.0.0.0` and `$PORT`** — `backend/start.sh` does this.
+2. **Do not block startup** with a long PyNite solve before binding — on Render, `SKIP_STARTUP_PREWARM=1` and the FastAPI **lifespan** yield immediately (configured in `render.yaml`).
+3. **`/health` stays lightweight** (`HEALTH_LIGHT=1`) so probes do not load the neural `.pt` checkpoint on every check.
+4. Set **`MPLBACKEND=Agg`** so matplotlib (PyNite dependency) does not try to open a display.
+
+After changing `render.yaml`, sync the Blueprint in the Render dashboard and redeploy.
+
 ## Backend environment
 
 | Variable | Purpose |
@@ -27,6 +38,9 @@ On the **free** plan, Render sleeps web services after ~15 minutes without traff
 | Rate limiting | Prefer **edge** limits (Render/nginx/Cloudflare). In-app rate limiting was removed to avoid FastAPI/Pydantic conflicts; add `slowapi` or similar in a follow-up if needed. |
 | `SENTRY_DSN` | Optional error reporting. |
 | `DEBUG` | Set to `1` to include exception text in JSON 500 responses (dev only). |
+| `SKIP_STARTUP_PREWARM` | Set to `1` on Render (default in `render.yaml`) so deploy port scan succeeds before PyNite warm-up. |
+| `HEALTH_LIGHT` | Set to `1` on Render so `/health` skips loading the brain checkpoint. |
+| `MPLBACKEND` | Use `Agg` on headless hosts (Render). |
 
 ## New API behavior
 
