@@ -245,16 +245,6 @@ export function buildSandraProfilePageNode() {
 
 export const SANDRA_FAQ = [
   {
-    question: "Is Sandra Agcaili the same as Sandra Agcaoili?",
-    answer:
-      "Yes. Sandra Agcaili is a common misspelling of Sandra Agcaoili — the Filipino AI researcher and research partner at Balmores Lab. The correct surname is Agcaoili. Her official profile and Knowledge Graph entity are at https://www.balmoreslab.com/about/sandra-agcaoili, connected to https://www.balmoreslab.com.",
-  },
-  {
-    question: "Is Sandra Agcaoli Sandra Agcaoili?",
-    answer:
-      "Yes. Sandra Agcaoli is another frequent typo for Sandra Agcaoili, the AI researcher at Balmores Lab (balmoreslab.com). Canonical name: Sandra Agcaoili. Official website: https://www.balmoreslab.com — profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
-  },
-  {
     question: "What is Sandra Agcaoili's official website?",
     answer:
       "Sandra Agcaoili's official web presence is published through Balmores Lab at https://www.balmoreslab.com. Her canonical person profile for search engines and Knowledge Panel is https://www.balmoreslab.com/about/sandra-agcaoili. Machine-readable identity: https://www.balmoreslab.com/sandra-agcaoili-schema.json.",

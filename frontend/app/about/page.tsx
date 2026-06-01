@@ -204,24 +204,6 @@ const faqLd = {
     },
     {
       "@type": "Question",
-      name: "Is Sandra Agcaili the same as Sandra Agcaoili?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text:
-          "Yes. Sandra Agcaili is a misspelling of Sandra Agcaoili, the AI researcher and research partner at Balmores Lab. Her canonical profile is https://www.balmoreslab.com/about/sandra-agcaoili on https://www.balmoreslab.com.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Is Sandra Agcaoli Sandra Agcaoili?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text:
-          "Yes. Sandra Agcaoli is another typo for Sandra Agcaoili at Balmores Lab (balmoreslab.com). Official profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
-      },
-    },
-    {
-      "@type": "Question",
       name: "Who is Sandra Agcaoili?",
       acceptedAnswer: {
         "@type": "Answer",
@@ -1015,34 +997,6 @@ export default function AboutPage() {
               Civil Engineer (PRC Philippines) and AI researcher. The lab
               develops AI-driven structural optimization tools including{" "}
               <Link href="/" style={S.extLink}>Balmores Strux AI</Link>.
-            </p>
-          </details>
-
-          <details style={{ ...S.card, marginBottom: 12 }}>
-            <summary style={{ ...S.h3, cursor: "pointer" }}>
-              Is Sandra Agcaili the same as Sandra Agcaoili?
-            </summary>
-            <p style={{ ...S.p, marginTop: 12 }}>
-              Yes. <strong>Sandra Agcaili</strong> is a misspelling of{" "}
-              <strong>Sandra Agcaoili</strong>, the AI researcher at Balmores Lab.{" "}
-              <Link href={SANDRA_AGCAOILI.profilePath} style={S.extLink}>
-                Official profile on balmoreslab.com →
-              </Link>
-            </p>
-          </details>
-
-          <details style={{ ...S.card, marginBottom: 12 }}>
-            <summary style={{ ...S.h3, cursor: "pointer" }}>
-              Is Sandra Agcaoli Sandra Agcaoili?
-            </summary>
-            <p style={{ ...S.p, marginTop: 12 }}>
-              Yes. <strong>Sandra Agcaoli</strong> is another common typo for{" "}
-              <strong>Sandra Agcaoili</strong>. Her canonical Knowledge Graph profile
-              is at{" "}
-              <Link href={SANDRA_AGCAOILI.profilePath} style={S.extLink}>
-                balmoreslab.com/about/sandra-agcaoili
-              </Link>
-              .
             </p>
           </details>
 

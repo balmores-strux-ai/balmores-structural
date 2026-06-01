@@ -164,7 +164,6 @@ export default function SandraAgcaoiliProfilePage() {
           <p className="name-aliases small-muted" style={{ margin: "0 0 12px", fontSize: 14 }}>
             Canonical name: <strong>Sandra Agcaoili</strong> · connected to{" "}
             <a href={SITE_URL} style={S.link}>balmoreslab.com</a>
-            · common searches: Sandra Agcaili, Sandra Agcaoli
           </p>
           <p style={S.lede} itemProp="description">
             {SANDRA_AGCAOILI.bio}
