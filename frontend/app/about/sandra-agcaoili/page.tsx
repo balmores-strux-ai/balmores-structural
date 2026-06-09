@@ -8,7 +8,9 @@ import {
   buildSandraFaqLd,
   buildSandraGraph,
   SANDRA_AGCAOILI,
+  SANDRA_BIRTH_DATE,
   SANDRA_FAQ,
+  SANDRA_KNOWLEDGE_SUMMARY,
   SANDRA_PROFILE_PATH,
   SANDRA_PROFILE_URL,
   SANDRA_PERSON_ID,
@@ -157,6 +159,7 @@ export default function SandraAgcaoiliProfilePage() {
         <meta itemProp="givenName" content={SANDRA_AGCAOILI.givenName} />
         <meta itemProp="familyName" content={SANDRA_AGCAOILI.familyName} />
         <meta itemProp="nationality" content={SANDRA_AGCAOILI.nationality} />
+        <meta itemProp="birthDate" content={SANDRA_BIRTH_DATE} />
 
         <p style={{ margin: "0 0 20px", fontSize: 14 }}>
           <Link href="/about" style={S.link}>← About Balmores Lab</Link>
@@ -191,12 +194,27 @@ export default function SandraAgcaoiliProfilePage() {
           </div>
         </header>
 
+        <section style={S.section} aria-labelledby="entity-h">
+          <h2 id="entity-h" style={S.h2}>At a Glance — Knowledge Graph</h2>
+          <p style={S.p} itemProp="disambiguatingDescription">
+            {SANDRA_KNOWLEDGE_SUMMARY}
+          </p>
+        </section>
+
         <section style={S.section} aria-labelledby="glance-h">
-          <h2 id="glance-h" style={S.h2}>At a Glance</h2>
+          <h2 id="glance-h" style={S.h2}>Profile Details</h2>
           <div style={S.card}>
             <div style={S.kvRow}>
               <div style={S.kvKey}>Full Name</div>
               <div style={S.kvVal}>{SANDRA_AGCAOILI.name}</div>
+            </div>
+            <div style={S.kvRow}>
+              <div style={S.kvKey}>Born</div>
+              <div style={S.kvVal}>
+                <time dateTime={SANDRA_BIRTH_DATE} itemProp="birthDate">
+                  October 11, 1988
+                </time>
+              </div>
             </div>
             <div style={S.kvRow}>
               <div style={S.kvKey}>Profession</div>

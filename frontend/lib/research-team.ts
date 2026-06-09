@@ -144,6 +144,12 @@ export const SANDRA_WORK_HISTORY: readonly SandraWorkEntry[] = [
   },
 ];
 
+export const SANDRA_BIRTH_DATE = "1988-10-11";
+
+/** Single-sentence entity blurb for Knowledge Panel / disambiguation. */
+export const SANDRA_KNOWLEDGE_SUMMARY =
+  "Sandra Agcaoili is a Filipino artificial-intelligence researcher based in Singapore and Research Partner at Balmores Lab. Born October 11, 1988. She contributes machine learning and trustworthy AI to structural engineering with Louie Doniego Balmores, is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman, and is a Licensed Agriculturist registered with the Professional Regulation Commission (PRC) of the Philippines.";
+
 export const SANDRA_CAREER_SUMMARY =
   "Sandra Agcaoili is a Filipino artificial-intelligence researcher based in Singapore and Research Partner at Balmores Lab (balmoreslab.com). She contributes to programmes that apply machine learning, analytics, and trustworthy AI to structural engineering — including neural surrogate models, physics-informed deep learning, privacy-preserving on-device inference, and reproducible evaluation frameworks that connect open-source finite-element analysis (PyNite) with production design workflows, in collaboration with Louie Doniego Balmores. She is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman (2023–present) and a member of the Analytics and Artificial Intelligence Association of the Philippines (AAP). Earlier in her career she spent eight years in animal nutrition and technical services in Singapore — as Technical Specialist (Animal Nutrition) at Zagro Singapore Pte Ltd (2014–2018), Animal Nutritionist at Alpha Multitrade (Feedconcept) (2012–2014), and Technical Services Associate at Glenwood Technologies International, Inc. (2010–2011). She holds a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009) and is a Licensed Agriculturist registered with the Professional Regulation Commission (PRC) of the Philippines.";
 
@@ -166,6 +172,7 @@ export const SANDRA_AGCAOILI = {
   jobTitle: "AI Researcher",
   professionalTitle: "Licensed Agriculturist (PRC Philippines)",
   role: "Research Partner, Balmores Lab",
+  birthDate: SANDRA_BIRTH_DATE,
   nationality: "Philippines",
   location: "Singapore",
   homeLocation: {
@@ -354,6 +361,8 @@ export function buildSandraPersonNode() {
     alternateName: getSandraAlternateNames(),
     jobTitle: [SANDRA_AGCAOILI.jobTitle, SANDRA_AGCAOILI.professionalTitle],
     description: SANDRA_AGCAOILI.bio,
+    disambiguatingDescription: SANDRA_KNOWLEDGE_SUMMARY,
+    birthDate: SANDRA_BIRTH_DATE,
     honorificCredential: SANDRA_PRC_LICENSE.title,
     url: SANDRA_PROFILE_URL,
     mainEntityOfPage: { "@id": SANDRA_PROFILE_PAGE_ID },
@@ -427,10 +436,15 @@ export function buildSandraProfilePageNode() {
     "@id": SANDRA_PROFILE_PAGE_ID,
     url: SANDRA_PROFILE_URL,
     name: `About ${SANDRA_AGCAOILI.name} - AI Researcher`,
+    description: SANDRA_KNOWLEDGE_SUMMARY,
     about: { "@id": SANDRA_PERSON_ID },
     mainEntity: { "@id": SANDRA_PERSON_ID },
     isPartOf: { "@id": `${SITE_URL}/#website` },
     dateModified: new Date().toISOString().split("T")[0],
+    primaryImageOfPage: {
+      "@type": "ImageObject",
+      url: `${SANDRA_PROFILE_URL}/opengraph-image`,
+    },
   };
 }
 
@@ -448,6 +462,11 @@ export const SANDRA_FAQ = [
     question: "Is Sandra Agcaoili a licensed agriculturist?",
     answer:
       "Yes. Sandra Agcaoili is a Licensed Agriculturist in the Philippines, registered with the Professional Regulation Commission (PRC) at https://prc.gov.ph, with a Bachelor of Science in Agriculture from the University of the Philippines (2005–2009). Her primary professional focus today is artificial-intelligence research — she is Research Partner at Balmores Lab and a PhD candidate in Artificial Intelligence at UP Diliman. Profile: https://www.balmoreslab.com/about/sandra-agcaoili.",
+  },
+  {
+    question: "When was Sandra Agcaoili born?",
+    answer:
+      "Sandra Agcaoili was born on October 11, 1988. Her canonical profile for search engines is published at https://www.balmoreslab.com/about/sandra-agcaoili.",
   },
   {
     question: "Where is Sandra Agcaoili located?",

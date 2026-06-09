@@ -90,7 +90,17 @@
 
     <rdfs:seeAlso rdf:resource="https://www.balmoreslab.com/about"/>
 
-    <schema:description>Licensed Civil Engineer (PRC Philippines, November 2013, Sequence No. 350) with over 10 years in high-performance structural design, researching AI-driven structural optimization at Balmores Lab.</schema:description>
+    <schema:birthDate>1991-06-26</schema:birthDate>
+
+    <schema:birthPlace>Tuguegarao City, Cagayan Valley, Philippines</schema:birthPlace>
+
+    <schema:homeLocation>Toronto, Ontario, Canada</schema:homeLocation>
+
+    <schema:jobTitle>Structural Engineer &amp; AI Researcher</schema:jobTitle>
+
+    <schema:description>Louie Doniego Balmores is a civil engineer based in Toronto, Ontario, Canada. Born June 26, 1991 in Tuguegarao City, Philippines. Registered Civil Engineer (Professional Regulation Commission, Philippines, November 2013, Sequence No. 350) with 10+ years of high-performance structural design. Founder of Balmores Lab — a research initiative on AI-driven structural optimization.</schema:description>
+
+    <schema:founderOf rdf:resource="https://www.balmoreslab.com/#organization"/>
 
   </foaf:Person>
 

@@ -36,7 +36,8 @@
     "url": "https://www.balmoreslab.com/opengraph-image",
     "caption": "Louie Doniego Balmores - Structural Engineer & AI Researcher"
   },
-  "description": "Licensed Civil Engineer (Professional Regulation Commission, Philippines) with over 10 years of experience in high-performance structural design, currently pioneering research in Artificial Intelligence for structural engineering — AI-driven structural optimization, computational design, and material efficiency at Balmores Lab.",
+  "description": "Louie Doniego Balmores is a civil engineer based in Toronto, Ontario, Canada. Born June 26, 1991 in Tuguegarao City, Philippines. Registered Civil Engineer (Professional Regulation Commission, Philippines, November 2013, Sequence No. 350) with 10+ years of high-performance structural design. Founder of Balmores Lab — a research initiative on AI-driven structural optimization.",
+  "disambiguatingDescription": "Louie Doniego Balmores is a civil engineer based in Toronto, Ontario, Canada. Born June 26, 1991 in Tuguegarao City, Philippines. Registered Civil Engineer (Professional Regulation Commission, Philippines, November 2013, Sequence No. 350) with 10+ years of high-performance structural design. Founder of Balmores Lab — a research initiative on AI-driven structural optimization.",
   "gender": "Male",
   "birthDate": "1991-06-26",
   "birthPlace": {
@@ -82,6 +83,14 @@
     "url": "https://www.balmoreslab.com"
   },
   "founder": { "@id": "https://www.balmoreslab.com/#organization" },
+  "founderOf": {
+    "@id": "https://www.balmoreslab.com/#organization",
+    "@type": "Organization",
+    "name": "Balmores Lab",
+    "url": "https://www.balmoreslab.com",
+    "description": "Independent research initiative on AI-driven structural engineering and computational design."
+  },
+  "subjectOf": { "@id": "https://www.balmoreslab.com/about#profilepage" },
   "colleague": { "@id": "https://www.balmoreslab.com/about/sandra-agcaoili#person" },
   "alumniOf": [
     { "@type": "EducationalOrganization", "name": "Master of Science in Computer Science (in progress)" },

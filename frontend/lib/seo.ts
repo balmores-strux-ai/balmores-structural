@@ -78,11 +78,17 @@ export const SITE_LOGO_IMAGE = {
 export const ORCID_ID = "0009-0008-5479-4033";
 export const ORCID_URL = `https://orcid.org/${ORCID_ID}`;
 
-export const DEFAULT_DESCRIPTION =
-  "Louie Doniego Balmores (Louie Balmores, Luis Balmores, Balmores) is a licensed Civil Engineer (PRC Philippines, 2013) with over 10 years of structural engineering experience and an AI researcher pioneering AI-driven structural optimization at Balmores Lab (balmoreslab.com).";
+export const LOUIE_BIRTH_DATE = "1991-06-26";
+export const LOUIE_BIRTH_PLACE = "Tuguegarao City, Cagayan Valley, Philippines";
+
+/** Single-sentence entity blurb aligned with Google Knowledge Panel fields. */
+export const LOUIE_KNOWLEDGE_SUMMARY =
+  "Louie Doniego Balmores is a civil engineer based in Toronto, Ontario, Canada. Born June 26, 1991 in Tuguegarao City, Philippines. Registered Civil Engineer (Professional Regulation Commission, Philippines, November 2013, Sequence No. 350) with 10+ years of high-performance structural design. Founder of Balmores Lab — a research initiative on AI-driven structural optimization.";
+
+export const DEFAULT_DESCRIPTION = LOUIE_KNOWLEDGE_SUMMARY;
 
 export const SHORT_DESCRIPTION =
-  "Licensed Civil Engineer (PRC Philippines) with 10+ years of structural design experience, researching AI-driven structural optimization at Balmores Lab.";
+  "Registered Civil Engineer (PRC Philippines, 2013) · Toronto, Canada · 10+ years structural design · Founder, Balmores Lab · AI-driven structural optimization.";
 
 /** Identity URLs published as schema.org sameAs + rel=me across the site. */
 export const BASE_SAME_AS = [
@@ -174,6 +180,7 @@ export function buildRootStructuredData() {
         honorificSuffix: "P.Eng (Candidate), PE (Candidate)",
         jobTitle: JOB_TITLE,
         description: DEFAULT_DESCRIPTION,
+        disambiguatingDescription: LOUIE_KNOWLEDGE_SUMMARY,
         url: SITE_URL,
         mainEntityOfPage: { "@id": PROFILE_PAGE_ID },
         image: {
@@ -182,10 +189,10 @@ export function buildRootStructuredData() {
           caption: `${PERSON_NAME} - ${JOB_TITLE}`,
         },
         gender: "Male",
-        birthDate: "1991-06-26",
+        birthDate: LOUIE_BIRTH_DATE,
         birthPlace: {
           "@type": "Place",
-          name: "Tuguegarao City, Cagayan Valley, Philippines",
+          name: LOUIE_BIRTH_PLACE,
           address: {
             "@type": "PostalAddress",
             addressLocality: "Tuguegarao City",
@@ -221,6 +228,15 @@ export function buildRootStructuredData() {
         nationality: { "@type": "Country", name: "Philippines" },
         worksFor: { "@id": ORG_ID },
         founder: { "@id": ORG_ID },
+        founderOf: {
+          "@id": ORG_ID,
+          "@type": "Organization",
+          name: SITE_NAME,
+          url: SITE_URL,
+          description:
+            "Independent research initiative on AI-driven structural engineering and computational design.",
+        },
+        subjectOf: { "@id": PROFILE_PAGE_ID },
         alumniOf: [
           { "@type": "EducationalOrganization", name: "Master of Science in Computer Science (in progress)" },
           { "@type": "EducationalOrganization", name: "Doctor of Information Technology (in progress)" },
@@ -335,10 +351,15 @@ export function buildRootStructuredData() {
         "@id": PROFILE_PAGE_ID,
         url: `${SITE_URL}/about`,
         name: `About ${PERSON_NAME}`,
+        description: LOUIE_KNOWLEDGE_SUMMARY,
         about: { "@id": PERSON_ID },
         mainEntity: { "@id": PERSON_ID },
         isPartOf: { "@id": SITE_ID },
         dateModified: today,
+        primaryImageOfPage: {
+          "@type": "ImageObject",
+          url: `${SITE_URL}/opengraph-image`,
+        },
       },
     ],
   };

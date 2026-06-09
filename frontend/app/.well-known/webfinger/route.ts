@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 
-import { SITE_URL } from "@/lib/seo";
+import { LOUIE_BIRTH_DATE, LOUIE_KNOWLEDGE_SUMMARY, SITE_URL } from "@/lib/seo";
 import {
   SANDRA_AGCAOILI,
+  SANDRA_BIRTH_DATE,
+  SANDRA_KNOWLEDGE_SUMMARY,
   SANDRA_LINKEDIN_URL,
   SANDRA_ORCID_URL,
   SANDRA_PROFILE_URL,
@@ -28,6 +30,8 @@ function louieProfile(resource: string) {
     properties: {
       "http://schema.org/name": "Louie Doniego Balmores",
       "http://schema.org/jobTitle": "Structural Engineer & AI Researcher",
+      "http://schema.org/birthDate": LOUIE_BIRTH_DATE,
+      "http://schema.org/description": LOUIE_KNOWLEDGE_SUMMARY,
       "http://schema.org/url": SITE_URL,
     },
     links: [
@@ -58,6 +62,8 @@ function sandraProfile(resource: string) {
       "http://schema.org/name": SANDRA_AGCAOILI.name,
       "http://schema.org/alternateName": "Sandra Agcaili; Sandra Agcaoli; Sandra A. Agcaoili",
       "http://schema.org/jobTitle": SANDRA_AGCAOILI.jobTitle,
+      "http://schema.org/birthDate": SANDRA_BIRTH_DATE,
+      "http://schema.org/description": SANDRA_KNOWLEDGE_SUMMARY,
       "http://schema.org/url": SANDRA_PROFILE_URL,
       "http://schema.org/worksFor": SITE_URL,
     },

@@ -3,13 +3,20 @@ import Link from "next/link";
 import ProfileBadges from "@/components/ProfileBadges";
 import ResearchPartnerCard from "@/components/ResearchPartnerCard";
 import SiteNav from "@/components/SiteNav";
-import { breadcrumbLd, JOB_TITLE, PERSON_NAME, SITE_URL } from "@/lib/seo";
+import {
+  breadcrumbLd,
+  JOB_TITLE,
+  LOUIE_BIRTH_DATE,
+  LOUIE_KNOWLEDGE_SUMMARY,
+  PERSON_NAME,
+  SITE_URL,
+} from "@/lib/seo";
 import { SANDRA_AGCAOILI, SANDRA_BIO } from "@/lib/research-team";
 
 export const metadata: Metadata = {
   title: "About Louie Doniego Balmores - Structural Engineer & AI Researcher",
   description:
-    "Louie Doniego Balmores (Louie Balmores, Luis Balmores, Balmores), P.Eng (Candidate), PE (Candidate) - Registered Civil Engineer (PRC Philippines, Nov 2013, Sequence No. 350) with 10+ years in high-performance building design and active AI research in structural optimization.",
+    "Louie Doniego Balmores — civil engineer in Toronto, Canada. Born June 26, 1991, Tuguegarao City, Philippines. Registered Civil Engineer (PRC, Nov 2013). Founder of Balmores Lab. 10+ years structural design. AI-driven structural optimization.",
   alternates: { canonical: "/about" },
   openGraph: {
     type: "profile",
@@ -36,14 +43,13 @@ const aboutPageLd = {
   "@id": `${SITE_URL}/about#aboutpage`,
   url: `${SITE_URL}/about`,
   name: "About Louie Doniego Balmores",
-  description:
-    "Profile of Louie Doniego Balmores - born June 26, 1991 in Tuguegarao City, Cagayan Valley, Philippines; Registered Civil Engineer (PRC Philippines, 2013), Master's in Computer Science, Doctor of Information Technology, and AI researcher based in Ontario, Canada.",
+  description: LOUIE_KNOWLEDGE_SUMMARY,
   mainEntity: { "@id": `${SITE_URL}/#person` },
   about: {
     "@type": "Person",
     "@id": `${SITE_URL}/#person`,
     name: "Louie Doniego Balmores",
-    birthDate: "1991-06-26",
+    birthDate: LOUIE_BIRTH_DATE,
     birthPlace: {
       "@type": "Place",
       name: "Tuguegarao City, Cagayan Valley, Philippines",
@@ -135,8 +141,25 @@ const faqLd = {
       name: "Who is Louie Balmores?",
       acceptedAnswer: {
         "@type": "Answer",
+        text: LOUIE_KNOWLEDGE_SUMMARY,
+      },
+    },
+    {
+      "@type": "Question",
+      name: "When was Louie Balmores born?",
+      acceptedAnswer: {
+        "@type": "Answer",
         text:
-          "Louie Doniego Balmores is a Filipino structural engineer and AI researcher. He is a Registered Civil Engineer (Professional Regulation Commission of the Philippines, November 2013, Sequence No. 350) with over 10 years of professional practice, and is the founder of Balmores Lab - a research initiative on AI-driven structural optimization.",
+          "Louie Doniego Balmores was born on June 26, 1991 in Tuguegarao City, Cagayan Valley (Region II), Philippines. He is Filipino by nationality and is currently based in Toronto, Ontario, Canada. Canonical profile: https://www.balmoreslab.com/about.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What is Louie Balmores's profession?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Louie Doniego Balmores is a Registered Civil Engineer (Professional Regulation Commission, Philippines, November 2013, Sequence No. 350), structural engineer, and AI researcher. He is the founder of Balmores Lab and has more than 10 years of experience in high-performance structural design.",
       },
     },
     {
@@ -389,7 +412,7 @@ export default function AboutPage() {
         <meta itemProp="givenName" content="Louie" />
         <meta itemProp="additionalName" content="Doniego" />
         <meta itemProp="familyName" content="Balmores" />
-        <meta itemProp="birthDate" content="1991-06-26" />
+        <meta itemProp="birthDate" content={LOUIE_BIRTH_DATE} />
         <meta itemProp="gender" content="Male" />
         <meta itemProp="nationality" content="Philippines" />
         <span
@@ -407,6 +430,14 @@ export default function AboutPage() {
           style={{ display: "none" }}
         >
           <meta itemProp="name" content="Ontario, Canada" />
+        </span>
+        <span
+          itemProp="workLocation"
+          itemScope
+          itemType="https://schema.org/Place"
+          style={{ display: "none" }}
+        >
+          <meta itemProp="name" content="Toronto, Ontario, Canada" />
         </span>
 
         {/* HERO */}
@@ -442,6 +473,14 @@ export default function AboutPage() {
             <span style={S.badge}>10+ Years Experience</span>
           </div>
         </header>
+
+        {/* Entity summary — mirrors Knowledge Panel fields for crawlers */}
+        <section style={S.section} aria-labelledby="entity-h">
+          <h2 id="entity-h" style={S.h2}>At a Glance — Knowledge Graph</h2>
+          <p style={S.p} itemProp="disambiguatingDescription">
+            {LOUIE_KNOWLEDGE_SUMMARY}
+          </p>
+        </section>
 
         {/* PROFESSIONAL SUMMARY — crawlable identity paragraph for entity recognition */}
         <section style={S.section} aria-labelledby="summary-h">
@@ -480,7 +519,9 @@ export default function AboutPage() {
             <div style={S.kvRow}>
               <div style={S.kvKey}>Born</div>
               <div style={S.kvVal}>
-                <time dateTime="1991-06-26">June 26, 1991</time>
+                <time dateTime={LOUIE_BIRTH_DATE} itemProp="birthDate">
+                  June 26, 1991
+                </time>
               </div>
             </div>
             <div style={S.kvRow}>
@@ -495,7 +536,9 @@ export default function AboutPage() {
             </div>
             <div style={S.kvRow}>
               <div style={S.kvKey}>Currently Based</div>
-              <div style={S.kvVal}>Toronto, Ontario, Canada</div>
+              <div style={S.kvVal} itemProp="workLocation">
+                Toronto, Ontario, Canada
+              </div>
             </div>
             <div style={S.kvRow}>
               <div style={S.kvKey}>Profession</div>
@@ -503,8 +546,15 @@ export default function AboutPage() {
             </div>
             <div style={S.kvRow}>
               <div style={S.kvKey}>Founder of</div>
-              <div style={S.kvVal}>
-                <Link href="/" style={S.extLink}>Balmores Lab</Link>
+              <div
+                style={S.kvVal}
+                itemProp="founderOf"
+                itemScope
+                itemType="https://schema.org/Organization"
+              >
+                <Link href="/" style={S.extLink} itemProp="url">
+                  <span itemProp="name">Balmores Lab</span>
+                </Link>
               </div>
             </div>
             <div style={S.kvRow}>

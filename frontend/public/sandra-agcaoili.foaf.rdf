@@ -46,7 +46,11 @@
     <owl:sameAs rdf:resource="https://rocketreach.co/sandra-agcaoili-email_72113673"/>
     <owl:sameAs rdf:resource="https://contactout.com/sandra-agcaoili-10976"/>
     <owl:sameAs rdf:resource="https://prc.gov.ph"/>
-    <schema:description>Sandra Agcaoili is a Filipino AI researcher and Research Partner at Balmores Lab, contributing to machine learning and structural-engineering AI programmes in Singapore. She is a PhD candidate in Artificial Intelligence at UP Diliman and a member of AAP. She holds a BS in Agriculture (UP, 2005–2009) and is a Licensed Agriculturist registered with the Professional Regulation Commission (PRC) of the Philippines.</schema:description>
+    <schema:birthDate>1988-10-11</schema:birthDate>
+
+    <schema:homeLocation>Singapore</schema:homeLocation>
+
+    <schema:description>Sandra Agcaoili is a Filipino artificial-intelligence researcher based in Singapore and Research Partner at Balmores Lab. Born October 11, 1988. She contributes machine learning and trustworthy AI to structural engineering with Louie Doniego Balmores, is a doctoral candidate in Artificial Intelligence at the University of the Philippines Diliman, and is a Licensed Agriculturist registered with the Professional Regulation Commission (PRC) of the Philippines.</schema:description>
   </foaf:Person>
 
 </rdf:RDF>

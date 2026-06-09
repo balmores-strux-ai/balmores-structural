@@ -10,9 +10,11 @@ LinkedIn: https://www.linkedin.com/in/louiebalmores/
 ORCID:    https://orcid.org/0009-0008-5479-4033
 GitHub:   https://github.com/balmores-strux-ai/balmores-structural
 X:        @louiedbalmores
+Born:     June 26, 1991 (Tuguegarao City, Philippines)
 From:     Tuguegarao City, Philippines — based in Toronto, Ontario, Canada
 
 Research Partner: Sandra Agcaoili
+Born:     October 11, 1988
 Role:     AI Researcher · Research Partner, Balmores Lab · PhD AI, UP Diliman
 License:  Licensed Agriculturist — Professional Regulation Commission (PRC), Philippines (BS Agriculture, UP 2005–2009)
 Location: Singapore
@@ -32,7 +34,7 @@ WebFinger: acct:sandra@balmoreslab.com
 
 /* SITE */
 
-Last update: 2026-05-29
+Last update: 2026-05-31
 Language:    English
 Doctype:     HTML5
 Components:  Next.js 14 · React 18 · Three.js (react-three-fiber) · PyNite FEM
